@@ -1,4 +1,7 @@
 defmodule Citadel.Accounts.Token do
+  @moduledoc """
+  The Token resource for managing authentication tokens, including storage and revocation.
+  """
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Accounts,
