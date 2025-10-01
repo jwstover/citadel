@@ -1,4 +1,7 @@
 defmodule Citadel.Secrets do
+  @moduledoc """
+  Manages secrets for AshAuthentication, providing token signing secrets.
+  """
   use AshAuthentication.Secret
 
   def secret_for(

@@ -1,4 +1,7 @@
 defmodule CitadelWeb.AuthOverrides do
+  @moduledoc """
+  Configuration module for customizing AshAuthentication Phoenix UI components.
+  """
   use AshAuthentication.Phoenix.Overrides
 
   # configure your UI overrides here

@@ -1,4 +1,7 @@
 defmodule Citadel.Accounts.User do
+  @moduledoc """
+  The User resource for authentication and authorization.
+  """
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Accounts,
