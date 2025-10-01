@@ -1,4 +1,8 @@
 import Config
+config :citadel, Oban, testing: :manual
+config :citadel, token_signing_secret: "Lu32ul4hfEE2x/l+8SkesaKOI8zopO/1"
+config :bcrypt_elixir, log_rounds: 1
+config :ash, policies: [show_policy_breakdowns?: true], disable_async?: true
 
 # Configure your database
 #

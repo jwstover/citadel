@@ -1,4 +1,5 @@
 import Config
+config :ash, policies: [show_policy_breakdowns?: true]
 
 # Configure your database
 config :citadel, Citadel.Repo,
@@ -64,7 +65,7 @@ config :citadel, CitadelWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :citadel, dev_routes: true
+config :citadel, dev_routes: true, token_signing_secret: "2OnzxulC+bdGrYTXDhdvJevOpeHMS+JX"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"

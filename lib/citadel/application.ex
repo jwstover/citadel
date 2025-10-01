@@ -11,11 +11,17 @@ defmodule Citadel.Application do
       CitadelWeb.Telemetry,
       Citadel.Repo,
       {DNSCluster, query: Application.get_env(:citadel, :dns_cluster_query) || :ignore},
+      {Oban,
+       AshOban.config(
+         Application.fetch_env!(:citadel, :ash_domains),
+         Application.fetch_env!(:citadel, Oban)
+       )},
       {Phoenix.PubSub, name: Citadel.PubSub},
       # Start a worker by calling: Citadel.Worker.start_link(arg)
       # {Citadel.Worker, arg},
       # Start to serve requests, typically the last entry
-      CitadelWeb.Endpoint
+      CitadelWeb.Endpoint,
+      {AshAuthentication.Supervisor, [otp_app: :citadel]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
