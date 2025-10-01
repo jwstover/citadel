@@ -11,7 +11,7 @@ defmodule Citadel.MixProject do
       aliases: aliases(),
       deps: deps(),
       compilers: [:phoenix_live_view] ++ Mix.compilers(),
-      listeners: [Phoenix.CodeReloader],
+      listeners: listeners(),
       consolidate_protocols: Mix.env() != :dev,
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -124,5 +124,17 @@ defmodule Citadel.MixProject do
       ],
       precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
     ]
+  end
+
+  defp listeners do
+    if dependabot?() do
+      []
+    else
+      [Phoenix.CodeReloader]
+    end
+  end
+
+  defp dependabot? do
+    Enum.any?(System.get_env(), fn {key, _value} -> String.starts_with?(key, "DEPENDABOT") end)
   end
 end
