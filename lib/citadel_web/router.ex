@@ -48,7 +48,6 @@ defmodule CitadelWeb.Router do
   scope "/", CitadelWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
     auth_routes AuthController, Citadel.Accounts.User, path: "/auth"
     sign_out_route AuthController
 
