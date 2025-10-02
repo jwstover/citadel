@@ -15,7 +15,7 @@ defmodule CitadelWeb.Router do
 
     plug :put_secure_browser_headers, %{
       "content-security-policy" =>
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ws: wss:;"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: wss:;"
     }
 
     plug :load_from_session
@@ -31,6 +31,7 @@ defmodule CitadelWeb.Router do
     pipe_through :browser
 
     ash_authentication_live_session :authenticated_routes do
+      live "/", HomeLive.Index, :index
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:

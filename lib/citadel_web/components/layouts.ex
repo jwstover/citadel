@@ -35,40 +35,79 @@ defmodule CitadelWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </header>
+    <div class="drawer lg:drawer-open">
+      <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+      <div class="drawer-content flex flex-col">
+        <%!-- Navbar --%>
+        <div class="navbar bg-base-200 lg:hidden">
+          <div class="flex-none">
+            <label for="sidebar-drawer" class="btn btn-square btn-ghost">
+              <.icon name="hero-bars-3" class="size-6" />
+            </label>
+          </div>
+          <div class="flex-1">
+            <span class="text-xl font-bold">Citadel</span>
+          </div>
+        </div>
 
-    <.flash_group flash={@flash} />
+        <div class="flex h-screen w-screen">
+          <div>
+            <label for="sidebar-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+            <div class="menu bg-base-100 text-base-content min-h-full w-56 p-2">
+              <%!-- Sidebar header --%>
+              <div class="mb-6 mt-2 px-2 gap-3 flex flex-row items-center">
+                <div class="btn btn-primary btn-square btn-sm pointer-events-none">
+                  <.icon name="hero-building-library" class="size-4" />
+                </div>
+                <h2>Citadel</h2>
+              </div>
+
+              <%!-- Navigation menu --%>
+              <ul class="menu-compact">
+                <li>
+                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                    <.icon name="hero-home" class="size-4 text-base-content/70" />
+                    <span>Home</span>
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                    <.icon name="hero-chart-bar" class="size-4 text-base-content/70" />
+                    <span>Dashboard</span>
+                  </.link>
+                </li>
+                <li>
+                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                    <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/70" />
+                    <span>Settings</span>
+                  </.link>
+                </li>
+              </ul>
+
+              <%!-- Theme toggle --%>
+              <div class="mt-auto pt-4 flex justify-center">
+                <div class="max-w-max">
+                  <.theme_toggle />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <%!-- Main content --%>
+          <main class="flex-grow bg-base-200 card card-border border-base-300 m-2">
+            <div class="card-body py-2 px-6">
+              {render_slot(@inner_block)}
+            </div>
+          </main>
+        </div>
+
+        <.flash_group flash={@flash} />
+      </div>
+
+      <%!-- Sidebar --%>
+      <div class="drawer-side"></div>
+    </div>
     """
   end
 
@@ -123,7 +162,7 @@ defmodule CitadelWeb.Layouts do
   def theme_toggle(assigns) do
     ~H"""
     <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
-      <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
+      <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=citadel-light]_&]:left-1/3 [[data-theme=citadel-dark]_&]:left-2/3 transition-[left]" />
 
       <button
         class="flex p-2 cursor-pointer w-1/3"
@@ -136,7 +175,7 @@ defmodule CitadelWeb.Layouts do
       <button
         class="flex p-2 cursor-pointer w-1/3"
         phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="light"
+        data-phx-theme="citadel-light"
       >
         <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
@@ -144,7 +183,7 @@ defmodule CitadelWeb.Layouts do
       <button
         class="flex p-2 cursor-pointer w-1/3"
         phx-click={JS.dispatch("phx:set-theme")}
-        data-phx-theme="dark"
+        data-phx-theme="citadel-dark"
       >
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
