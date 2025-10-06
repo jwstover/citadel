@@ -96,7 +96,7 @@ defmodule CitadelWeb.Layouts do
 
           <%!-- Main content --%>
           <main class="flex-grow bg-base-200 card card-border border-base-300 m-2">
-            <div class="card-body py-2 px-6">
+            <div class="card-body p-0">
               {render_slot(@inner_block)}
             </div>
           </main>

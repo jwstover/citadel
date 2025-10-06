@@ -33,8 +33,8 @@
   --color-secondary-content: oklch(100% 0 0);
   --color-accent: oklch(77% 0.152 181.912);
   --color-accent-content: oklch(27% 0.046 192.524);
-  --color-neutral: oklch(37% 0 0);
-  --color-neutral-content: oklch(98% 0 0);
+  --color-neutral: oklch(0% 0 0);
+  --color-neutral-content: oklch(80% 0 0);
   --color-info: oklch(80.39% 0.1148 241.68);
   --color-info-content: oklch(30.39% 0.1148 241.68);
   --color-success: oklch(83.92% 0.0901 136.87);
@@ -50,7 +50,7 @@
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 1;
-  --noise: 1;
+  --noise: 0;
 }
 
 @plugin "../vendor/daisyui-theme" {
