@@ -288,6 +288,169 @@ defmodule Citadel.Todos.TodoTest do
     end
   end
 
+  describe "update_todo/3 code interface" do
+    test "updates a todo using code interface", %{user: user, todo_state: todo_state} do
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Original Title #{System.unique_integer([:positive])}",
+            description: "Original description",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      updated =
+        Todos.update_todo!(
+          todo.id,
+          %{
+            title: "Updated Title #{System.unique_integer([:positive])}",
+            description: "Updated description"
+          },
+          actor: user
+        )
+
+      assert updated.id == todo.id
+      assert updated.title != todo.title
+      assert updated.description == "Updated description"
+      assert updated.todo_state_id == todo_state.id
+    end
+
+    test "can change todo_state using code interface", %{user: user, todo_state: todo_state} do
+      # Create another todo state
+      new_state =
+        Todos.create_todo_state!(%{
+          name: "New State #{System.unique_integer([:positive])}",
+          order: 2
+        })
+
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Todo #{System.unique_integer([:positive])}",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      updated = Todos.update_todo!(todo.id, %{todo_state_id: new_state.id}, actor: user)
+
+      assert updated.id == todo.id
+      assert updated.todo_state_id == new_state.id
+      assert updated.todo_state_id != todo_state.id
+    end
+
+    test "can update multiple fields at once", %{user: user, todo_state: todo_state} do
+      new_state =
+        Todos.create_todo_state!(%{
+          name: "Done State #{System.unique_integer([:positive])}",
+          order: 3
+        })
+
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Original #{System.unique_integer([:positive])}",
+            description: "Original desc",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      updated =
+        Todos.update_todo!(
+          todo.id,
+          %{
+            title: "New Title",
+            description: "New description",
+            todo_state_id: new_state.id
+          },
+          actor: user
+        )
+
+      assert updated.title == "New Title"
+      assert updated.description == "New description"
+      assert updated.todo_state_id == new_state.id
+    end
+
+    test "raises error when updating another user's todo", %{user: user, todo_state: todo_state} do
+      other_user = create_user()
+
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Protected Todo #{System.unique_integer([:positive])}",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      # When using get_by, Ash returns Invalid (not found) to avoid leaking info about record existence
+      assert_raise Ash.Error.Invalid, fn ->
+        Todos.update_todo!(todo.id, %{title: "Unauthorized Update"}, actor: other_user)
+      end
+    end
+
+    test "raises error when updating with invalid title", %{user: user, todo_state: todo_state} do
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Valid Title #{System.unique_integer([:positive])}",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Todos.update_todo!(todo.id, %{title: nil}, actor: user)
+      end
+    end
+
+    test "raises error when updating with non-existent todo_state_id", %{
+      user: user,
+      todo_state: todo_state
+    } do
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Todo #{System.unique_integer([:positive])}",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      fake_state_id = Ash.UUID.generate()
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Todos.update_todo!(todo.id, %{todo_state_id: fake_state_id}, actor: user)
+      end
+    end
+
+    test "raises error when updating non-existent todo", %{user: user} do
+      fake_todo_id = Ash.UUID.generate()
+
+      # get_by returns Invalid when record is not found
+      assert_raise Ash.Error.Invalid, fn ->
+        Todos.update_todo!(fake_todo_id, %{title: "Updated"}, actor: user)
+      end
+    end
+
+    test "raises error when actor is not provided", %{user: user, todo_state: todo_state} do
+      todo =
+        Todos.create_todo!(
+          %{
+            title: "Todo #{System.unique_integer([:positive])}",
+            todo_state_id: todo_state.id
+          },
+          actor: user
+        )
+
+      assert_raise Ash.Error.Forbidden, fn ->
+        Todos.update_todo!(todo.id, %{title: "Updated"})
+      end
+    end
+  end
+
   describe "destroy todo" do
     test "destroys a todo", %{user: user, todo_state: todo_state} do
       todo =

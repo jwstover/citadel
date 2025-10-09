@@ -34,19 +34,25 @@ defmodule CitadelWeb.HomeLive.Index do
     {:noreply, socket |> assign(:show_todo_form, false)}
   end
 
-  def handle_info({:todo_created, todo}, socket) do
+  def handle_event("todo-moved", %{"todo_id" => todo_id, "new_state_id" => new_state_id}, socket) do
+    Todos.update_todo!(todo_id, %{todo_state_id: new_state_id},
+      actor: socket.assigns.current_user
+    )
+
+    {:noreply, assign_todos(socket)}
+  end
+
+  def handle_info({:todo_created, _todo}, socket) do
     {:noreply, assign_todos(socket) |> assign(:show_todo_form, false)}
   end
 
   defp assign_todos(socket) do
-    # Load todos for the current user with their state loaded
     todos =
       Todos.list_todos!(
         actor: socket.assigns.current_user,
         load: [:todo_state]
       )
 
-    # Group todos by their state
     todos_by_state = Enum.group_by(todos, & &1.todo_state_id)
 
     assign(socket, :todos_by_state, todos_by_state)
@@ -57,9 +63,7 @@ defmodule CitadelWeb.HomeLive.Index do
     <Layouts.app flash={@flash}>
       <.control_bar />
 
-      <div class="">
-        <.todos_list todo_states={@todo_states} todos_by_state={@todos_by_state} />
-      </div>
+      <.todos_list todo_states={@todo_states} todos_by_state={@todos_by_state} />
 
       <.live_component
         :if={@show_todo_form}

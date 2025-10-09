@@ -5,11 +5,9 @@ defmodule CitadelWeb.Components.NewTodoModal do
 
   require Logger
 
-  alias Citadel.Todos
   alias Citadel.Todos.Todo
 
   def update(assigns, socket) do
-    IO.inspect(assigns, label: "================== ASSIGNS\n")
     {:ok, socket |> assign(assigns) |> assign_form()}
   end
 
@@ -42,7 +40,12 @@ defmodule CitadelWeb.Components.NewTodoModal do
     <dialog id={@id} class="modal modal-open">
       <div class="modal-box" phx-click-away="close-new-todo-form">
         <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" phx-click="close-new-todo-form">✕</button>
+          <button
+            class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+            phx-click="close-new-todo-form"
+          >
+            ✕
+          </button>
         </form>
         <h3 class="text-lg font-bold mb-2">New Todo</h3>
 

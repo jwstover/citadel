@@ -20,7 +20,6 @@ defmodule Citadel.Todos.Todo do
     create :create do
       accept [:title, :description, :todo_state_id]
       change relate_actor(:user)
-      change set_attribute(:todo_state_id, "0199c98c-2c2b-76f8-9e2e-d155bc3afa5b")
     end
 
     update :update do

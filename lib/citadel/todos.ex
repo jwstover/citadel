@@ -14,6 +14,7 @@ defmodule Citadel.Todos do
     resource Citadel.Todos.Todo do
       define :create_todo, action: :create
       define :list_todos, action: :read
+      define :update_todo, action: :update, get_by: [:id]
     end
   end
 end
