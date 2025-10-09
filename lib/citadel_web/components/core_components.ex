@@ -420,6 +420,39 @@ defmodule CitadelWeb.CoreComponents do
     """
   end
 
+  def icon(%{name: "fa-" <> _} = assigns) do
+    ~H"""
+    <span class={[@name, @class]} />
+    """
+  end
+
+  @doc """
+  Renders a [Font Awesome](https://fontawesome.com) icon.
+
+  Font Awesome icons come in three styles – solid, regular, and brands.
+  Styles are applied using the `-solid`, `-regular`, and `-brands` suffix.
+
+  You can customize the size and colors of the icons by setting
+  width, height, and background color classes.
+
+  Icons are extracted from the `assets/vendor/fontawesome` directory and bundled
+  within your compiled app.css by the plugin in `assets/vendor/fontawesome.js`.
+
+  ## Examples
+
+      <.fa_icon name="rocket-solid" />
+      <.fa_icon name="github-brands" class="size-6" />
+      <.fa_icon name="heart-regular" class="text-red-500" />
+  """
+  attr :name, :string, required: true
+  attr :class, :string, default: "size-4"
+
+  def fa_icon(assigns) do
+    ~H"""
+    <span class={["fa-#{@name}", @class]} />
+    """
+  end
+
   ## JS Commands
 
   def show(js \\ %JS{}, selector) do
