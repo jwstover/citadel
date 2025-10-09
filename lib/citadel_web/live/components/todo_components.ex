@@ -55,13 +55,7 @@ defmodule CitadelWeb.Components.TodoComponents do
         <div class="todo-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
         </div>
-        <input
-          type="checkbox"
-          class="checkbox checkbox-xs"
-          name="todo_status"
-          value="false"
-          checked={@todo.todo_state.is_complete}
-        />
+        <.icon name="fa-circle-regular" />
         <div class="flex flex-col">
           <div class="font-medium text-base-content">{@todo.title}</div>
           <div :if={@todo.description} class="text-sm text-base-content/70">
