@@ -8,7 +8,7 @@ defmodule CitadelWeb.Components.TodoComponents do
     <div class="flex p-2 pl-6 border-b border-base-300">
       <div>
         <.button class="btn btn-sm btn-neutral">
-          <.icon name="hero-plus" class="size-4" />  New 
+          <.icon name="hero-plus" class="size-4" /> New
         </.button>
       </div>
     </div>
