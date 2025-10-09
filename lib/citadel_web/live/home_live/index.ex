@@ -5,6 +5,8 @@ defmodule CitadelWeb.HomeLive.Index do
 
   import CitadelWeb.Components.TodoComponents
 
+  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
+
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
