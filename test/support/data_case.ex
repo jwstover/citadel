@@ -57,4 +57,25 @@ defmodule Citadel.DataCase do
       end)
     end)
   end
+
+  @doc """
+  Generates a unique email address for testing.
+  """
+  def unique_user_email do
+    "user-#{System.unique_integer([:positive])}@example.com"
+  end
+
+  @doc """
+  Creates a user for testing using Ash.Seed.
+
+  ## Examples
+
+      user = create_user()
+      user = create_user(%{email: "custom@example.com"})
+  """
+  def create_user(attrs \\ %{}) do
+    email = Map.get(attrs, :email, unique_user_email())
+
+    Ash.Seed.seed!(Citadel.Accounts.User, %{email: email})
+  end
 end

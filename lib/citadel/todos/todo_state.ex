@@ -1,4 +1,7 @@
 defmodule Citadel.Todos.TodoState do
+  @moduledoc """
+  Represents the possible states a todo item can be in (e.g., "To Do", "In Progress", "Done").
+  """
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Todos,
@@ -11,7 +14,12 @@ defmodule Citadel.Todos.TodoState do
   end
 
   actions do
-    defaults [:read, :update, :destroy, create: :*]
+    defaults [:read, :destroy, create: :*]
+
+    update :update do
+      primary? true
+      accept [:name, :description, :order, :is_complete]
+    end
   end
 
   policies do
