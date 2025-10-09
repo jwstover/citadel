@@ -70,7 +70,16 @@ if config_env() == :prod do
   config :citadel,
     token_signing_secret:
       System.get_env("TOKEN_SIGNING_SECRET") ||
-        raise("Missing environment variable `TOKEN_SIGNING_SECRET`!")
+        raise("Missing environment variable `TOKEN_SIGNING_SECRET`!"),
+    google_client_id:
+      System.get_env("GOOGLE_CLIENT_ID") ||
+        raise("Missing environment variable `GOOGLE_CLIENT_ID`!"),
+    google_client_secret:
+      System.get_env("GOOGLE_CLIENT_SECRET") ||
+        raise("Missing environment variable `GOOGLE_CLIENT_SECRET`!"),
+    google_redirect_uri:
+      System.get_env("GOOGLE_REDIRECT_URI") ||
+        raise("Missing environment variable `GOOGLE_REDIRECT_URI`!")
 
   # ## SSL Support
   #

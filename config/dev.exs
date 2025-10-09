@@ -66,7 +66,13 @@ config :citadel, CitadelWeb.Endpoint,
   ]
 
 # Enable dev routes for dashboard and mailbox
-config :citadel, dev_routes: true, token_signing_secret: "2OnzxulC+bdGrYTXDhdvJevOpeHMS+JX"
+config :citadel,
+  dev_routes: true,
+  token_signing_secret: "2OnzxulC+bdGrYTXDhdvJevOpeHMS+JX",
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID") || "dev-client-id",
+  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET") || "dev-client-secret",
+  google_redirect_uri:
+    System.get_env("GOOGLE_REDIRECT_URI") || "http://localhost:4100/auth/user/google/callback"
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
