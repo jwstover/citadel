@@ -14,6 +14,7 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read
+      define :get_task, action: :read, get_by: [:id]
       define :update_task, action: :update, get_by: [:id]
     end
   end

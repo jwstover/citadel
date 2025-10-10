@@ -32,6 +32,7 @@ defmodule CitadelWeb.Router do
 
     ash_authentication_live_session :authenticated_routes do
       live "/", HomeLive.Index, :index
+      live "/tasks/:id", TaskLive.Show, :show
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
