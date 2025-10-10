@@ -3,6 +3,8 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   use CitadelWeb, :html
 
+  alias Citadel.Tasks.TaskState
+
   attr :class, :string, default: ""
 
   def control_bar(assigns) do
@@ -55,7 +57,7 @@ defmodule CitadelWeb.Components.TaskComponents do
         <div class="task-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
         </div>
-        <.icon name="fa-circle-regular" />
+          <.task_state_icon task_state={@task.task_state} />
         <div class="flex flex-col">
           <div class="font-medium text-base-content">{@task.title}</div>
           <div :if={@task.description} class="text-sm text-base-content/70">
@@ -66,6 +68,24 @@ defmodule CitadelWeb.Components.TaskComponents do
 
       <div></div>
     </div>
+    """
+  end
+
+  attr :task_state, TaskState, required: true
+
+  def task_state_icon(assigns) do
+    
+    ~H"""
+    <%= case @task_state.name do %>
+      <% "Todo" -> %>
+        <.icon name="fa-circle-regular" class="text-sky-600 size-4" />
+
+      <% "In Progress" -> %>
+        <.icon name="fa-circle-half-stroke-solid" class="text-yellow-500 size-4" />
+
+      <% "Complete" -> %>
+        <.icon name="fa-circle-solid" class="size-4" />
+    <% end %>
     """
   end
 end
