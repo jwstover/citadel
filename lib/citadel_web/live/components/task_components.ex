@@ -1,4 +1,4 @@
-defmodule CitadelWeb.Components.TodoComponents do
+defmodule CitadelWeb.Components.TaskComponents do
   @moduledoc false
 
   use CitadelWeb, :html
@@ -9,7 +9,7 @@ defmodule CitadelWeb.Components.TodoComponents do
     ~H"""
     <div class={["flex p-2 pl-6 border-b border-base-300", @class]}>
       <div>
-        <.button class="btn btn-sm btn-neutral" phx-click="new-todo">
+        <.button class="btn btn-sm btn-neutral" phx-click="new-task">
           <.icon name="hero-plus" class="size-4" /> New
         </.button>
       </div>
@@ -17,25 +17,25 @@ defmodule CitadelWeb.Components.TodoComponents do
     """
   end
 
-  attr :todo_states, :list, required: true
-  attr :todos_by_state, :map, required: true
+  attr :task_states, :list, required: true
+  attr :tasks_by_state, :map, required: true
 
-  def todos_list(assigns) do
+  def tasks_list(assigns) do
     ~H"""
-    <div class="divide-y divide-base-300" phx-hook="TodoDragDrop" id="todos-container">
-      <div :for={state <- @todo_states} class="py-4">
+    <div class="divide-y divide-base-300" phx-hook="TaskDragDrop" id="tasks-container">
+      <div :for={state <- @task_states} class="py-4">
         <div class="px-6 mb-3 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-base-content">
             {state.name}
           </h2>
           <span class="badge badge-neutral badge-sm">
-            {length(Map.get(@todos_by_state, state.id, []))}
+            {length(Map.get(@tasks_by_state, state.id, []))}
           </span>
         </div>
 
         <div data-dropzone data-state-id={state.id} class="min-h-[50px]">
-          <%= if todos = Map.get(@todos_by_state, state.id) do %>
-            <.todo :for={todo <- todos} todo={todo} />
+          <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
+            <.task :for={task <- tasks} task={task} />
           <% end %>
         </div>
       </div>
@@ -43,23 +43,23 @@ defmodule CitadelWeb.Components.TodoComponents do
     """
   end
 
-  attr :todo, :map, required: true
+  attr :task, :map, required: true
 
-  def todo(assigns) do
+  def task(assigns) do
     ~H"""
     <div
-      class="todo-item flex flex-row justify-between pl-6 py-2 hover:bg-base-100 cursor-move"
-      data-todo-id={@todo.id}
+      class="task-item flex flex-row justify-between pl-6 py-2 hover:bg-base-100 cursor-move"
+      data-task-id={@task.id}
     >
       <div class="flex flex-row items-center gap-2">
-        <div class="todo-drag-handle flex items-center cursor-grab active:cursor-grabbing">
+        <div class="task-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
         </div>
         <.icon name="fa-circle-regular" />
         <div class="flex flex-col">
-          <div class="font-medium text-base-content">{@todo.title}</div>
-          <div :if={@todo.description} class="text-sm text-base-content/70">
-            {@todo.description}
+          <div class="font-medium text-base-content">{@task.title}</div>
+          <div :if={@task.description} class="text-sm text-base-content/70">
+            {@task.description}
           </div>
         </div>
       </div>

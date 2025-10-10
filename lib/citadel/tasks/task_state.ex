@@ -1,15 +1,15 @@
-defmodule Citadel.Todos.TodoState do
+defmodule Citadel.Tasks.TaskState do
   @moduledoc """
-  Represents the possible states a todo item can be in (e.g., "To Do", "In Progress", "Done").
+  Represents the possible states a task item can be in (e.g., "To Do", "In Progress", "Done").
   """
   use Ash.Resource,
     otp_app: :citadel,
-    domain: Citadel.Todos,
+    domain: Citadel.Tasks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "todo_states"
+    table "task_states"
     repo Citadel.Repo
   end
 

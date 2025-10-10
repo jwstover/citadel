@@ -1,16 +1,16 @@
-defmodule Citadel.Todos.Todo do
+defmodule Citadel.Tasks.Task do
   @moduledoc """
-  Represents a todo item with a title, description, and associated state.
-  Todos are owned by users and can only be accessed by their owners.
+  Represents a task item with a title, description, and associated state.
+  Tasks are owned by users and can only be accessed by their owners.
   """
   use Ash.Resource,
     otp_app: :citadel,
-    domain: Citadel.Todos,
+    domain: Citadel.Tasks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "todos"
+    table "tasks"
     repo Citadel.Repo
   end
 
@@ -18,13 +18,13 @@ defmodule Citadel.Todos.Todo do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:title, :description, :todo_state_id]
+      accept [:title, :description, :task_state_id]
       change relate_actor(:user)
     end
 
     update :update do
       primary? true
-      accept [:title, :description, :todo_state_id]
+      accept [:title, :description, :task_state_id]
     end
   end
 
@@ -52,7 +52,7 @@ defmodule Citadel.Todos.Todo do
   end
 
   relationships do
-    belongs_to :todo_state, Citadel.Todos.TodoState, public?: true, allow_nil?: false
+    belongs_to :task_state, Citadel.Tasks.TaskState, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
   end
 end
