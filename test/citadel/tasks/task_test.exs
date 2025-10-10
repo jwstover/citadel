@@ -53,14 +53,31 @@ defmodule Citadel.Tasks.TaskTest do
       end
     end
 
-    test "raises error when task_state_id is missing", %{user: user} do
+    test "sets default task_state_id to the state with lowest order when not provided", %{
+      user: user
+    } do
+      # Create a task state with the lowest order to ensure it gets selected
+      lowest_order_state =
+        Tasks.create_task_state!(%{
+          name: "Lowest Order State #{System.unique_integer([:positive])}",
+          order: 0
+        })
+
+      # Create additional task states with higher order
+      _higher_order_state =
+        Tasks.create_task_state!(%{
+          name: "Higher Order State #{System.unique_integer([:positive])}",
+          order: 5
+        })
+
       attrs = %{
-        title: "Missing State #{System.unique_integer([:positive])}"
+        title: "Task Without State #{System.unique_integer([:positive])}"
       }
 
-      assert_raise Ash.Error.Invalid, fn ->
-        Tasks.create_task!(attrs, actor: user)
-      end
+      task = Tasks.create_task!(attrs, actor: user)
+
+      # Should default to the task_state with order: 0
+      assert task.task_state_id == lowest_order_state.id
     end
 
     test "raises error when actor is missing", %{task_state: task_state} do
