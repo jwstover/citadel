@@ -20,6 +20,7 @@ defmodule Citadel.Tasks.Task do
     create :create do
       accept [:title, :description, :task_state_id]
       change relate_actor(:user)
+      change Citadel.Tasks.Changes.SetDefaultTaskState
     end
 
     update :update do
