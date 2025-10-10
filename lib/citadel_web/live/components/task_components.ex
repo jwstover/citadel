@@ -50,20 +50,23 @@ defmodule CitadelWeb.Components.TaskComponents do
   def task(assigns) do
     ~H"""
     <div
-      class="task-item flex flex-row justify-between pl-6 py-2 hover:bg-base-100 cursor-move"
+      class="task-item flex flex-row justify-between pl-6 py-2 hover:bg-base-100"
       data-task-id={@task.id}
     >
-      <div class="flex flex-row items-center gap-2">
+      <div class="flex flex-row items-center gap-2 flex-1">
         <div class="task-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
         </div>
-          <.task_state_icon task_state={@task.task_state} />
-        <div class="flex flex-col">
+        <.task_state_icon task_state={@task.task_state} />
+        <.link
+          navigate={~p"/tasks/#{@task.id}"}
+          class="flex flex-col flex-1 cursor-pointer hover:underline"
+        >
           <div class="font-medium text-base-content">{@task.title}</div>
           <div :if={@task.description} class="text-sm text-base-content/70">
             {@task.description}
           </div>
-        </div>
+        </.link>
       </div>
 
       <div></div>
@@ -74,15 +77,12 @@ defmodule CitadelWeb.Components.TaskComponents do
   attr :task_state, TaskState, required: true
 
   def task_state_icon(assigns) do
-    
     ~H"""
     <%= case @task_state.name do %>
       <% "Todo" -> %>
         <.icon name="fa-circle-regular" class="text-sky-600 size-4" />
-
       <% "In Progress" -> %>
         <.icon name="fa-circle-half-stroke-solid" class="text-yellow-500 size-4" />
-
       <% "Complete" -> %>
         <.icon name="fa-circle-solid" class="size-4" />
     <% end %>
