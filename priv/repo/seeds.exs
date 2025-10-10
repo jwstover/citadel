@@ -10,8 +10,8 @@
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
 
-alias Citadel.Todos
+alias Citadel.Tasks
 
-Todos.create_todo_state!(%{name: "Todo", order: 1})
-Todos.create_todo_state!(%{name: "In Progress", order: 2})
-Todos.create_todo_state!(%{name: "Complete", order: 3})
+Tasks.create_task_state!(%{name: "Todo", order: 1})
+Tasks.create_task_state!(%{name: "In Progress", order: 2})
+Tasks.create_task_state!(%{name: "Complete", order: 3})
