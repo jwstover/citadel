@@ -7,7 +7,10 @@ defmodule Citadel.Tasks.Task do
     otp_app: :citadel,
     domain: Citadel.Tasks,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    extensions: [AshAi]
+
+  # AI model access is now abstracted through Citadel.AI.Helpers
 
   postgres do
     table "tasks"
@@ -27,6 +30,24 @@ defmodule Citadel.Tasks.Task do
       primary? true
       accept [:title, :description, :task_state_id]
     end
+
+    action :parse_task_from_text, :map do
+      description """
+      Parses natural language text into task attributes.
+      Extract a concise title (max 100 chars), optional description, and suggested state.
+      The suggested_state should be one of: to_do, in_progress, or done.
+      """
+
+      argument :text, :string do
+        allow_nil? false
+        description "Natural language text describing the task to create"
+      end
+
+      run fn _input, _context ->
+        model = Citadel.AI.Helpers.get_model()
+        prompt(model)
+      end
+    end
   end
 
   policies do
@@ -39,7 +60,7 @@ defmodule Citadel.Tasks.Task do
     end
 
     policy action_type([:update, :destroy]) do
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(user_id == ^actor(:id))
     end
   end
 

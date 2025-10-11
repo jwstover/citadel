@@ -62,6 +62,7 @@ defmodule Citadel.MixProject do
       {:oban, "~> 2.0"},
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:ash_ai, "~> 0.2"},
+      {:langchain, "~> 0.3"},
       {:tidewave, "~> 0.5", only: [:dev]},
       {:live_debugger, "~> 0.4", only: [:dev]},
       {:oban_web, "~> 2.0"},
