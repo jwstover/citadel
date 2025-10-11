@@ -59,6 +59,60 @@ defmodule Citadel.AI.Providers.OpenAI do
   end
 
   @impl true
+  def stream_message(message, actor, config, callback) do
+    model =
+      ChatOpenAI.new!(%{
+        model: config[:model] || default_model(),
+        api_key: config.api_key,
+        stream: true
+      })
+
+    result =
+      %{llm: model}
+      |> LLMChain.new!()
+      |> AshAi.setup_ash_ai(actor: actor, otp_app: :citadel)
+      |> LLMChain.add_message(Message.new_user!(message))
+      |> LLMChain.add_callback(%{
+        on_llm_new_delta: fn _model, delta ->
+          if delta.content && delta.content != "" do
+            callback.(delta.content)
+          end
+        end
+      })
+      |> LLMChain.run(mode: :while_needs_response)
+
+    case result do
+      {:ok, chain} ->
+        case chain.last_message do
+          %Message{content: response} when is_binary(response) ->
+            {:ok, response}
+
+          _ ->
+            {:error, :api_error, "No response from AI"}
+        end
+
+      {:error, %LLMChain{}} ->
+        {:error, :api_error,
+         "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
+
+      {:error, reason} ->
+        parse_error(reason)
+    end
+  rescue
+    error in [ArgumentError, RuntimeError] ->
+      {:error, :api_error, Exception.message(error)}
+
+    error ->
+      {:error, :unknown_error, "#{inspect(error)}"}
+  catch
+    :exit, _reason ->
+      {:error, :timeout_error, "Request timed out"}
+
+    kind, reason ->
+      {:error, :unknown_error, "#{kind}: #{inspect(reason)}"}
+  end
+
+  @impl true
   def parse_error(%{status: status, body: body} = _response) when is_map(body) do
     message = extract_api_error_message(body, status)
     error_type = Citadel.AI.Provider.classify_http_error(status)

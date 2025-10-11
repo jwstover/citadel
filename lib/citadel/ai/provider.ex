@@ -23,6 +23,8 @@ defmodule Citadel.AI.Provider do
 
   @type actor :: struct() | nil
 
+  @type stream_callback :: (String.t() -> :ok)
+
   @doc """
   Sends a message to the AI provider and returns the response.
 
@@ -36,6 +38,25 @@ defmodule Citadel.AI.Provider do
     - `{:error, error_type, message}` on failure
   """
   @callback send_message(String.t(), actor(), config()) ::
+              {:ok, String.t()} | {:error, error_type(), String.t()}
+
+  @doc """
+  Streams a message to the AI provider, calling the callback for each chunk.
+
+  The callback receives text deltas as they arrive. After streaming completes,
+  the function returns the complete final message.
+
+  ## Parameters
+    - message: The user message to send
+    - actor: The current user/actor making the request
+    - config: Provider-specific configuration including API key
+    - callback: Function called with each text chunk as it arrives
+
+  ## Returns
+    - `{:ok, complete_response}` on success with full message
+    - `{:error, error_type, message}` on failure
+  """
+  @callback stream_message(String.t(), actor(), config(), stream_callback()) ::
               {:ok, String.t()} | {:error, error_type(), String.t()}
 
   @doc """

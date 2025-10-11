@@ -16,7 +16,7 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
         |> Ash.Query.limit(10)
         |> Ash.Query.select([:text, :source])
         |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!()
+        |> Ash.read!(actor: context.actor)
 
       system_prompt =
         LangChain.Message.new_system!("""
@@ -37,20 +37,20 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
       %{
         llm: ChatOpenAI.new!(%{model: "gpt-4o"}),
         custom_context: Map.new(Ash.Context.to_opts(context)),
-        verbose?: true
+        verbose?: false
       }
       |> LLMChain.new!()
       |> LLMChain.add_message(system_prompt)
       |> LLMChain.add_messages(message_chain)
-      |> LLMChain.run(mode: :while_needs_response)
+      |> LLMChain.run()
       |> case do
         {:ok,
          %LangChain.Chains.LLMChain{
            last_message: %{content: content}
          }} ->
-          Ash.Changeset.force_change_attribute(changeset, :title, content)
+          Ash.Changeset.force_change_attribute(changeset, :title, String.trim(content))
 
-        {:error, _, error} ->
+        {:error, error} ->
           {:error, error}
       end
     end)

@@ -134,13 +134,13 @@ defmodule Citadel.Chat.Message do
   end
 
   policies do
-    # Allow AshAi actor (background jobs) to perform upsert_response and respond
-    policy action(:upsert_response) do
-      authorize_if actor_attribute_equals(:__struct__, AshAi)
+    # Allow AshAi actor (background jobs) full access for processing messages
+    bypass actor_attribute_equals(:__struct__, AshAi) do
+      authorize_if always()
     end
 
     policy action(:respond) do
-      authorize_if always()
+      authorize_if relates_to_actor_via([:conversation, :user])
     end
 
     policy action(:for_conversation) do

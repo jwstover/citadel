@@ -10,6 +10,7 @@ defmodule Citadel.Chat.Conversation do
   oban do
     triggers do
       trigger :name_conversation do
+        actor_persister Citadel.AiAgentActorPersister
         action :generate_name
         queue :conversations
         lock_for_update? false
@@ -46,6 +47,11 @@ defmodule Citadel.Chat.Conversation do
   end
 
   policies do
+    # Allow AshAi actor (background jobs) full access for naming conversations
+    bypass actor_attribute_equals(:__struct__, AshAi) do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:user)
     end

@@ -175,7 +175,13 @@ defmodule CitadelWeb.ChatLive do
 
     socket
     |> assign(:conversation, conversation)
-    |> stream(:messages, Citadel.Chat.message_history!(conversation.id, stream?: true, actor: socket.assigns.current_user))
+    |> stream(
+      :messages,
+      Citadel.Chat.message_history!(conversation.id,
+        stream?: true,
+        actor: socket.assigns.current_user
+      )
+    )
     |> assign_message_form()
     |> then(&{:noreply, &1})
   end

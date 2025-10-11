@@ -86,6 +86,106 @@ defmodule Citadel.AI.Client do
   end
 
   @doc """
+  Streams a message to an AI provider, calling callback for each chunk.
+
+  The callback receives text deltas as they arrive from the AI provider.
+  After streaming completes, the function returns the complete final message.
+
+  ## Parameters
+    - message: The user message to send
+    - actor: The current user/actor making the request (used for AshAi context)
+    - callback: Function called with each text chunk as it arrives (for /3 arity)
+    - opts: Optional keyword list with the following options (for /4 arity):
+      - `:provider` - The provider to use (`:anthropic` or `:openai`). Defaults to configured default.
+      - `:model` - The model to use. Defaults to provider's default model.
+      - `:api_key` - Custom API key. Defaults to application config.
+
+  ## Returns
+    - `{:ok, complete_response}` - Success with full AI response
+    - `{:error, :provider_not_configured, message}` - Provider API key not configured
+    - `{:error, error_type, message}` - Other errors (see Citadel.AI.Provider for error types)
+
+  ## Examples
+
+      # Stream to console with default provider
+      Citadel.AI.Client.stream_message("Hello!", current_user, fn chunk ->
+        IO.write(chunk)
+        :ok
+      end)
+
+      # Stream to database with explicit provider
+      Citadel.AI.Client.stream_message(
+        "Write a poem",
+        actor,
+        [provider: :anthropic],
+        fn chunk ->
+          Message.upsert_response!(id: msg_id, text: chunk)
+          :ok
+        end
+      )
+  """
+  @spec stream_message(String.t(), actor(), Provider.stream_callback()) ::
+          {:ok, String.t()}
+          | {:error, Provider.error_type() | :provider_not_configured, String.t()}
+  def stream_message(message, actor, callback) when is_function(callback, 1) do
+    stream_message(message, actor, [], callback)
+  end
+
+  @spec stream_message(String.t(), actor(), opts(), Provider.stream_callback()) ::
+          {:ok, String.t()}
+          | {:error, Provider.error_type() | :provider_not_configured, String.t()}
+  def stream_message(message, actor, opts, callback) when is_function(callback, 1) do
+    provider = Keyword.get(opts, :provider, Config.default_provider())
+
+    with {:ok, api_key} <- get_api_key(provider, opts),
+         {:ok, provider_config} <- build_provider_config(provider, api_key, opts),
+         {:ok, provider_module} <- get_provider_module(provider) do
+      provider_module.stream_message(message, actor, provider_config, callback)
+    end
+  end
+
+  @doc """
+  Streaming version that raises on error.
+
+  Same as `stream_message/3` or `stream_message/4` but raises on error instead of
+  returning error tuple.
+
+  ## Examples
+
+      # With default provider
+      response = Citadel.AI.Client.stream_message!("Hello!", current_user, fn chunk ->
+        IO.write(chunk)
+        :ok
+      end)
+
+      # With explicit provider
+      response = Citadel.AI.Client.stream_message!(
+        "Hello!",
+        current_user,
+        [provider: :openai],
+        fn chunk ->
+          IO.write(chunk)
+          :ok
+        end
+      )
+  """
+  @spec stream_message!(String.t(), actor(), Provider.stream_callback()) :: String.t()
+  def stream_message!(message, actor, callback) when is_function(callback, 1) do
+    case stream_message(message, actor, callback) do
+      {:ok, response} -> response
+      {:error, _type, message} -> raise RuntimeError, message
+    end
+  end
+
+  @spec stream_message!(String.t(), actor(), opts(), Provider.stream_callback()) :: String.t()
+  def stream_message!(message, actor, opts, callback) when is_function(callback, 1) do
+    case stream_message(message, actor, opts, callback) do
+      {:ok, response} -> response
+      {:error, _type, message} -> raise RuntimeError, message
+    end
+  end
+
+  @doc """
   Checks if a provider is available (configured with API key).
 
   ## Parameters
