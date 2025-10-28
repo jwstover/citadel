@@ -21,7 +21,7 @@ defmodule Citadel.Chat.Message.Changes.Respond do
         |> Ash.Query.filter(id != ^message.id)
         |> Ash.Query.select([:text, :source, :tool_calls, :tool_results])
         |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!()
+        |> Ash.read!(Ash.Context.to_opts(context))
         |> Enum.concat([%{source: :user, text: message.text}])
 
       system_prompt =
@@ -41,10 +41,10 @@ defmodule Citadel.Chat.Message.Changes.Respond do
           stream: true,
           setup_ash_ai: true,
           ash_ai_opts: [
-            otp_app: :citadel,
+            otp_app: :citadel
             # add the names of tools you want available in your conversation here.
             # i.e tools: [:list_tasks, :create_task]
-            tools: []
+            # tools: []
           ],
           custom_context: Map.new(Ash.Context.to_opts(context))
         )
