@@ -165,6 +165,47 @@ defmodule Citadel.AI.Providers.Anthropic do
     "claude-3-5-sonnet-20241022"
   end
 
+  @impl true
+  def create_chain(actor, config, opts \\ []) do
+    stream = Keyword.get(opts, :stream, false)
+
+    model =
+      ChatAnthropic.new!(%{
+        model: config[:model] || default_model(),
+        api_key: config.api_key,
+        stream: stream
+      })
+
+    chain =
+      %{llm: model}
+      |> LLMChain.new!()
+
+    # Add custom context if provided
+    chain =
+      case Keyword.get(opts, :custom_context) do
+        nil -> chain
+        context -> Map.put(chain, :custom_context, context)
+      end
+
+    # Setup AshAi if requested
+    chain =
+      if Keyword.get(opts, :setup_ash_ai, false) do
+        ash_ai_opts =
+          opts
+          |> Keyword.get(:ash_ai_opts, [])
+          |> Keyword.put(:actor, actor)
+
+        AshAi.setup_ash_ai(chain, ash_ai_opts)
+      else
+        chain
+      end
+
+    {:ok, chain}
+  rescue
+    error ->
+      {:error, :api_error, Exception.message(error)}
+  end
+
   # Private helpers
 
   defp extract_api_error_message(%{"error" => %{"message" => message}}, _status) do

@@ -88,6 +88,24 @@ defmodule Citadel.AI.Provider do
   @callback default_model() :: String.t()
 
   @doc """
+  Creates a configured LangChain for advanced use cases like tool calling.
+
+  This is useful for integrations that need direct access to LangChain features
+  such as AshAi tool calling, custom callbacks, or multi-step chains.
+
+  ## Parameters
+    - actor: The current user/actor making the request
+    - config: Provider-specific configuration including API key
+    - opts: Optional keyword list with chain-specific options
+
+  ## Returns
+    - `{:ok, chain}` - A configured LangChain.Chains.LLMChain
+    - `{:error, error_type, message}` on configuration failure
+  """
+  @callback create_chain(actor(), config(), keyword()) ::
+              {:ok, LangChain.Chains.LLMChain.t()} | {:error, error_type(), String.t()}
+
+  @doc """
   Helper function to classify HTTP status codes into error types.
   """
   @spec classify_http_error(integer()) :: error_type()

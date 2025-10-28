@@ -241,6 +241,77 @@ defmodule Citadel.AI.Client do
     provider_module.default_model()
   end
 
+  @doc """
+  Creates a configured LangChain for advanced use cases like tool calling.
+
+  This is useful when you need direct access to LangChain features such as:
+  - AshAi tool integration
+  - Custom callbacks for streaming
+  - Multi-step conversation chains
+  - Fine-grained control over chain execution
+
+  ## Parameters
+    - actor: The current user/actor making the request
+    - opts: Optional keyword list with:
+      - `:provider` - The provider to use (defaults to configured default)
+      - `:model` - The model to use (defaults to provider's default)
+      - `:stream` - Whether to enable streaming (default: false)
+      - `:setup_ash_ai` - Whether to setup AshAi tools (default: false)
+      - `:ash_ai_opts` - Options to pass to AshAi.setup_ash_ai (default: [])
+      - `:custom_context` - Custom context map to add to the chain
+
+  ## Returns
+    - `{:ok, chain}` - A configured LangChain.Chains.LLMChain
+    - `{:error, error_type, message}` on failure
+
+  ## Examples
+
+      # Create a basic chain
+      {:ok, chain} = Citadel.AI.Client.create_chain(actor)
+
+      # Create a chain with streaming and tools
+      {:ok, chain} = Citadel.AI.Client.create_chain(actor,
+        provider: :anthropic,
+        stream: true,
+        setup_ash_ai: true,
+        ash_ai_opts: [otp_app: :citadel, tools: [:list_tasks]]
+      )
+
+      # Then use the chain with LangChain functions
+      chain
+      |> LangChain.Chains.LLMChain.add_message(message)
+      |> LangChain.Chains.LLMChain.run()
+  """
+  @spec create_chain(actor(), opts()) ::
+          {:ok, LangChain.Chains.LLMChain.t()}
+          | {:error, Provider.error_type() | :provider_not_configured, String.t()}
+  def create_chain(actor, opts \\ []) do
+    provider = Keyword.get(opts, :provider, Config.default_provider())
+
+    with {:ok, api_key} <- get_api_key(provider, opts),
+         {:ok, provider_config} <- build_provider_config(provider, api_key, opts),
+         {:ok, provider_module} <- get_provider_module(provider) do
+      provider_module.create_chain(actor, provider_config, opts)
+    end
+  end
+
+  @doc """
+  Creates a configured LangChain, raises on error.
+
+  Same as `create_chain/2` but raises on error instead of returning error tuple.
+
+  ## Examples
+
+      chain = Citadel.AI.Client.create_chain!(current_user, stream: true)
+  """
+  @spec create_chain!(actor(), opts()) :: LangChain.Chains.LLMChain.t()
+  def create_chain!(actor, opts \\ []) do
+    case create_chain(actor, opts) do
+      {:ok, chain} -> chain
+      {:error, _type, message} -> raise RuntimeError, message
+    end
+  end
+
   # Private helpers
 
   defp get_api_key(provider, opts) do

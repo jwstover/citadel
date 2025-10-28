@@ -1,5 +1,13 @@
 import Config
-config :langchain, openai_key: fn -> System.fetch_env!("OPENAI_API_KEY") end
+
+# LangChain OpenAI key configuration - allows nil for graceful degradation
+config :langchain,
+  openai_key: fn ->
+    case System.get_env("OPENAI_API_KEY") do
+      nil -> nil
+      key -> key
+    end
+  end
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the

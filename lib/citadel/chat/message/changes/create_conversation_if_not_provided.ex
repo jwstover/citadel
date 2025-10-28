@@ -1,4 +1,10 @@
 defmodule Citadel.Chat.Message.Changes.CreateConversationIfNotProvided do
+  @moduledoc """
+  Creates a conversation if one is not provided when creating a message.
+
+  This ensures every message belongs to a conversation, automatically
+  creating one if needed while validating permissions.
+  """
   use Ash.Resource.Change
 
   @impl true

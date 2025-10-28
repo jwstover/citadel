@@ -48,6 +48,12 @@ defmodule Citadel.AI do
   # Delegate core functionality to Client
   defdelegate send_message(message, actor, opts \\ []), to: Citadel.AI.Client
   defdelegate send_message!(message, actor, opts \\ []), to: Citadel.AI.Client
+  defdelegate stream_message(message, actor, callback), to: Citadel.AI.Client
+  defdelegate stream_message(message, actor, opts, callback), to: Citadel.AI.Client
+  defdelegate stream_message!(message, actor, callback), to: Citadel.AI.Client
+  defdelegate stream_message!(message, actor, opts, callback), to: Citadel.AI.Client
+  defdelegate create_chain(actor, opts \\ []), to: Citadel.AI.Client
+  defdelegate create_chain!(actor, opts \\ []), to: Citadel.AI.Client
   defdelegate provider_available?(provider), to: Citadel.AI.Client
   defdelegate available_providers(), to: Citadel.AI.Client
   defdelegate default_model(provider), to: Citadel.AI.Client

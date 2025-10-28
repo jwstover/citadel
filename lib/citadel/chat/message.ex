@@ -1,4 +1,10 @@
 defmodule Citadel.Chat.Message do
+  @moduledoc """
+  Represents a chat message from either a user or AI agent.
+
+  Messages support streaming responses, tool calling, and automatic
+  AI response generation through background jobs.
+  """
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Chat,

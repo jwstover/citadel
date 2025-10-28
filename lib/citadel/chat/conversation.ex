@@ -1,4 +1,10 @@
 defmodule Citadel.Chat.Conversation do
+  @moduledoc """
+  Represents a chat conversation with automatic AI-powered naming.
+
+  Conversations are automatically named based on message content after
+  sufficient messages have been exchanged or after 10 minutes.
+  """
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Chat,

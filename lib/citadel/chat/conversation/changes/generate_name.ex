@@ -1,4 +1,10 @@
 defmodule Citadel.Chat.Conversation.Changes.GenerateName do
+  @moduledoc """
+  Generates an AI-powered title for conversations based on message history.
+
+  Uses the configured AI provider to analyze conversation content and
+  create a concise, descriptive title (2-8 words).
+  """
   use Ash.Resource.Change
   require Ash.Query
 

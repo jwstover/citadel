@@ -1,4 +1,11 @@
 defmodule Citadel.Chat do
+  @moduledoc """
+  The Chat domain for managing conversations and messages.
+
+  This domain provides functionality for AI-powered chat conversations,
+  including message history management, AI responses, and automatic
+  conversation naming.
+  """
   use Ash.Domain, otp_app: :citadel, extensions: [AshPhoenix]
 
   resources do

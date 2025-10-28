@@ -1,9 +1,14 @@
 defmodule Citadel.Chat.Message.Changes.Respond do
+  @moduledoc """
+  Generates AI responses to user messages using the configured AI provider.
+
+  This change handles streaming responses, tool calling, and conversation
+  history management for chat interactions.
+  """
   use Ash.Resource.Change
   require Ash.Query
 
   alias LangChain.Chains.LLMChain
-  alias LangChain.ChatModels.ChatOpenAI
 
   @impl true
   def change(changeset, _opts, context) do
@@ -29,16 +34,24 @@ defmodule Citadel.Chat.Message.Changes.Respond do
 
       new_message_id = Ash.UUID.generate()
 
-      %{
-        llm: ChatOpenAI.new!(%{model: "gpt-4o", stream: true}),
-        custom_context: Map.new(Ash.Context.to_opts(context))
-      }
-      |> LLMChain.new!()
+      # Use Citadel.AI abstraction to create a configured chain
+      # This respects the configured provider (Anthropic or OpenAI)
+      {:ok, chain} =
+        Citadel.AI.create_chain(context.actor,
+          stream: true,
+          setup_ash_ai: true,
+          ash_ai_opts: [
+            otp_app: :citadel,
+            # add the names of tools you want available in your conversation here.
+            # i.e tools: [:list_tasks, :create_task]
+            tools: []
+          ],
+          custom_context: Map.new(Ash.Context.to_opts(context))
+        )
+
+      chain
       |> LLMChain.add_message(system_prompt)
       |> LLMChain.add_messages(message_chain)
-      # add the names of tools you want available in your conversation here.
-      # i.e tools: [:lookup_weather]
-      |> AshAi.setup_ash_ai(otp_app: :citadel, tools: [], actor: context.actor)
       |> LLMChain.add_callback(%{
         on_llm_new_delta: fn _model, data ->
           if data.content && data.content != "" do

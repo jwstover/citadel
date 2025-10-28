@@ -206,6 +206,18 @@ defmodule CitadelWeb.ChatLive do
   def handle_event("send_message", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.message_form, params: params) do
       {:ok, message} ->
+        # Check if AI is available before proceeding
+        socket =
+          if Citadel.AI.available?() do
+            socket
+          else
+            put_flash(
+              socket,
+              :warning,
+              "AI provider not configured. Your message was saved but no response will be generated."
+            )
+          end
+
         if socket.assigns.conversation do
           socket
           |> assign_message_form()

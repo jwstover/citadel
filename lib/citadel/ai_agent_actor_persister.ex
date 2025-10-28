@@ -1,4 +1,10 @@
 defmodule Citadel.AiAgentActorPersister do
+  @moduledoc """
+  Persists actor information for background jobs, including AI agents.
+
+  This allows Oban jobs to restore the correct actor context when
+  processing background tasks like AI responses.
+  """
   use AshOban.ActorPersister
 
   def store(%Citadel.Accounts.User{id: id}), do: %{"type" => "user", "id" => id}

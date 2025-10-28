@@ -22,6 +22,8 @@ defmodule CitadelWeb.AuthController do
   end
 
   def failure(conn, activity, reason) do
+    IO.inspect(reason, label: "================== REASON\n")
+
     message =
       case {activity, reason} do
         {_,
