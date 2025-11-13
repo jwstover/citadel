@@ -1,5 +1,14 @@
 import Config
 
+# LangChain OpenAI key configuration - allows nil for graceful degradation
+config :langchain,
+  openai_key: fn ->
+    case System.get_env("OPENAI_API_KEY") do
+      nil -> nil
+      key -> key
+    end
+  end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -19,6 +28,29 @@ import Config
 if System.get_env("PHX_SERVER") do
   config :citadel, CitadelWeb.Endpoint, server: true
 end
+
+# Configure AI providers for chat functionality
+# Set ANTHROPIC_API_KEY and/or OPENAI_API_KEY environment variables
+
+# Anthropic (Claude) provider configuration
+anthropic_api_key = System.get_env("ANTHROPIC_API_KEY")
+
+# OpenAI (GPT) provider configuration
+openai_api_key = System.get_env("OPENAI_API_KEY")
+
+# Default provider selection (falls back to :anthropic if not set)
+default_provider =
+  case System.get_env("DEFAULT_AI_PROVIDER") do
+    "openai" -> :openai
+    "anthropic" -> :anthropic
+    _ -> :anthropic
+  end
+
+# Configure Citadel.AI with provider settings
+config :citadel, Citadel.AI,
+  anthropic_api_key: anthropic_api_key,
+  openai_api_key: openai_api_key,
+  default_provider: default_provider
 
 if config_env() == :prod do
   database_url =

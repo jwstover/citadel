@@ -53,6 +53,7 @@ defmodule Citadel.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:mdex, "~> 0.7"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
@@ -62,6 +63,7 @@ defmodule Citadel.MixProject do
       {:oban, "~> 2.0"},
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:ash_ai, "~> 0.2"},
+      {:langchain, "~> 0.3"},
       {:tidewave, "~> 0.5", only: [:dev]},
       {:live_debugger, "~> 0.4", only: [:dev]},
       {:oban_web, "~> 2.0"},
@@ -111,7 +113,12 @@ defmodule Citadel.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "ash.setup", "assets.setup", "assets.build", "run priv/repo/seeds.exs"],
-      ck: ["format", "compile --warnings-as-errors --force", "credo --strict", "sobelow --config"],
+      ck: [
+        "format",
+        "compile --warnings-as-errors --force",
+        "credo --strict",
+        "sobelow --config --exit"
+      ],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],

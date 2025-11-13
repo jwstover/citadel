@@ -12,7 +12,7 @@ config :ash_oban, pro?: false
 config :citadel, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10],
+  queues: [default: 10, chat_responses: [limit: 10], conversations: [limit: 10]],
   repo: Citadel.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
@@ -60,7 +60,7 @@ config :spark,
 config :citadel,
   ecto_repos: [Citadel.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Citadel.Todos, Citadel.Accounts]
+  ash_domains: [Citadel.Chat, Citadel.Tasks, Citadel.Accounts]
 
 # Configures the endpoint
 config :citadel, CitadelWeb.Endpoint,

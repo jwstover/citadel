@@ -1,11 +1,11 @@
-defmodule CitadelWeb.Components.NewTodoModal do
+defmodule CitadelWeb.Components.NewTaskModal do
   @moduledoc false
 
   use CitadelWeb, :live_component
 
   require Logger
 
-  alias Citadel.Todos.Todo
+  alias Citadel.Tasks.Task
 
   def update(assigns, socket) do
     {:ok, socket |> assign(assigns) |> assign_form()}
@@ -16,19 +16,19 @@ defmodule CitadelWeb.Components.NewTodoModal do
            params: params,
            action_opts: [actor: socket.assigns.current_user]
          ) do
-      {:ok, todo} ->
-        send(self(), {:todo_created, todo})
+      {:ok, task} ->
+        send(self(), {:task_created, task})
         {:noreply, socket}
 
       {:error, form} ->
-        Logger.error("Error creating todo: #{inspect(form)}")
+        Logger.error("Error creating task: #{inspect(form)}")
         {:noreply, socket |> assign(:form, form)}
     end
   end
 
   def assign_form(socket) do
     form =
-      AshPhoenix.Form.for_create(Todo, :create, actor: socket.assigns.current_user)
+      AshPhoenix.Form.for_create(Task, :create, actor: socket.assigns.current_user)
       |> to_form()
 
     socket
@@ -38,16 +38,16 @@ defmodule CitadelWeb.Components.NewTodoModal do
   def render(assigns) do
     ~H"""
     <dialog id={@id} class="modal modal-open">
-      <div class="modal-box" phx-click-away="close-new-todo-form">
+      <div class="modal-box" phx-click-away="close-new-task-form">
         <form method="dialog">
           <button
             class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            phx-click="close-new-todo-form"
+            phx-click="close-new-task-form"
           >
             ✕
           </button>
         </form>
-        <h3 class="text-lg font-bold mb-2">New Todo</h3>
+        <h3 class="text-lg font-bold mb-2">New Task</h3>
 
         <.form for={@form} phx-submit="create" phx-target={@myself}>
           <.input field={@form[:title]} placeholder="Title" />

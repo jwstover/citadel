@@ -79,16 +79,16 @@
           "global": null,
           "strategy": null
         },
-        "name": "todos_todo_state_id_fkey",
+        "name": "tasks_task_state_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
-        "table": "todo_states"
+        "table": "task_states"
       },
       "scale": null,
       "size": null,
-      "source": "todo_state_id",
+      "source": "task_state_id",
       "type": "uuid"
     },
     {
@@ -110,7 +110,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "todos_user_id_fkey",
+        "name": "tasks_user_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -128,7 +128,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "5E601615F1552F65F4EF75A574C8F0A69474A40C2D1CA852BAC8DF44C8C94EB4",
+  "hash": "16783B20D7D53E7A2C8CD04CC72FE738FE2726E1C32F304E084F5E49B97B12DA",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -137,5 +137,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "todos"
+  "table": "tasks"
 }

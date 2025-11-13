@@ -90,7 +90,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "5F9C5CD861FE0D87276682D3314D64E44C7BC2526977528AC6F7B54E1395DCBF",
+  "hash": "3ECC1A09D8A38BDD088619E8D0AA12F04B13B383688316E47570D94B8B397FC4",
   "identities": [],
   "multitenancy": {
     "attribute": null,
@@ -99,5 +99,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "todo_states"
+  "table": "task_states"
 }
