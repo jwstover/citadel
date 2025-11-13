@@ -12,7 +12,10 @@ defmodule Citadel.Accounts.Checks.CanManageWorkspaceMembership do
 
   @impl true
   def match?(actor, %{changeset: %Ash.Changeset{} = changeset}, _opts) do
-    workspace_id = Ash.Changeset.get_argument(changeset, :workspace_id)
+    # workspace_id can be either an argument or an attribute
+    workspace_id =
+      Ash.Changeset.get_argument(changeset, :workspace_id) ||
+        Ash.Changeset.get_attribute(changeset, :workspace_id)
 
     if is_nil(workspace_id) do
       false
@@ -26,29 +29,41 @@ defmodule Citadel.Accounts.Checks.CanManageWorkspaceMembership do
   defp check_can_manage(actor, workspace_id) when not is_nil(actor) do
     require Ash.Query
 
-    # Check if actor is the workspace owner or a member
-    workspace =
-      Citadel.Accounts.Workspace
-      |> Ash.Query.for_read(:read)
-      |> Ash.Query.filter(id == ^workspace_id)
-      |> Ash.Query.load(:memberships)
-      |> Ash.read_one(authorize?: false)
+    actor_id = Map.get(actor, :id)
 
-    case workspace do
-      {:ok, workspace} when not is_nil(workspace) ->
-        is_owner = workspace.owner_id == actor.id
+    if is_nil(actor_id) do
+      false
+    else
+      # Check if actor is the workspace owner or a member
+      result =
+        Citadel.Accounts.Workspace
+        |> Ash.Query.filter(id == ^workspace_id)
+        |> Ash.read_one(authorize?: false)
 
-        is_member =
-          Enum.any?(workspace.memberships || [], fn membership ->
-            membership.user_id == actor.id
-          end)
+      case result do
+        {:ok, workspace} when not is_nil(workspace) ->
+          workspace_owner?(workspace, actor_id) or workspace_member?(workspace_id, actor_id)
 
-        is_owner or is_member
-
-      _ ->
-        false
+        _ ->
+          false
+      end
     end
   end
 
   defp check_can_manage(_actor, _workspace_id), do: false
+
+  defp workspace_owner?(workspace, actor_id) do
+    workspace.owner_id == actor_id
+  end
+
+  defp workspace_member?(workspace_id, actor_id) do
+    require Ash.Query
+
+    case Citadel.Accounts.WorkspaceMembership
+         |> Ash.Query.filter(workspace_id == ^workspace_id and user_id == ^actor_id)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, membership} when not is_nil(membership) -> true
+      _ -> false
+    end
+  end
 end

@@ -25,5 +25,13 @@ defmodule Citadel.Accounts do
       define :remove_workspace_member, action: :leave
       define :list_workspace_members, action: :read
     end
+
+    resource Citadel.Accounts.WorkspaceInvitation do
+      define :create_invitation, action: :create, args: [:email, :workspace_id]
+      define :list_workspace_invitations, action: :read
+      define :get_invitation_by_token, action: :read, get_by: [:token]
+      define :accept_invitation, action: :accept
+      define :revoke_invitation, action: :destroy
+    end
   end
 end

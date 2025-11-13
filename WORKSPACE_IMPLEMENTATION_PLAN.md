@@ -17,7 +17,7 @@ Implement workspace/organization functionality to group users together within th
 
 ## Overall Progress
 
-- [x] Phase 1: Core Workspace Resources (1.1 Complete - Workspace Resource, 1.2 Complete - WorkspaceMembership Resource)
+- [x] Phase 1: Core Workspace Resources (Complete - All resources created)
 - [ ] Phase 2: Add Multitenancy to Existing Resources
 - [ ] Phase 3: Authorization & Policies
 - [ ] Phase 4: Data Migration
@@ -102,41 +102,56 @@ Implement workspace/organization functionality to group users together within th
 - [x] Run `mix test` - all 82 tests passing
 - [x] Run `mix ck` - all quality checks passing
 
-### 1.3 Create WorkspaceInvitation Resource
+### 1.3 Create WorkspaceInvitation Resource ✅ COMPLETE
 
-- [ ] Create `lib/citadel/accounts/workspace_invitation.ex`
-- [ ] Add attributes:
-  - [ ] `uuid_v7_primary_key :id`
-  - [ ] `attribute :email, :ci_string` (required)
-  - [ ] `attribute :token, :string` (required, unique, auto-generated)
-  - [ ] `attribute :expires_at, :utc_datetime_usec` (default: 7 days from now)
-  - [ ] `attribute :accepted_at, :utc_datetime_usec` (nullable)
-  - [ ] `timestamps`
-- [ ] Add relationships:
-  - [ ] `belongs_to :workspace, Citadel.Accounts.Workspace` (required)
-  - [ ] `belongs_to :invited_by, Citadel.Accounts.User` (required)
-- [ ] Add calculations:
-  - [ ] `calculate :is_expired, :boolean` - check if expires_at < now()
-  - [ ] `calculate :is_accepted, :boolean` - check if accepted_at is not nil
-- [ ] Add actions:
-  - [ ] `create :create` - generate token, set expires_at, set invited_by from actor
-  - [ ] `read :read` - default read
-  - [ ] `update :accept` - set accepted_at, create workspace membership
-  - [ ] `destroy :revoke` - delete invitation
-- [ ] Add policies:
-  - [ ] Workspace members can create invitations
-  - [ ] Workspace members can list invitations for their workspace
-  - [ ] Anyone with valid token can read that specific invitation
-  - [ ] Anyone with valid token can accept invitation
-  - [ ] Workspace owner can revoke invitations
-- [ ] Add code interface to Citadel.Accounts domain:
-  - [ ] `define :create_invitation`
-  - [ ] `define :list_workspace_invitations`
-  - [ ] `define :get_invitation_by_token`
-  - [ ] `define :accept_invitation`
-  - [ ] `define :revoke_invitation`
-- [ ] Add to `lib/citadel/accounts.ex` resources list
-- [ ] Run `mix ash.codegen --dev workspace_invitation`
+- [x] Create `lib/citadel/accounts/workspace_invitation.ex`
+- [x] Add attributes:
+  - [x] `uuid_v7_primary_key :id`
+  - [x] `attribute :email, :ci_string` (required, public)
+  - [x] `attribute :token, :string` (required, unique, auto-generated via GenerateToken change, public)
+  - [x] `attribute :expires_at, :utc_datetime_usec` (set to 7 days from now via SetExpiration change, public)
+  - [x] `attribute :accepted_at, :utc_datetime_usec` (nullable, public)
+  - [x] `timestamps` (inserted_at and updated_at)
+- [x] Add relationships:
+  - [x] `belongs_to :workspace, Citadel.Accounts.Workspace` (required, public)
+  - [x] `belongs_to :invited_by, Citadel.Accounts.User` (required, public)
+- [x] Add calculations:
+  - [x] `calculate :is_expired, :boolean, expr(expires_at < now())`
+  - [x] `calculate :is_accepted, :boolean, expr(not is_nil(accepted_at))`
+- [x] Add actions:
+  - [x] `create :create` - generate token, set expires_at, relate actor as invited_by
+  - [x] `read :read` - default read
+  - [x] `update :accept` - validate invitation, create workspace membership, set accepted_at
+  - [x] `update :update` - internal action for testing (accept [:expires_at, :accepted_at])
+  - [x] `destroy :revoke` - delete invitation
+- [x] Add policies:
+  - [x] Workspace owner or members can create invitations (using CanCreateWorkspaceInvitation check)
+  - [x] Workspace owner and members can list invitations for their workspace
+  - [x] Anyone (unauthenticated) with valid token can read that specific invitation
+  - [x] Anyone with valid token can accept invitation
+  - [x] Workspace owner can revoke invitations
+- [x] Add code interface to Citadel.Accounts domain:
+  - [x] `define :create_invitation` (args: [:email, :workspace_id])
+  - [x] `define :list_workspace_invitations`
+  - [x] `define :get_invitation_by_token` (get_by: [:token])
+  - [x] `define :accept_invitation`
+  - [x] `define :revoke_invitation`
+- [x] Add to `lib/citadel/accounts.ex` resources list
+- [x] Run `mix ash.codegen --dev workspace_invitation`
+- [x] Create migration and run `mix ash.migrate`
+- [x] Create custom change modules:
+  - [x] `GenerateToken` - auto-generate secure URL-safe tokens
+  - [x] `SetExpiration` - set expires_at to 7 days from now
+  - [x] `ValidateInvitation` - ensure invitation not expired or already accepted
+  - [x] `AcceptInvitation` - create workspace membership on acceptance (refactored for low nesting)
+- [x] Create custom policy checks:
+  - [x] `CanCreateWorkspaceInvitation` - SQL-based check for owner or member (with Sobelow skip annotation)
+  - [x] `HasValidInvitationToken` - allow unauthenticated token-based reads
+- [x] Create identity constraint on token for uniqueness
+- [x] Create comprehensive tests (19 tests, all passing)
+- [x] Fix CanManageWorkspaceMembership to handle attributes/arguments
+- [x] Run `mix test` - all 101 tests passing
+- [x] Run `mix ck` - all quality checks passing
 
 ---
 
