@@ -5,6 +5,8 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias Citadel.Tasks
 
+  import CitadelWeb.Components.Markdown
+
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
 
   def mount(%{"id" => id}, _session, socket) do
@@ -62,8 +64,8 @@ defmodule CitadelWeb.TaskLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <div class="p-6 max-w-4xl mx-auto">
-        <div class="mb-6">
+      <div class="p-4">
+        <div class="mb-4">
           <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
             <.icon name="hero-arrow-left" class="size-4" /> Back to Tasks
           </.link>
@@ -80,38 +82,23 @@ defmodule CitadelWeb.TaskLive.Show do
             </div>
           </.form>
         <% else %>
-          <div class="card bg-base-100 shadow-xl">
-            <div class="card-body">
-              <div class="flex items-start justify-between">
-                <div class="flex items-center gap-3 flex-1">
-                  <.task_state_icon task_state={@task.task_state} />
-                  <h1 class="card-title text-2xl">{@task.title}</h1>
-                </div>
-                <.button :if={@can_edit} class="btn btn-sm btn-outline" phx-click="edit">
-                  <.icon name="hero-pencil" class="size-4" /> Edit
-                </.button>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="py-4">
-                <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
-                <%= if @task.description do %>
-                  <p class="text-base-content whitespace-pre-wrap">{@task.description}</p>
-                <% else %>
-                  <p class="text-base-content/50 italic">No description provided</p>
-                <% end %>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="flex gap-6 text-sm text-base-content/70">
-                <div>
-                  <span class="font-semibold">Status:</span>
-                  <span class="badge badge-sm ml-2">{@task.task_state.name}</span>
-                </div>
-              </div>
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-3 flex-1">
+              <.task_state_icon task_state={@task.task_state} />
+              <h1 class="card-title text-2xl">{@task.title}</h1>
             </div>
+            <.button :if={@can_edit} class="btn btn-sm btn-outline" phx-click="edit">
+              <.icon name="hero-pencil" class="size-4" /> Edit
+            </.button>
+          </div>
+
+          <div class="py-4">
+            <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
+            <%= if @task.description do %>
+              <div class="text-base-content prose max-w-none">{to_markdown(@task.description)}</div>
+            <% else %>
+              <p class="text-base-content/50 italic">No description provided</p>
+            <% end %>
           </div>
         <% end %>
       </div>

@@ -2,6 +2,8 @@ defmodule CitadelWeb.ChatLive do
   use Elixir.CitadelWeb, :live_view
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
 
+  import CitadelWeb.Components.Markdown
+
   def render(assigns) do
     ~H"""
     <div class="drawer md:drawer-open bg-base-200 min-h-dvh max-h-dvh">
@@ -82,13 +84,13 @@ defmodule CitadelWeb.ChatLive do
             class="flex items-center gap-4"
           >
             <div class="flex-1">
-              <input
+              <textarea
                 name={form[:text].name}
                 value={form[:text].value}
-                type="text"
+                type="textarea"
                 phx-mounted={JS.focus()}
                 placeholder="Type your message..."
-                class="input input-primary w-full mb-0"
+                class="textarea textarea-primary w-full mb-0"
                 autocomplete="off"
               />
             </div>
@@ -283,39 +285,5 @@ defmodule CitadelWeb.ChatLive do
       :message_form,
       form
     )
-  end
-
-  defp to_markdown(text) do
-    # Note that you must pass the "unsafe: true" option to first generate the raw HTML
-    # in order to sanitize it. https://hexdocs.pm/mdex/MDEx.html#module-sanitize
-    MDEx.to_html(text,
-      extension: [
-        strikethrough: true,
-        tagfilter: true,
-        table: true,
-        autolink: true,
-        tasklist: true,
-        footnotes: true,
-        shortcodes: true
-      ],
-      parse: [
-        smart: true,
-        relaxed_tasklist_matching: true,
-        relaxed_autolinks: true
-      ],
-      render: [
-        github_pre_lang: true,
-        unsafe: true
-      ],
-      sanitize: MDEx.Document.default_sanitize_options()
-    )
-    |> case do
-      {:ok, html} ->
-        html
-        |> Phoenix.HTML.raw()
-
-      {:error, _} ->
-        text
-    end
   end
 end
