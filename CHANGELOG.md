@@ -1,3 +1,21 @@
+# [0.4.0](https://github.com/jwstover/citadel/compare/v0.3.0...v0.4.0) (2025-11-13)
+
+
+### Bug Fixes
+
+* resolve issue with LLM chat not having message history ([3361698](https://github.com/jwstover/citadel/commit/33616981ca109fd9cda760b35fa1b9a287fab7f9))
+
+
+### Features
+
+* add basic chat functionality ([e66f8d7](https://github.com/jwstover/citadel/commit/e66f8d71d8bb740edfb3c388b7340f9a3f5f8172))
+* add basic LLM chat interface ([e9f7d49](https://github.com/jwstover/citadel/commit/e9f7d49f92124bff9ad583ebfc43d43b7b22dc68))
+* add basic task details page ([0f1fc87](https://github.com/jwstover/citadel/commit/0f1fc878eacdad8611bab43d16dc225bfe0045af))
+* render markdown in the chat window ([727c158](https://github.com/jwstover/citadel/commit/727c158c02e110dca2811e1b939dc40253323ff5))
+* set default state when creating new tasks ([538d048](https://github.com/jwstover/citadel/commit/538d048cdd720c1a3bf64113bed24815aeaa41b4))
+
+
+
 # [0.3.0](https://github.com/jwstover/citadel/compare/v0.2.0...v0.3.0) (2025-10-09)
 
 
