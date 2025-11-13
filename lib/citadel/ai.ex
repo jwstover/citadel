@@ -45,6 +45,8 @@ defmodule Citadel.AI do
   - Conversation history management
   """
 
+  alias Citadel.AI.Provider
+
   # Delegate core functionality to Client
   defdelegate send_message(message, actor, opts \\ []), to: Citadel.AI.Client
   defdelegate send_message!(message, actor, opts \\ []), to: Citadel.AI.Client
@@ -102,6 +104,6 @@ defmodule Citadel.AI do
   end
 
   def format_error(error_type, message) do
-    Citadel.AI.Provider.format_error(error_type, message)
+    Provider.format_error(error_type, message)
   end
 end

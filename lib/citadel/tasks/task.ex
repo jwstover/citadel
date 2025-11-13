@@ -10,6 +10,8 @@ defmodule Citadel.Tasks.Task do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshAi]
 
+  alias Citadel.AI.Helpers
+
   # AI model access is now abstracted through Citadel.AI.Helpers
 
   postgres do
@@ -44,7 +46,7 @@ defmodule Citadel.Tasks.Task do
       end
 
       run fn _input, _context ->
-        model = Citadel.AI.Helpers.get_model()
+        model = Helpers.get_model()
         prompt(model)
       end
     end

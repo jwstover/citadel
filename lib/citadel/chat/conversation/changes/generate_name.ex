@@ -31,14 +31,7 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
         RESPOND WITH ONLY THE NEW CONVERSATION NAME.
         """)
 
-      message_chain =
-        Enum.map(messages, fn message ->
-          if message.source == :agent do
-            LangChain.Message.new_assistant!(message.text)
-          else
-            LangChain.Message.new_user!(message.text)
-          end
-        end)
+      message_chain = Enum.map(messages, &convert_to_langchain_message/1)
 
       %{
         llm: ChatOpenAI.new!(%{model: "gpt-4o"}),
@@ -60,5 +53,13 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
           {:error, error}
       end
     end)
+  end
+
+  defp convert_to_langchain_message(%{source: :agent, text: text}) do
+    LangChain.Message.new_assistant!(text)
+  end
+
+  defp convert_to_langchain_message(%{text: text}) do
+    LangChain.Message.new_user!(text)
   end
 end

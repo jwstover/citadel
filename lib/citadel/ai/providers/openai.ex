@@ -8,6 +8,7 @@ defmodule Citadel.AI.Providers.OpenAI do
 
   @behaviour Citadel.AI.Provider
 
+  alias Citadel.AI.Provider
   alias LangChain.Chains.LLMChain
   alias LangChain.ChatModels.ChatOpenAI
   alias LangChain.Message
@@ -115,7 +116,7 @@ defmodule Citadel.AI.Providers.OpenAI do
   @impl true
   def parse_error(%{status: status, body: body} = _response) when is_map(body) do
     message = extract_api_error_message(body, status)
-    error_type = Citadel.AI.Provider.classify_http_error(status)
+    error_type = Provider.classify_http_error(status)
     {:error, error_type, message}
   end
 
@@ -123,17 +124,17 @@ defmodule Citadel.AI.Providers.OpenAI do
     case Jason.decode(body) do
       {:ok, decoded} ->
         message = extract_api_error_message(decoded, status)
-        error_type = Citadel.AI.Provider.classify_http_error(status)
+        error_type = Provider.classify_http_error(status)
         {:error, error_type, message}
 
       {:error, _} ->
-        error_type = Citadel.AI.Provider.classify_http_error(status)
+        error_type = Provider.classify_http_error(status)
         {:error, error_type, "API returned status #{status}: #{body}"}
     end
   end
 
   def parse_error(%{status: status}) when is_integer(status) do
-    error_type = Citadel.AI.Provider.classify_http_error(status)
+    error_type = Provider.classify_http_error(status)
     message = default_error_message(status)
     {:error, error_type, message}
   end
@@ -208,12 +209,12 @@ defmodule Citadel.AI.Providers.OpenAI do
 
   # Private helpers
 
-  defp extract_api_error_message(%{"error" => %{"message" => message}}, _status) do
-    "OpenAI API Error: #{message}"
-  end
-
   defp extract_api_error_message(%{"error" => %{"type" => type, "message" => message}}, _status) do
     "OpenAI API Error (#{type}): #{message}"
+  end
+
+  defp extract_api_error_message(%{"error" => %{"message" => message}}, _status) do
+    "OpenAI API Error: #{message}"
   end
 
   defp extract_api_error_message(%{"message" => message}, _status) do

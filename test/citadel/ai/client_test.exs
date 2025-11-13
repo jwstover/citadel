@@ -8,10 +8,7 @@ defmodule Citadel.AI.ClientTest do
       user = create_user()
 
       # Skip if no API key configured
-      unless Client.provider_available?(:openai) || Client.provider_available?(:anthropic) do
-        # Skip test if no providers are configured
-        assert true
-      else
+      if Client.provider_available?(:openai) || Client.provider_available?(:anthropic) do
         # Collect chunks
         test_pid = self()
 
@@ -31,15 +28,16 @@ defmodule Citadel.AI.ClientTest do
         # Should have received at least one chunk
         assert_receive {:chunk, chunk}, 5000
         assert is_binary(chunk)
+      else
+        # Skip test if no providers are configured
+        assert true
       end
     end
 
     test "supports explicit provider option" do
       user = create_user()
 
-      unless Client.provider_available?(:anthropic) do
-        assert true
-      else
+      if Client.provider_available?(:anthropic) do
         callback = fn _chunk -> :ok end
 
         result =
@@ -52,6 +50,8 @@ defmodule Citadel.AI.ClientTest do
 
         assert {:ok, message} = result
         assert is_binary(message)
+      else
+        assert true
       end
     end
 
@@ -80,15 +80,15 @@ defmodule Citadel.AI.ClientTest do
     test "returns complete message on success" do
       user = create_user()
 
-      unless Client.provider_available?(:openai) || Client.provider_available?(:anthropic) do
-        assert true
-      else
+      if Client.provider_available?(:openai) || Client.provider_available?(:anthropic) do
         callback = fn _chunk -> :ok end
 
         result = Client.stream_message!("Say 'test'", user, callback)
 
         assert is_binary(result)
         assert String.length(result) > 0
+      else
+        assert true
       end
     end
 

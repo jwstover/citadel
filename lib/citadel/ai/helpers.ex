@@ -7,6 +7,7 @@ defmodule Citadel.AI.Helpers do
   (like AshAi).
   """
 
+  alias Citadel.AI.Config
   alias LangChain.ChatModels.ChatAnthropic
   alias LangChain.ChatModels.ChatOpenAI
 
@@ -36,8 +37,8 @@ defmodule Citadel.AI.Helpers do
   @spec get_model(Citadel.AI.Config.provider() | nil, keyword()) ::
           ChatAnthropic.t() | ChatOpenAI.t()
   def get_model(provider \\ nil, opts \\ []) do
-    provider = provider || Citadel.AI.Config.default_provider()
-    api_key = Keyword.get(opts, :api_key) || Citadel.AI.Config.get_api_key!(provider)
+    provider = provider || Config.default_provider()
+    api_key = Keyword.get(opts, :api_key) || Config.get_api_key!(provider)
 
     case provider do
       :anthropic ->
@@ -73,9 +74,9 @@ defmodule Citadel.AI.Helpers do
   @spec get_model_if_available(Citadel.AI.Config.provider() | nil, keyword()) ::
           ChatAnthropic.t() | ChatOpenAI.t() | nil
   def get_model_if_available(provider \\ nil, opts \\ []) do
-    provider = provider || Citadel.AI.Config.default_provider()
+    provider = provider || Config.default_provider()
 
-    case Citadel.AI.Config.get_api_key(provider) do
+    case Config.get_api_key(provider) do
       {:ok, api_key} ->
         opts = Keyword.put_new(opts, :api_key, api_key)
         get_model(provider, opts)
