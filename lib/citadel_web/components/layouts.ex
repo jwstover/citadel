@@ -95,7 +95,7 @@ defmodule CitadelWeb.Layouts do
           </div>
 
           <%!-- Main content --%>
-          <main class="flex-grow bg-base-200 card card-border border-base-300 m-2">
+          <main class="flex-grow bg-base-200 card card-border border-border m-2">
             <div class="card-body p-0">
               {render_slot(@inner_block)}
             </div>
@@ -161,7 +161,7 @@ defmodule CitadelWeb.Layouts do
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
+    <div class="card relative flex flex-row items-center border-2 border-border bg-base-300 rounded-full">
       <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=citadel-light]_&]:left-1/3 [[data-theme=citadel-dark]_&]:left-2/3 transition-[left]" />
 
       <button

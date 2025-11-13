@@ -22,6 +22,18 @@
   themes: false;
 }
 
+:root {
+  --citadel-color-border: oklch(20% 0 0);
+}
+
+[data-theme="citadel-light"] {
+  --citadel-color-border: oklch(82% 0 0);
+}
+
+@theme inline {
+  --color-border: var(--citadel-color-border);
+}
+
 @plugin "../vendor/daisyui-theme" {
   name: "citadel-dark";
   default: true;

@@ -9,7 +9,7 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   def control_bar(assigns) do
     ~H"""
-    <div class={["flex p-2 pl-6 border-b border-base-300", @class]}>
+    <div class={["flex p-2 pl-6 border-b border-border", @class]}>
       <div>
         <.button class="btn btn-sm btn-neutral" phx-click="new-task">
           <.icon name="hero-plus" class="size-4" /> New
@@ -24,7 +24,7 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   def tasks_list(assigns) do
     ~H"""
-    <div class="divide-y divide-base-300" phx-hook="TaskDragDrop" id="tasks-container">
+    <div class="divide-y divide-border" phx-hook="TaskDragDrop" id="tasks-container">
       <div :for={state <- @task_states} class="py-4">
         <div class="px-6 mb-3 flex items-center justify-between">
           <h2 class="text-lg font-semibold text-base-content">
