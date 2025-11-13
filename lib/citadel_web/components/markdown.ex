@@ -23,6 +23,7 @@ defmodule CitadelWeb.Components.Markdown do
       iex> to_markdown("# Hello")
       # Returns sanitized HTML
   """
+  # sobelow_skip ["XSS.Raw"]
   def to_markdown(text) do
     # Note that you must pass the "unsafe: true" option to first generate the raw HTML
     # in order to sanitize it. https://hexdocs.pm/mdex/MDEx.html#module-sanitize
@@ -49,8 +50,8 @@ defmodule CitadelWeb.Components.Markdown do
     )
     |> case do
       {:ok, html} ->
-        html
-        |> Phoenix.HTML.raw()
+        # Safe: HTML is sanitized by MDEx.to_html with default_sanitize_options() before being marked as safe
+        Phoenix.HTML.raw(html)
 
       {:error, _} ->
         text
