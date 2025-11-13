@@ -42,9 +42,10 @@ defmodule Citadel.Accounts.Workspace do
       authorize_if actor_present()
     end
 
-    # For Phase 1.1: Only owner can read (will be expanded to members in Phase 1.2)
+    # Owner and members can read the workspace
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner)
+      authorize_if expr(exists(memberships, user_id == ^actor(:id)))
     end
 
     # Only the owner can update the workspace
@@ -78,15 +79,18 @@ defmodule Citadel.Accounts.Workspace do
     belongs_to :owner, Citadel.Accounts.User do
       allow_nil? false
       attribute_writable? true
+      public? true
     end
 
-    # Note: memberships and members relationships will be added in Phase 1.2
-    # has_many :memberships, Citadel.Accounts.WorkspaceMembership
-    #
-    # many_to_many :members, Citadel.Accounts.User do
-    #   through Citadel.Accounts.WorkspaceMembership
-    #   source_attribute_on_join_resource :workspace_id
-    #   destination_attribute_on_join_resource :user_id
-    # end
+    has_many :memberships, Citadel.Accounts.WorkspaceMembership do
+      public? true
+    end
+
+    many_to_many :members, Citadel.Accounts.User do
+      through Citadel.Accounts.WorkspaceMembership
+      source_attribute_on_join_resource :workspace_id
+      destination_attribute_on_join_resource :user_id
+      public? true
+    end
   end
 end

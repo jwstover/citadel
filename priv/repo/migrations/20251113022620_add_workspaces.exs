@@ -26,7 +26,8 @@ defmodule Citadel.Repo.Migrations.AddWorkspaces do
             name: "workspaces_owner_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
   end
 

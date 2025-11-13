@@ -19,5 +19,11 @@ defmodule Citadel.Accounts do
       define :update_workspace, action: :update
       define :destroy_workspace, action: :destroy
     end
+
+    resource Citadel.Accounts.WorkspaceMembership do
+      define :add_workspace_member, action: :join, args: [:user_id, :workspace_id]
+      define :remove_workspace_member, action: :leave
+      define :list_workspace_members, action: :read
+    end
   end
 end
