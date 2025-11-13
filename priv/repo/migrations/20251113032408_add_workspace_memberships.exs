@@ -25,7 +25,9 @@ defmodule Citadel.Repo.Migrations.AddWorkspaceMemberships do
             name: "workspace_memberships_user_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), primary_key: true, null: false
+          ),
+          primary_key: true,
+          null: false
 
       add :workspace_id,
           references(:workspaces,
@@ -33,7 +35,9 @@ defmodule Citadel.Repo.Migrations.AddWorkspaceMemberships do
             name: "workspace_memberships_workspace_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), primary_key: true, null: false
+          ),
+          primary_key: true,
+          null: false
     end
 
     create unique_index(:workspace_memberships, [:user_id, :workspace_id],

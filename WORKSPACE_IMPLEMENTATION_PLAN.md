@@ -17,7 +17,7 @@ Implement workspace/organization functionality to group users together within th
 
 ## Overall Progress
 
-- [x] Phase 1: Core Workspace Resources (1.1 Complete - Workspace Resource)
+- [x] Phase 1: Core Workspace Resources (1.1 Complete - Workspace Resource, 1.2 Complete - WorkspaceMembership Resource)
 - [ ] Phase 2: Add Multitenancy to Existing Resources
 - [ ] Phase 3: Authorization & Policies
 - [ ] Phase 4: Data Migration
@@ -42,15 +42,15 @@ Implement workspace/organization functionality to group users together within th
   - [x] `timestamps`
 - [x] Add relationships:
   - [x] `belongs_to :owner, Citadel.Accounts.User` (required, allow_nil?: false)
-  - [x] `has_many :memberships, Citadel.Accounts.WorkspaceMembership` (commented out for Phase 1.2)
-  - [x] `many_to_many :members, Citadel.Accounts.User` (commented out for Phase 1.2)
+  - [x] `has_many :memberships, Citadel.Accounts.WorkspaceMembership`
+  - [x] `many_to_many :members, Citadel.Accounts.User`
 - [x] Add actions:
   - [x] `create :create` - accept name, set owner from actor
   - [x] `read :read` - default read
   - [x] `update :update` - allow updating name
   - [x] `destroy :destroy` - delete workspace
 - [x] Add policies:
-  - [x] Owner can read workspace (temporarily - will expand to members in Phase 1.2)
+  - [x] Owner and members can read workspace
   - [x] Owner can update workspace
   - [x] Owner can destroy workspace
   - [x] Any authenticated user can create workspace
@@ -67,32 +67,40 @@ Implement workspace/organization functionality to group users together within th
 - [x] Create custom policy check `WorkspaceMember` (for Phase 1.2)
 - [x] Fix pre-existing compilation warnings in AI providers
 
-### 1.2 Create WorkspaceMembership Resource
+### 1.2 Create WorkspaceMembership Resource ✅ COMPLETE
 
-- [ ] Create `lib/citadel/accounts/workspace_membership.ex`
-- [ ] Add attributes:
-  - [ ] `uuid_v7_primary_key :id`
-  - [ ] `timestamps` (only inserted_at needed)
-- [ ] Add relationships:
-  - [ ] `belongs_to :user, Citadel.Accounts.User` (required, primary_key?: true)
-  - [ ] `belongs_to :workspace, Citadel.Accounts.Workspace` (required, primary_key?: true)
-- [ ] Add identity:
-  - [ ] `identity :unique_membership, [:user_id, :workspace_id]`
-- [ ] Add actions:
-  - [ ] `create :join` - create membership
-  - [ ] `read :read` - default read
-  - [ ] `destroy :leave` - remove membership
-- [ ] Add policies:
-  - [ ] Workspace owner can create memberships (invite users)
-  - [ ] Workspace owner can destroy memberships (remove users)
-  - [ ] Users can read their own memberships
-  - [ ] Prevent owner from leaving their own workspace
-- [ ] Add code interface to Citadel.Accounts domain:
-  - [ ] `define :add_workspace_member`
-  - [ ] `define :remove_workspace_member`
-  - [ ] `define :list_workspace_members`
-- [ ] Add to `lib/citadel/accounts.ex` resources list
-- [ ] Run `mix ash.codegen --dev workspace_membership`
+- [x] Create `lib/citadel/accounts/workspace_membership.ex`
+- [x] Add attributes:
+  - [x] `uuid_v7_primary_key :id`
+  - [x] `timestamps` (inserted_at and updated_at)
+- [x] Add relationships:
+  - [x] `belongs_to :user, Citadel.Accounts.User` (required, primary_key?: true, public?: true)
+  - [x] `belongs_to :workspace, Citadel.Accounts.Workspace` (required, primary_key?: true, public?: true)
+- [x] Add identity:
+  - [x] `identity :unique_membership, [:user_id, :workspace_id]`
+- [x] Add actions:
+  - [x] `create :join` - create membership with user_id and workspace_id arguments
+  - [x] `read :read` - default read
+  - [x] `destroy :leave` - remove membership with validation to prevent owner leaving
+- [x] Add policies:
+  - [x] Workspace owner or members can create memberships (invite users)
+  - [x] Workspace owner can destroy memberships (remove users)
+  - [x] Users can read memberships in workspaces they belong to
+  - [x] Prevent owner from leaving their own workspace via custom validation
+- [x] Add code interface to Citadel.Accounts domain:
+  - [x] `define :add_workspace_member` (args: [:user_id, :workspace_id])
+  - [x] `define :remove_workspace_member`
+  - [x] `define :list_workspace_members`
+- [x] Add to `lib/citadel/accounts.ex` resources list
+- [x] Run `mix ash.codegen --dev workspace_membership`
+- [x] Create migration and run `mix ash.migrate`
+- [x] Create custom policy check `CanManageWorkspaceMembership`
+- [x] Create custom validation `PreventOwnerLeaving` (refactored to avoid deep nesting)
+- [x] Create comprehensive tests (15 tests, all passing)
+- [x] Update Workspace resource to uncomment membership relationships
+- [x] Update Workspace read policy to allow members to read workspace
+- [x] Run `mix test` - all 82 tests passing
+- [x] Run `mix ck` - all quality checks passing
 
 ### 1.3 Create WorkspaceInvitation Resource
 
