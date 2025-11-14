@@ -140,10 +140,10 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
       memberships = Accounts.list_workspace_members!(actor: member1)
       membership_ids = Enum.map(memberships, & &1.id)
 
-      # Member1 can see all memberships in the workspace they belong to
+      # Member1 can see all memberships in the workspace they belong to (including owner)
       assert membership1.id in membership_ids
       assert membership2.id in membership_ids
-      assert length(memberships) == 2
+      assert length(memberships) == 3
     end
 
     test "returns empty list when user has no memberships" do
@@ -168,8 +168,11 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
       memberships =
         Accounts.list_workspace_members!(actor: member, load: [:workspace, :user])
 
-      assert length(memberships) == 1
-      loaded_membership = hd(memberships)
+      # Should see 2 memberships (owner + member)
+      assert length(memberships) == 2
+
+      # Find the member's membership
+      loaded_membership = Enum.find(memberships, &(&1.user.id == member.id))
       assert loaded_membership.workspace.id == workspace.id
       assert loaded_membership.user.id == member.id
     end
@@ -246,8 +249,12 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
           actor: owner
         )
 
-      # Create membership for the owner
-      owner_membership = Accounts.add_workspace_member!(owner.id, workspace.id, actor: owner)
+      # Get the owner's automatically created membership
+      [owner_membership] =
+        Accounts.list_workspace_members!(
+          actor: owner,
+          query: [filter: [user_id: owner.id, workspace_id: workspace.id]]
+        )
 
       # Owner should not be able to remove their own membership
       assert_raise Ash.Error.Invalid, fn ->

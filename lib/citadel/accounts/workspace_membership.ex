@@ -12,6 +12,10 @@ defmodule Citadel.Accounts.WorkspaceMembership do
   postgres do
     table "workspace_memberships"
     repo Citadel.Repo
+
+    references do
+      reference :workspace, on_delete: :delete
+    end
   end
 
   code_interface do

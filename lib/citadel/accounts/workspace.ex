@@ -29,6 +29,19 @@ defmodule Citadel.Accounts.Workspace do
       accept [:name]
 
       change relate_actor(:owner)
+
+      change fn changeset, context ->
+        Ash.Changeset.after_action(changeset, fn changeset, workspace ->
+          # Automatically create membership for the owner
+          Citadel.Accounts.add_workspace_member!(
+            workspace.owner_id,
+            workspace.id,
+            actor: context.actor
+          )
+
+          {:ok, workspace}
+        end)
+      end
     end
 
     update :update do
@@ -45,7 +58,7 @@ defmodule Citadel.Accounts.Workspace do
     # Owner and members can read the workspace
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner)
-      authorize_if expr(exists(memberships, user_id == ^actor(:id)))
+      authorize_if Citadel.Accounts.Checks.WorkspaceMember
     end
 
     # Only the owner can update the workspace

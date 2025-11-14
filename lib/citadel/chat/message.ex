@@ -4,6 +4,10 @@ defmodule Citadel.Chat.Message do
 
   Messages support streaming responses, tool calling, and automatic
   AI response generation through background jobs.
+
+  Note: Messages inherit workspace context through their conversation relationship.
+  No direct workspace_id is stored on messages; workspace scoping is handled
+  via the conversation.
   """
   use Ash.Resource,
     otp_app: :citadel,
@@ -52,7 +56,7 @@ defmodule Citadel.Chat.Message do
       end
 
       argument :conversation_id, :uuid do
-        public? false
+        allow_nil? true
       end
 
       change Citadel.Chat.Message.Changes.CreateConversationIfNotProvided
@@ -146,28 +150,41 @@ defmodule Citadel.Chat.Message do
     end
 
     policy action(:respond) do
-      authorize_if relates_to_actor_via([:conversation, :user])
+      authorize_if expr(
+                     conversation.workspace.owner_id == ^actor(:id) or
+                       exists(conversation.workspace.memberships, user_id == ^actor(:id))
+                   )
     end
 
     policy action(:for_conversation) do
-      authorize_if relates_to_actor_via([:conversation, :user])
+      authorize_if expr(
+                     conversation.workspace.owner_id == ^actor(:id) or
+                       exists(conversation.workspace.memberships, user_id == ^actor(:id))
+                   )
     end
 
-    # Read: users can read messages in their own conversations
+    # Read: users can read messages in conversations within their workspace
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:conversation, :user])
+      authorize_if expr(
+                     conversation.workspace.owner_id == ^actor(:id) or
+                       exists(conversation.workspace.memberships, user_id == ^actor(:id))
+                   )
     end
 
     # Create: authenticated users can create messages
     # The CreateConversationIfNotProvided change ensures messages are only created
-    # in conversations owned by the actor (either by creating a new one or validating existing)
+    # in conversations the actor has access to (via conversation policies which check
+    # workspace membership), or creates a new conversation for the actor
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if actor_present()
     end
 
-    # Destroy: users can delete messages in their own conversations
+    # Destroy: users can delete messages in conversations within their workspace
     policy action_type(:destroy) do
-      authorize_if relates_to_actor_via([:conversation, :user])
+      authorize_if expr(
+                     conversation.workspace.owner_id == ^actor(:id) or
+                       exists(conversation.workspace.memberships, user_id == ^actor(:id))
+                   )
     end
   end
 

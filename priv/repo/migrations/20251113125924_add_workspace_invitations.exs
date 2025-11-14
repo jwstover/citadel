@@ -29,7 +29,8 @@ defmodule Citadel.Repo.Migrations.AddWorkspaceInvitations do
             name: "workspace_invitations_workspace_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :invited_by_id,
           references(:users,
@@ -37,7 +38,8 @@ defmodule Citadel.Repo.Migrations.AddWorkspaceInvitations do
             name: "workspace_invitations_invited_by_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create unique_index(:workspace_invitations, [:token],
