@@ -4,6 +4,10 @@ defmodule Citadel.Chat.Conversation do
 
   Conversations are automatically named based on message content after
   sufficient messages have been exchanged or after 10 minutes.
+
+  Conversations are workspace-scoped and can be accessed by all members
+  of the workspace. The user relationship tracks who originally created
+  the conversation.
   """
   use Ash.Resource,
     otp_app: :citadel,
@@ -36,7 +40,7 @@ defmodule Citadel.Chat.Conversation do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:title]
+      accept [:title, :workspace_id]
       change relate_actor(:user)
     end
 
@@ -59,15 +63,21 @@ defmodule Citadel.Chat.Conversation do
     end
 
     policy action_type(:read) do
-      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(
+                     workspace.owner_id == ^actor(:id) or
+                       exists(workspace.memberships, user_id == ^actor(:id))
+                   )
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if Citadel.Accounts.Checks.TenantWorkspaceMember
     end
 
     policy action_type([:update, :destroy]) do
-      authorize_if expr(user_id == ^actor(:id))
+      authorize_if expr(
+                     workspace.owner_id == ^actor(:id) or
+                       exists(workspace.memberships, user_id == ^actor(:id))
+                   )
     end
   end
 
@@ -84,6 +94,11 @@ defmodule Citadel.Chat.Conversation do
     end
   end
 
+  multitenancy do
+    strategy :attribute
+    attribute :workspace_id
+  end
+
   attributes do
     uuid_v7_primary_key :id
 
@@ -95,6 +110,11 @@ defmodule Citadel.Chat.Conversation do
   end
 
   relationships do
+    belongs_to :workspace, Citadel.Accounts.Workspace do
+      public? true
+      allow_nil? false
+    end
+
     has_many :messages, Citadel.Chat.Message do
       public? true
     end
