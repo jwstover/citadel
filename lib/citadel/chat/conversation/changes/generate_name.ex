@@ -22,7 +22,7 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
         |> Ash.Query.limit(10)
         |> Ash.Query.select([:text, :source])
         |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!(actor: context.actor)
+        |> Ash.read!(Ash.Context.to_opts(context))
 
       system_prompt =
         LangChain.Message.new_system!("""

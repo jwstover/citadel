@@ -8,6 +8,7 @@ defmodule CitadelWeb.HomeLive.Index do
   alias Citadel.Tasks
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
+  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -36,7 +37,8 @@ defmodule CitadelWeb.HomeLive.Index do
 
   def handle_event("task-moved", %{"task_id" => task_id, "new_state_id" => new_state_id}, socket) do
     Tasks.update_task!(task_id, %{task_state_id: new_state_id},
-      actor: socket.assigns.current_user
+      actor: socket.assigns.current_user,
+      tenant: socket.assigns.current_workspace.id
     )
 
     {:noreply, assign_tasks(socket)}
@@ -50,6 +52,7 @@ defmodule CitadelWeb.HomeLive.Index do
     tasks =
       Tasks.list_tasks!(
         actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
         load: [:task_state]
       )
 
@@ -70,6 +73,7 @@ defmodule CitadelWeb.HomeLive.Index do
         module={CitadelWeb.Components.NewTaskModal}
         id="new-task-modal"
         current_user={@current_user}
+        current_workspace={@current_workspace}
       />
     </Layouts.app>
     """

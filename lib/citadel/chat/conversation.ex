@@ -85,11 +85,11 @@ defmodule Citadel.Chat.Conversation do
     module CitadelWeb.Endpoint
     prefix "chat"
 
-    publish_all :create, ["conversations", :user_id] do
+    publish_all :create, ["conversations", :workspace_id] do
       transform & &1.data
     end
 
-    publish_all :update, ["conversations", :user_id] do
+    publish_all :update, ["conversations", :workspace_id] do
       transform & &1.data
     end
   end

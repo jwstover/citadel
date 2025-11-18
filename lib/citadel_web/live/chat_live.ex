@@ -1,6 +1,7 @@
 defmodule CitadelWeb.ChatLive do
   use Elixir.CitadelWeb, :live_view
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
+  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   import CitadelWeb.Components.Markdown
 
@@ -145,14 +146,18 @@ defmodule CitadelWeb.ChatLive do
   def mount(_params, _session, socket) do
     socket = assign_new(socket, :current_user, fn -> nil end)
 
-    CitadelWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_user.id}")
+    # Subscribe to workspace-scoped conversation updates
+    CitadelWeb.Endpoint.subscribe("chat:conversations:#{socket.assigns.current_workspace.id}")
 
     socket =
       socket
       |> assign(:page_title, "Chat")
       |> stream(
         :conversations,
-        Citadel.Chat.my_conversations!(actor: socket.assigns.current_user)
+        Citadel.Chat.my_conversations!(
+          actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id
+        )
       )
       |> assign(:messages, [])
 
@@ -161,17 +166,22 @@ defmodule CitadelWeb.ChatLive do
 
   def handle_params(%{"conversation_id" => conversation_id}, _, socket) do
     conversation =
-      Citadel.Chat.get_conversation!(conversation_id, actor: socket.assigns.current_user)
+      Citadel.Chat.get_conversation!(conversation_id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
 
     cond do
       socket.assigns[:conversation] && socket.assigns[:conversation].id == conversation.id ->
         :ok
 
       socket.assigns[:conversation] ->
+        # Switch message subscriptions when changing conversations
         CitadelWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
         CitadelWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
 
       true ->
+        # Subscribe to message updates for the selected conversation
         CitadelWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
     end
 
@@ -181,7 +191,8 @@ defmodule CitadelWeb.ChatLive do
       :messages,
       Citadel.Chat.message_history!(conversation.id,
         stream?: true,
-        actor: socket.assigns.current_user
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
       )
     )
     |> assign_message_form()
@@ -272,11 +283,15 @@ defmodule CitadelWeb.ChatLive do
       if socket.assigns.conversation do
         Citadel.Chat.form_to_create_message(
           actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id,
           private_arguments: %{conversation_id: socket.assigns.conversation.id}
         )
         |> to_form()
       else
-        Citadel.Chat.form_to_create_message(actor: socket.assigns.current_user)
+        Citadel.Chat.form_to_create_message(
+          actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id
+        )
         |> to_form()
       end
 

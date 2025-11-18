@@ -14,7 +14,10 @@ defmodule CitadelWeb.Components.NewTaskModal do
   def handle_event("create", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form,
            params: params,
-           action_opts: [actor: socket.assigns.current_user]
+           action_opts: [
+             actor: socket.assigns.current_user,
+             tenant: socket.assigns.current_workspace.id
+           ]
          ) do
       {:ok, task} ->
         send(self(), {:task_created, task})
@@ -28,7 +31,10 @@ defmodule CitadelWeb.Components.NewTaskModal do
 
   def assign_form(socket) do
     form =
-      AshPhoenix.Form.for_create(Task, :create, actor: socket.assigns.current_user)
+      AshPhoenix.Form.for_create(Task, :create,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
       |> to_form()
 
     socket
