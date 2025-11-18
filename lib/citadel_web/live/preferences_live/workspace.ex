@@ -36,42 +36,37 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
   end
 
   defp load_workspace_data(workspace_id, current_user) do
-    try do
-      # Load workspace with owner - will raise if user doesn't have access
-      workspace =
-        Accounts.get_workspace_by_id!(
-          workspace_id,
-          actor: current_user,
-          load: [:owner]
-        )
+    workspace =
+      Accounts.get_workspace_by_id!(
+        workspace_id,
+        actor: current_user,
+        load: [:owner]
+      )
 
-      # Load memberships with user details
-      memberships =
-        Accounts.list_workspace_members!(
-          query: [filter: [workspace_id: workspace.id]],
-          actor: current_user,
-          load: [:user]
-        )
+    memberships =
+      Accounts.list_workspace_members!(
+        query: [filter: [workspace_id: workspace.id]],
+        actor: current_user,
+        load: [:user]
+      )
 
-      # Filter pending invitations (not accepted)
-      invitations =
-        Accounts.list_workspace_invitations!(
-          query: [filter: [workspace_id: workspace.id, is_accepted: false]],
-          actor: current_user,
-          load: [:invited_by]
-        )
+    invitations =
+      Accounts.list_workspace_invitations!(
+        query: [filter: [workspace_id: workspace.id, is_accepted: false]],
+        actor: current_user,
+        load: [:invited_by]
+      )
 
-      {:ok, workspace, memberships, invitations}
-    rescue
-      Ash.Error.Forbidden ->
-        {:error, :forbidden}
+    {:ok, workspace, memberships, invitations}
+  rescue
+    Ash.Error.Forbidden ->
+      {:error, :forbidden}
 
-      Ash.Error.Query.NotFound ->
-        {:error, :not_found}
+    Ash.Error.Query.NotFound ->
+      {:error, :not_found}
 
-      Ash.Error.Invalid ->
-        {:error, :not_found}
-    end
+    Ash.Error.Invalid ->
+      {:error, :not_found}
   end
 
   def handle_event("show-invite-modal", _params, socket) do
