@@ -80,13 +80,13 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   # Callback handlers
-  defp handle_llm_delta(_model, data, message_id, message, _context) do
+  defp handle_llm_delta(_model, data, message_id, message, context) do
     if has_content?(data) do
-      upsert_message_response(message_id, message, data.content, %{})
+      upsert_message_response(message_id, message, data.content, %{}, context)
     end
   end
 
-  defp handle_message_processed(_chain, data, message_id, message, _context) do
+  defp handle_message_processed(_chain, data, message_id, message, context) do
     if should_persist_message?(data) do
       upsert_message_response(
         message_id,
@@ -96,13 +96,14 @@ defmodule Citadel.Chat.Message.Changes.Respond do
           complete: true,
           tool_calls: transform_tool_calls(data.tool_calls),
           tool_results: transform_tool_results(data.tool_results)
-        }
+        },
+        context
       )
     end
   end
 
   # Message persistence
-  defp upsert_message_response(id, message, text, additional_attrs) do
+  defp upsert_message_response(id, message, text, additional_attrs, context) do
     base_attrs = %{
       id: id,
       response_to_id: message.id,
@@ -110,11 +111,13 @@ defmodule Citadel.Chat.Message.Changes.Respond do
       text: text
     }
 
+    context_opts = Ash.Context.to_opts(context)
+
     Citadel.Chat.Message
     |> Ash.Changeset.for_create(
       :upsert_response,
       Map.merge(base_attrs, additional_attrs),
-      actor: %AshAi{}
+      Keyword.merge([actor: %AshAi{}], context_opts)
     )
     |> Ash.create!()
   end

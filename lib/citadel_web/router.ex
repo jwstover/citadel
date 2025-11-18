@@ -35,6 +35,8 @@ defmodule CitadelWeb.Router do
       live "/chat/:conversation_id", ChatLive
       live "/", HomeLive.Index, :index
       live "/tasks/:id", TaskLive.Show, :show
+      live "/preferences", PreferencesLive.Index, :index
+      live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:

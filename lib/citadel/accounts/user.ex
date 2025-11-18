@@ -65,6 +65,22 @@ defmodule Citadel.Accounts.User do
         |> Ash.Changeset.change_attributes(Map.take(user_info, ["email"]))
       end
 
+      change fn changeset, _context ->
+        Ash.Changeset.after_action(changeset, fn _changeset, user ->
+          existing_workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+
+          if Enum.empty?(existing_workspaces) do
+            _workspace =
+              Citadel.Accounts.create_workspace!(
+                "Personal",
+                actor: user
+              )
+          end
+
+          {:ok, user}
+        end)
+      end
+
       upsert_fields []
     end
   end

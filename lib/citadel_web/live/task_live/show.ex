@@ -8,9 +8,15 @@ defmodule CitadelWeb.TaskLive.Show do
   import CitadelWeb.Components.Markdown
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
+  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(%{"id" => id}, _session, socket) do
-    task = Tasks.get_task!(id, actor: socket.assigns.current_user, load: [:task_state, :user])
+    task =
+      Tasks.get_task!(id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :user]
+      )
 
     can_edit = Tasks.can_update_task?(socket.assigns.current_user, task)
 
@@ -27,7 +33,11 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("edit", _params, socket) do
     form =
       socket.assigns.task
-      |> AshPhoenix.Form.for_update(:update, domain: Tasks)
+      |> AshPhoenix.Form.for_update(:update,
+        domain: Tasks,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
       |> to_form()
 
     {:noreply, socket |> assign(:editing, true) |> assign(:form, form)}
@@ -45,7 +55,7 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, task} ->
-        task = Ash.load!(task, [:task_state, :user])
+        task = Ash.load!(task, [:task_state, :user], tenant: socket.assigns.current_workspace.id)
 
         socket =
           socket
