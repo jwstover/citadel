@@ -41,6 +41,8 @@ defmodule Citadel.DataCase do
 
   use ExUnit.CaseTemplate
 
+  import Citadel.Generator
+
   alias Ecto.Adapters.SQL.Sandbox
 
   using do
@@ -106,9 +108,7 @@ defmodule Citadel.DataCase do
       user = create_user(%{email: "custom@example.com"})
   """
   def create_user(attrs \\ %{}) do
-    email = Map.get(attrs, :email, unique_user_email())
-
-    Ash.Seed.seed!(Citadel.Accounts.User, %{email: email})
+    generate(user(attrs |> Map.to_list()))
   end
 
   @doc """

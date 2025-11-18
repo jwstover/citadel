@@ -64,17 +64,19 @@ defmodule CitadelWeb.HomeLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash}>
-      <.control_bar />
+      <div class="bg-base-200 border border-base-300">
+        <.control_bar />
 
-      <.tasks_list task_states={@task_states} tasks_by_state={@tasks_by_state} />
+        <.tasks_list task_states={@task_states} tasks_by_state={@tasks_by_state} />
 
-      <.live_component
-        :if={@show_task_form}
-        module={CitadelWeb.Components.NewTaskModal}
-        id="new-task-modal"
-        current_user={@current_user}
-        current_workspace={@current_workspace}
-      />
+        <.live_component
+          :if={@show_task_form}
+          module={CitadelWeb.Components.NewTaskModal}
+          id="new-task-modal"
+          current_user={@current_user}
+          current_workspace={@current_workspace}
+        />
+      </div>
     </Layouts.app>
     """
   end

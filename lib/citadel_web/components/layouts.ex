@@ -78,9 +78,9 @@ defmodule CitadelWeb.Layouts do
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                  <.link navigate={~p"/preferences"} class="flex items-center gap-2">
                     <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/70" />
-                    <span>Settings</span>
+                    <span>Preferences</span>
                   </.link>
                 </li>
               </ul>
@@ -95,7 +95,7 @@ defmodule CitadelWeb.Layouts do
           </div>
 
           <%!-- Main content --%>
-          <main class="flex-grow bg-base-200 card card-border border-border m-2">
+          <main class="flex-grow my-4 mx-4">
             <div class="card-body p-0">
               {render_slot(@inner_block)}
             </div>
