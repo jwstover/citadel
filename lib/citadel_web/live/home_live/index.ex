@@ -63,7 +63,7 @@ defmodule CitadelWeb.HomeLive.Index do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
       <div class="bg-base-200 border border-base-300">
         <.control_bar />
 

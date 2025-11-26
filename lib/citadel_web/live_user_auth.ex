@@ -41,23 +41,38 @@ defmodule CitadelWeb.LiveUserAuth do
 
   def on_mount(:load_workspace, _params, session, socket) do
     if socket.assigns[:current_user] do
-      workspace_id =
-        session["current_workspace_id"] || get_default_workspace_id(socket.assigns.current_user)
+      user = socket.assigns.current_user
+      workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+
+      workspace_id = session["current_workspace_id"] || get_default_workspace_id(workspaces)
 
       workspace =
         Citadel.Accounts.get_workspace_by_id!(
           workspace_id,
-          actor: socket.assigns.current_user
+          actor: user
         )
 
-      {:cont, assign(socket, :current_workspace, workspace)}
+      socket =
+        socket
+        |> assign(:current_workspace, workspace)
+        |> assign(:workspaces, workspaces)
+        |> Phoenix.LiveView.attach_hook(:workspace_switcher, :handle_event, fn
+          "switch-workspace", %{"workspace-id" => new_workspace_id}, socket ->
+            # Redirect to controller endpoint to update session
+            {:halt,
+             Phoenix.LiveView.redirect(socket, to: ~p"/workspaces/switch/#{new_workspace_id}")}
+
+          _event, _params, socket ->
+            {:cont, socket}
+        end)
+
+      {:cont, socket}
     else
       {:cont, socket}
     end
   end
 
-  defp get_default_workspace_id(user) do
-    workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+  defp get_default_workspace_id(workspaces) do
     List.first(workspaces).id
   end
 end

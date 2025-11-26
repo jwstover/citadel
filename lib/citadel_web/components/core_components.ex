@@ -113,11 +113,16 @@ defmodule CitadelWeb.CoreComponents do
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :string
-  attr :variant, :string, values: ~w(primary)
+  attr :variant, :string, values: ~w(primary ghost error)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-neutral"}
+    variants = %{
+      "primary" => "btn-primary",
+      "ghost" => "btn-ghost",
+      "error" => "btn-error",
+      nil => "btn-neutral"
+    }
 
     assigns =
       assign_new(assigns, :class, fn ->

@@ -6,9 +6,13 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
   alias Citadel.Accounts
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
+  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, :show_invite_modal, false)}
+    {:ok,
+     socket
+     |> assign(:show_invite_modal, false)
+     |> assign(:show_leave_confirmation, false)}
   end
 
   def handle_params(%{"id" => workspace_id}, _uri, socket) do
@@ -24,8 +28,7 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
          |> assign(:workspace, workspace)
          |> assign(:memberships, memberships)
          |> assign(:invitations, invitations)
-         |> assign(:is_owner, is_owner)
-         |> assign(:current_workspace, workspace)}
+         |> assign(:is_owner, is_owner)}
 
       {:error, _reason} ->
         {:noreply,
@@ -75,6 +78,49 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
 
   def handle_event("hide-invite-modal", _params, socket) do
     {:noreply, assign(socket, :show_invite_modal, false)}
+  end
+
+  def handle_event("show-leave-confirmation", _params, socket) do
+    {:noreply, assign(socket, :show_leave_confirmation, true)}
+  end
+
+  def handle_event("hide-leave-confirmation", _params, socket) do
+    {:noreply, assign(socket, :show_leave_confirmation, false)}
+  end
+
+  def handle_event("leave-workspace", _params, socket) do
+    current_user = socket.assigns.current_user
+    workspace = socket.assigns.workspace
+
+    # Find the current user's membership
+    memberships =
+      Accounts.list_workspace_members!(
+        actor: current_user,
+        query: [filter: [workspace_id: workspace.id, user_id: current_user.id]]
+      )
+
+    case memberships do
+      [membership] ->
+        case Accounts.remove_workspace_member!(membership, actor: current_user) do
+          :ok ->
+            {:noreply,
+             socket
+             |> put_flash(:info, "You have left the workspace")
+             |> redirect(to: ~p"/preferences")}
+
+          {:error, _error} ->
+            {:noreply,
+             socket
+             |> assign(:show_leave_confirmation, false)
+             |> put_flash(:error, "Failed to leave workspace")}
+        end
+
+      [] ->
+        {:noreply,
+         socket
+         |> assign(:show_leave_confirmation, false)
+         |> put_flash(:error, "Membership not found")}
+    end
   end
 
   def handle_event("remove-member", %{"id" => membership_id}, socket) do
@@ -152,10 +198,28 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
      |> put_flash(:info, "Invitation sent successfully")}
   end
 
+  def handle_info({:confirm_action, "leave-workspace-modal"}, socket) do
+    handle_event("leave-workspace", %{}, socket)
+  end
+
+  def handle_info({:cancel_confirmation, _id}, socket) do
+    {:noreply, assign(socket, :show_leave_confirmation, false)}
+  end
+
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <h1 class="text-2xl mb-4">Workspace Management</h1>
+    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl">Workspace: {@workspace.name}</h1>
+        <div class="flex gap-2">
+          <.link :if={@is_owner} navigate={~p"/preferences/workspaces/#{@workspace.id}/edit"}>
+            <.button variant="ghost">Edit Workspace</.button>
+          </.link>
+          <.button :if={!@is_owner} variant="error" phx-click="show-leave-confirmation">
+            Leave Workspace
+          </.button>
+        </div>
+      </div>
 
       <div class="space-y-6">
         <.card class="bg-base-200 border-base-300">
@@ -224,6 +288,18 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
         id="invite-member-modal"
         current_user={@current_user}
         current_workspace={@current_workspace}
+      />
+
+      <.live_component
+        :if={@show_leave_confirmation}
+        module={CitadelWeb.Components.ConfirmationModal}
+        id="leave-workspace-modal"
+        title="Leave Workspace"
+        message="Are you sure you want to leave this workspace? You will lose access to all conversations and tasks in this workspace."
+        confirm_label="Leave Workspace"
+        cancel_label="Cancel"
+        on_confirm="confirm"
+        on_cancel="cancel"
       />
     </Layouts.app>
     """

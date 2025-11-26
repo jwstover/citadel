@@ -73,7 +73,7 @@ defmodule CitadelWeb.TaskLive.Show do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
+    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
       <div class="p-4">
         <div class="mb-4">
           <.link navigate={~p"/"} class="btn btn-ghost btn-sm">

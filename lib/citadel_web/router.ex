@@ -36,6 +36,8 @@ defmodule CitadelWeb.Router do
       live "/", HomeLive.Index, :index
       live "/tasks/:id", TaskLive.Show, :show
       live "/preferences", PreferencesLive.Index, :index
+      live "/preferences/workspaces/new", PreferencesLive.WorkspaceForm, :new
+      live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
       live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
       # in each liveview, add one of the following at the top of the module:
       #
@@ -48,10 +50,18 @@ defmodule CitadelWeb.Router do
       # If an authenticated user must *not* be present:
       # on_mount {CitadelWeb.LiveUserAuth, :live_no_user}
     end
+
+    # Public routes (no authentication required)
+    ash_authentication_live_session :public_routes do
+      live "/invitations/:token", InvitationLive.Accept, :show
+    end
   end
 
   scope "/", CitadelWeb do
     pipe_through :browser
+
+    # Workspace session management
+    get "/workspaces/switch/:workspace_id", WorkspaceController, :switch
 
     auth_routes AuthController, Citadel.Accounts.User, path: "/auth"
     sign_out_route AuthController

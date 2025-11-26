@@ -138,7 +138,7 @@ defmodule CitadelWeb.PreferencesLive.IndexTest do
       {:ok, _view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
 
       # Should show workspace preferences page
-      assert html =~ "Workspace Management"
+      assert html =~ "Workspace:"
       assert html =~ "Members"
     end
 
