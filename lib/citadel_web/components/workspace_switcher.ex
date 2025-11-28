@@ -13,7 +13,7 @@ defmodule CitadelWeb.Components.WorkspaceSwitcher do
   def workspace_switcher(assigns) do
     ~H"""
     <div class="dropdown">
-      <div tabindex="0" role="button" class="btn btn-ghost gap-2">
+      <div tabindex="0" role="button" class="btn btn-secondary btn-sm gap-2">
         <.icon name="hero-building-office" class="h-5 w-5" />
         <span class="hidden sm:inline">{@current_workspace.name}</span>
         <.icon name="hero-chevron-down" class="h-4 w-4" />
