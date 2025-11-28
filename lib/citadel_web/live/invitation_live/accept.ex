@@ -6,6 +6,7 @@ defmodule CitadelWeb.InvitationLive.Accept do
   use CitadelWeb, :live_view
 
   alias Citadel.Accounts
+  alias Citadel.Accounts.WorkspaceInvitation
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_optional}
 
@@ -71,7 +72,7 @@ defmodule CitadelWeb.InvitationLive.Accept do
     invitation = socket.assigns.invitation
 
     case Accounts.accept_invitation!(invitation, actor: user) do
-      :ok ->
+      %WorkspaceInvitation{} ->
         {:noreply,
          socket
          |> put_flash(:info, "Welcome to #{invitation.workspace.name}!")
@@ -84,7 +85,7 @@ defmodule CitadelWeb.InvitationLive.Accept do
          |> assign(:error, :accept_failed)}
     end
   rescue
-    _ ->
+    _err ->
       {:noreply,
        socket
        |> put_flash(:error, "An error occurred while accepting the invitation.")

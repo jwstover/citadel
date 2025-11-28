@@ -287,7 +287,7 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
         module={CitadelWeb.Components.InviteMemberModal}
         id="invite-member-modal"
         current_user={@current_user}
-        current_workspace={@current_workspace}
+        workspace={@workspace}
       />
 
       <.live_component

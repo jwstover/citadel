@@ -33,7 +33,7 @@ defmodule CitadelWeb.Components.InviteMemberModal do
       AshPhoenix.Form.for_create(WorkspaceInvitation, :create,
         actor: socket.assigns.current_user,
         prepare_params: fn params, _context ->
-          Map.put(params, "workspace_id", socket.assigns.current_workspace.id)
+          Map.put(params, "workspace_id", socket.assigns.workspace.id)
         end
       )
       |> to_form()

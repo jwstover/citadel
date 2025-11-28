@@ -47,10 +47,18 @@ defmodule CitadelWeb.LiveUserAuth do
       workspace_id = session["current_workspace_id"] || get_default_workspace_id(workspaces)
 
       workspace =
-        Citadel.Accounts.get_workspace_by_id!(
+        Citadel.Accounts.get_workspace_by_id(
           workspace_id,
           actor: user
         )
+        |> case do
+          {:error, _} ->
+            get_default_workspace_id(workspaces)
+            |> Citadel.Accounts.get_workspace_by_id!(actor: user)
+
+          {:ok, workspace} ->
+            workspace
+        end
 
       socket =
         socket
