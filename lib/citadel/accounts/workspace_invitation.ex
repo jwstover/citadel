@@ -32,6 +32,9 @@ defmodule Citadel.Accounts.WorkspaceInvitation do
       change {Citadel.Accounts.WorkspaceInvitation.Changes.GenerateToken, []}
       change {Citadel.Accounts.WorkspaceInvitation.Changes.SetExpiration, []}
       change relate_actor(:invited_by)
+
+      # Enqueue email notification (runs after_action)
+      change {Citadel.Accounts.WorkspaceInvitation.Changes.EnqueueInvitationEmail, []}
     end
 
     update :accept do

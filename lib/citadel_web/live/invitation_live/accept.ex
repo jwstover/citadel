@@ -28,7 +28,10 @@ defmodule CitadelWeb.InvitationLive.Accept do
   end
 
   defp load_invitation(token) do
-    case Accounts.get_invitation_by_token(token, load: [:workspace, :invited_by, :is_accepted, :is_expired], authorize?: false) do
+    case Accounts.get_invitation_by_token(token,
+           load: [:workspace, :invited_by, :is_accepted, :is_expired],
+           authorize?: false
+         ) do
       {:ok, invitation} ->
         cond do
           invitation.is_accepted ->

@@ -12,7 +12,12 @@ config :ash_oban, pro?: false
 config :citadel, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [default: 10, chat_responses: [limit: 10], conversations: [limit: 10]],
+  queues: [
+    default: 10,
+    chat_responses: [limit: 10],
+    conversations: [limit: 10],
+    invitations: [limit: 5]
+  ],
   repo: Citadel.Repo,
   plugins: [{Oban.Plugins.Cron, []}]
 
