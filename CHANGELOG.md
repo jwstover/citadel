@@ -1,3 +1,24 @@
+# [0.5.0](https://github.com/jwstover/citadel/compare/v0.4.0...v0.5.0) (2025-12-02)
+
+
+### Bug Fixes
+
+* modify workspace invitation to use correct workspace ([7a60556](https://github.com/jwstover/citadel/commit/7a60556b9c65f0033f59f2e44d41e17c9b08d587))
+
+
+### Features
+
+* add ability to switch workspaces ([a6f3a24](https://github.com/jwstover/citadel/commit/a6f3a2476595854d833c3a5d5758bf28fea3eecb))
+* add api key authentication ([765881b](https://github.com/jwstover/citadel/commit/765881b551fc1f23221610416c15b310808cfeb6))
+* add emails for invitations ([9d58655](https://github.com/jwstover/citadel/commit/9d5865585427fc2c13d8c8f69634c66809fc0d05))
+* add preferences page and workspace preferences ([38043e0](https://github.com/jwstover/citadel/commit/38043e07a5d3ae290a0f519ae7aa81e14752ea84))
+* add workspace invitations ([efc098b](https://github.com/jwstover/citadel/commit/efc098bcd8905fb2f50fcfb4d9bd83342c2ddde8))
+* add workspace memberships ([80106fe](https://github.com/jwstover/citadel/commit/80106feec83e6d14ec147ad81c66b415b59b2f16))
+* add workspaces ([abd81e3](https://github.com/jwstover/citadel/commit/abd81e3f0f3e78446989d93aba001d278c0aa8a9))
+* use workspace_id in background jobs ([46652b0](https://github.com/jwstover/citadel/commit/46652b0011b33a4a3d9b641aae900307faff0784))
+
+
+
 # [0.4.0](https://github.com/jwstover/citadel/compare/v0.3.0...v0.4.0) (2025-11-13)
 
 
