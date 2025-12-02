@@ -71,9 +71,9 @@ defmodule Citadel.Accounts.WorkspaceMembership do
       authorize_if expr(exists(workspace.memberships, user_id == ^actor(:id)))
     end
 
-    # Workspace owner can destroy memberships (remove users)
     policy action_type(:destroy) do
       authorize_if expr(workspace.owner_id == ^actor(:id))
+      authorize_if expr(user_id == ^actor(:id))
     end
   end
 
