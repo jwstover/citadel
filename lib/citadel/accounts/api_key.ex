@@ -19,7 +19,7 @@ defmodule Citadel.Accounts.ApiKey do
 
     create :create do
       primary? true
-      accept [:user_id, :expires_at]
+      accept [:name, :user_id, :expires_at]
 
       change {AshAuthentication.Strategy.ApiKey.GenerateApiKey,
               prefix: :citadel, hash: :api_key_hash}
@@ -30,10 +30,26 @@ defmodule Citadel.Accounts.ApiKey do
     bypass AshAuthentication.Checks.AshAuthenticationInteraction do
       authorize_if always()
     end
+
+    policy action_type(:read) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action_type(:destroy) do
+      authorize_if expr(user_id == ^actor(:id))
+    end
+
+    policy action_type(:create) do
+      authorize_if actor_present()
+    end
   end
 
   attributes do
     uuid_primary_key :id
+
+    attribute :name, :string do
+      allow_nil? false
+    end
 
     attribute :api_key_hash, :binary do
       allow_nil? false
