@@ -32,6 +32,28 @@ defmodule CitadelWeb.CoreComponents do
   alias Phoenix.HTML.Form
   alias Phoenix.LiveView.JS
 
+  attr :class, :string, default: nil
+
+  slot :title, required: true
+  slot :inner_block
+  slot :action, required: false
+
+  def card(assigns) do
+    ~H"""
+    <div class={["card bg-base-200 border border-base-300", @class]}>
+      <div class="card-body">
+        <div class="card-title">
+          {render_slot(@title)}
+        </div>
+        {render_slot(@inner_block)}
+        <div :for={action <- @action} :if={@action != []} class="card-actions">
+          {render_slot(action)}
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   @doc """
   Renders flash notices.
 
@@ -91,11 +113,16 @@ defmodule CitadelWeb.CoreComponents do
   """
   attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
   attr :class, :string
-  attr :variant, :string, values: ~w(primary)
+  attr :variant, :string, values: ~w(primary ghost error)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-neutral"}
+    variants = %{
+      "primary" => "btn-primary",
+      "ghost" => "btn-ghost",
+      "error" => "btn-error",
+      nil => "btn-neutral"
+    }
 
     assigns =
       assign_new(assigns, :class, fn ->
@@ -345,11 +372,11 @@ defmodule CitadelWeb.CoreComponents do
         </tr>
       </thead>
       <tbody id={@id} phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}>
-        <tr :for={row <- @rows} id={@row_id && @row_id.(row)}>
+        <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group">
           <td
             :for={col <- @col}
             phx-click={@row_click && @row_click.(row)}
-            class={@row_click && "hover:cursor-pointer"}
+            class={@row_click && "hover:cursor-pointer group-hover:bg-base-300"}
           >
             {render_slot(col, @row_item.(row))}
           </td>

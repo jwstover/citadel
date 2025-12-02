@@ -2,6 +2,8 @@ defmodule CitadelWeb.AuthController do
   use CitadelWeb, :controller
   use AshAuthentication.Phoenix.Controller
 
+  require Logger
+
   def success(conn, activity, user, _token) do
     return_to = get_session(conn, :return_to) || ~p"/"
 
@@ -35,7 +37,8 @@ defmodule CitadelWeb.AuthController do
           You can confirm your account using the link we sent to you, or by resetting your password.
           """
 
-        _ ->
+        err ->
+          Logger.error("Failed to authenticate user: #{inspect(err)}")
           "Incorrect email or password"
       end
 

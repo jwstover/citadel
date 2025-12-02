@@ -5,6 +5,8 @@ defmodule CitadelWeb.Layouts do
   """
   use CitadelWeb, :html
 
+  import CitadelWeb.Components.WorkspaceSwitcher
+
   # Embed all files in layouts/* within this module.
   # The default root.html.heex file contains the HTML
   # skeleton of your application, namely HTML headers
@@ -30,6 +32,9 @@ defmodule CitadelWeb.Layouts do
   attr :current_scope, :map,
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
+  attr :current_workspace, :map, default: nil, doc: "the current workspace"
+  attr :workspaces, :list, default: [], doc: "list of all user's workspaces"
 
   slot :inner_block, required: true
 
@@ -63,6 +68,16 @@ defmodule CitadelWeb.Layouts do
                 <h2>Citadel</h2>
               </div>
 
+              <%!-- Workspace switcher --%>
+              <%= if @current_workspace && @workspaces != [] do %>
+                <div class="mb-4 px-2">
+                  <.workspace_switcher
+                    current_workspace={@current_workspace}
+                    workspaces={@workspaces}
+                  />
+                </div>
+              <% end %>
+
               <%!-- Navigation menu --%>
               <ul class="menu-compact">
                 <li>
@@ -78,9 +93,9 @@ defmodule CitadelWeb.Layouts do
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                  <.link navigate={~p"/preferences"} class="flex items-center gap-2">
                     <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/70" />
-                    <span>Settings</span>
+                    <span>Preferences</span>
                   </.link>
                 </li>
               </ul>
@@ -95,7 +110,7 @@ defmodule CitadelWeb.Layouts do
           </div>
 
           <%!-- Main content --%>
-          <main class="flex-grow bg-base-200 card card-border border-border m-2">
+          <main class="flex-grow my-4 mx-4">
             <div class="card-body p-0">
               {render_slot(@inner_block)}
             </div>

@@ -17,6 +17,8 @@ defmodule CitadelWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
+  import Citadel.Generator
+
   using do
     quote do
       # The default endpoint for testing
@@ -52,18 +54,21 @@ defmodule CitadelWeb.ConnCase do
   """
   def register_and_log_in_user(%{conn: conn} = context) do
     user = Citadel.DataCase.create_user()
+    workspace = generate(workspace([], actor: user))
+
     conn = log_in_user(conn, user)
-    Map.merge(context, %{conn: conn, user: user})
+
+    Map.merge(context, %{conn: conn, user: user, workspace: workspace})
   end
 
   @doc """
   Logs in the given user without going through authentication.
   """
   def log_in_user(conn, user) do
-    token =
-      AshAuthentication.Jwt.token_for_user(user,
+    {:ok, token, _} =
+      AshAuthentication.Jwt.token_for_user(user, %{},
         purpose: :user,
-        token_lifetime: {1, :hour}
+        token_lifetime: {1, :hours}
       )
 
     conn
