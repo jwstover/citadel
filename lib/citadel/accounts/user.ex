@@ -30,6 +30,11 @@ defmodule Citadel.Accounts.User do
         client_secret Citadel.Secrets
         redirect_uri Citadel.Secrets
       end
+
+      api_key :api_key do
+        api_key_relationship :valid_api_keys
+        api_key_hash_attribute :api_key_hash
+      end
     end
   end
 
@@ -83,6 +88,11 @@ defmodule Citadel.Accounts.User do
 
       upsert_fields []
     end
+
+    read :sign_in_with_api_key do
+      argument :api_key, :string, allow_nil?: false
+      prepare AshAuthentication.Strategy.ApiKey.SignInPreparation
+    end
   end
 
   policies do
@@ -101,6 +111,12 @@ defmodule Citadel.Accounts.User do
     attribute :email, :ci_string do
       allow_nil? false
       public? true
+    end
+  end
+
+  relationships do
+    has_many :valid_api_keys, Citadel.Accounts.ApiKey do
+      filter expr(valid)
     end
   end
 

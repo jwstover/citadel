@@ -25,6 +25,10 @@ defmodule CitadelWeb.Router do
     plug :accepts, ["json"]
     plug :load_from_bearer
     plug :set_actor, :user
+
+    plug AshAuthentication.Strategy.ApiKey.Plug,
+      resource: Citadel.Accounts.User,
+      required?: true
   end
 
   scope "/", CitadelWeb do

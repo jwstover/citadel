@@ -33,5 +33,7 @@ defmodule Citadel.Accounts do
       define :list_workspace_invitations, action: :read
       define :revoke_invitation, action: :destroy
     end
+
+    resource Citadel.Accounts.ApiKey
   end
 end
