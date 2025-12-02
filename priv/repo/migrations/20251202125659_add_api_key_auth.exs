@@ -28,7 +28,8 @@ defmodule Citadel.Repo.Migrations.AddApiKeyAuth do
             name: "tasks_workspace_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     drop constraint(:messages, "messages_conversation_id_fkey")
@@ -50,7 +51,8 @@ defmodule Citadel.Repo.Migrations.AddApiKeyAuth do
             name: "conversations_workspace_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
     end
 
     create table(:api_keys, primary_key: false) do

@@ -1,4 +1,8 @@
 defmodule Citadel.Accounts.ApiKey do
+  @moduledoc """
+  The ApiKey resource for authentication and authorization.
+  """
+
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Accounts,
