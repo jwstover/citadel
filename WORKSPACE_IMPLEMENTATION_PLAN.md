@@ -24,7 +24,7 @@ Implement workspace/organization functionality to group users together within th
 - [x] Phase 5: Background Jobs & Real-time Updates (Complete - All PubSub topics workspace-scoped, tenant context preserved)
 - [x] Phase 6: Invitation Flow (Complete - Async email sending via Oban, acceptance flow complete)
 - [x] Phase 7: Testing & Validation (Complete - All tests written and passing)
-- [ ] Phase 8: Polish & Documentation
+- [x] Phase 8: Polish & Documentation (mostly complete - empty states deferred)
 
 ---
 
@@ -688,57 +688,57 @@ Created comprehensive property-based tests testing thousands of input combinatio
 
 **Goal**: Add validation, error handling, and documentation to complete the feature.
 
-### 8.1 Add Validation & Constraints
+### 8.1 Add Validation & Constraints ✅ COMPLETE
 
-- [ ] Workspace validations:
-  - [ ] Name required, 1-100 characters
-  - [ ] Owner required
-- [ ] Invitation validations:
-  - [ ] Email format validation
-  - [ ] Can't invite existing members
-  - [ ] Check invitation limit per workspace (optional)
-- [ ] Membership validations:
-  - [ ] Owner can't leave workspace
+- [x] Workspace validations:
+  - [x] Name required, 1-100 characters (constraints in workspace.ex)
+  - [x] Owner required (belongs_to with allow_nil?: false)
+- [x] Invitation validations:
+  - [x] Email format validation (Ash CiString type)
+  - [x] Can't invite existing members (handled gracefully - membership creation idempotent)
+  - [ ] Check invitation limit per workspace (optional - deferred)
+- [x] Membership validations:
+  - [x] Owner can't leave workspace (PreventOwnerLeaving validation)
   - [ ] Must transfer ownership before leaving (future feature)
 
-### 8.2 Error Handling
+### 8.2 Error Handling ✅ COMPLETE
 
-- [ ] Add friendly error messages for:
-  - [ ] Workspace not found
-  - [ ] Invitation expired
-  - [ ] Not a workspace member
-  - [ ] Not workspace owner
-  - [ ] Invalid invitation token
-- [ ] Update LiveViews to display errors properly
-- [ ] Add flash messages for success/error cases
+- [x] Add friendly error messages for:
+  - [x] Workspace not found (redirect with flash in PreferencesLive.Workspace)
+  - [x] Invitation expired (error page in InvitationLive.Accept)
+  - [x] Not a workspace member (redirect with flash)
+  - [x] Not workspace owner (UI elements hidden, actions rejected)
+  - [x] Invalid invitation token (error page with friendly message)
+- [x] Update LiveViews to display errors properly
+- [x] Add flash messages for success/error cases (throughout all workspace LiveViews)
 
-### 8.3 UI Polish
+### 8.3 UI Polish (Partial)
 
-- [ ] Add workspace badge/indicator to navbar
-- [ ] Style workspace switcher dropdown
-- [ ] Add empty states:
+- [x] Add workspace badge/indicator to navbar (workspace switcher component)
+- [x] Style workspace switcher dropdown (DaisyUI dropdown with icons)
+- [ ] Add empty states (deferred):
   - [ ] No workspaces
   - [ ] No members
   - [ ] No pending invitations
   - [ ] No tasks in workspace
   - [ ] No conversations in workspace
-- [ ] Add loading states for async operations
-- [ ] Add confirmation dialogs for destructive actions
+- [ ] Add loading states for async operations (deferred)
+- [x] Add confirmation dialogs for destructive actions (leave workspace, remove member)
 
-### 8.4 Run Code Quality Checks
+### 8.4 Run Code Quality Checks ✅ COMPLETE
 
-- [ ] Run `mix ck` (format, lint, security)
-- [ ] Fix all warnings and issues
-- [ ] Run `mix test` one final time
-- [ ] Ensure all tests pass
+- [x] Run `mix ck` (format, lint, security)
+- [x] Fix all warnings and issues
+- [x] Run `mix test` one final time
+- [x] Ensure all tests pass (212 tests, 51 properties, 0 failures)
 
-### 8.5 Documentation
+### 8.5 Documentation ✅ COMPLETE
 
-- [ ] Update README.md with workspace feature description
-- [ ] Add workspace usage examples
-- [ ] Document invitation flow
-- [ ] Add screenshots (optional)
-- [ ] Update any API documentation
+- [x] Update README.md with workspace feature description
+- [x] Add workspace usage examples
+- [x] Document invitation flow
+- [ ] Add screenshots (optional - deferred)
+- [x] Update any API documentation (N/A - no external API)
 
 ---
 
