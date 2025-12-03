@@ -35,7 +35,7 @@ defmodule Citadel.Accounts do
     end
 
     resource Citadel.Accounts.ApiKey do
-      define :create_api_key, action: :create, args: [:name, :expires_at, :user_id]
+      define :create_api_key, action: :create, args: [:name, :expires_at, :user_id, :workspace_id]
       define :list_api_keys, action: :read
       define :destroy_api_key, action: :destroy
     end

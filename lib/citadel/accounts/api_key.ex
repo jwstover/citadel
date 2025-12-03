@@ -19,7 +19,7 @@ defmodule Citadel.Accounts.ApiKey do
 
     create :create do
       primary? true
-      accept [:name, :user_id, :expires_at]
+      accept [:name, :user_id, :expires_at, :workspace_id]
 
       change {AshAuthentication.Strategy.ApiKey.GenerateApiKey,
               prefix: :citadel, hash: :api_key_hash}
@@ -40,7 +40,7 @@ defmodule Citadel.Accounts.ApiKey do
     end
 
     policy action_type(:create) do
-      authorize_if actor_present()
+      authorize_if Citadel.Accounts.Checks.TenantWorkspaceMember
     end
   end
 
@@ -59,10 +59,19 @@ defmodule Citadel.Accounts.ApiKey do
     attribute :expires_at, :utc_datetime_usec do
       allow_nil? false
     end
+
+    attribute :workspace_id, :uuid do
+      allow_nil? false
+      public? true
+    end
   end
 
   relationships do
     belongs_to :user, Citadel.Accounts.User
+
+    belongs_to :workspace, Citadel.Accounts.Workspace do
+      define_attribute? false
+    end
   end
 
   calculations do

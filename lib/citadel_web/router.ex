@@ -35,6 +35,8 @@ defmodule CitadelWeb.Router do
     plug AshAuthentication.Strategy.ApiKey.Plug,
       resource: Citadel.Accounts.User,
       required?: true
+
+    plug CitadelWeb.Plugs.SetTenantFromApiKey
   end
 
   scope "/", CitadelWeb do
