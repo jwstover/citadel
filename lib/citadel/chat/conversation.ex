@@ -22,9 +22,10 @@ defmodule Citadel.Chat.Conversation do
       trigger :name_conversation do
         actor_persister Citadel.AiAgentActorPersister
         action :generate_name
-        read_action :read
+        read_action :needs_naming
         queue :conversations
         lock_for_update? false
+        use_tenant_from_record? true
         worker_module_name Citadel.Chat.Message.Workers.NameConversation
         scheduler_module_name Citadel.Chat.Message.Schedulers.NameConversation
         where expr(needs_title)
@@ -39,6 +40,12 @@ defmodule Citadel.Chat.Conversation do
 
   actions do
     defaults [:read, :destroy]
+
+    read :needs_naming do
+      multitenancy :allow_global
+      pagination keyset?: true
+      filter expr(needs_title)
+    end
 
     create :create do
       accept [:title, :workspace_id]
