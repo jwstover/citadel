@@ -12,8 +12,11 @@ defmodule CitadelWeb.PreferencesLive.ApiKeyNew do
     form =
       AshPhoenix.Form.for_create(ApiKey, :create,
         actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
         prepare_source: fn changeset ->
-          Ash.Changeset.change_attribute(changeset, :user_id, socket.assigns.current_user.id)
+          changeset
+          |> Ash.Changeset.change_attribute(:user_id, socket.assigns.current_user.id)
+          |> Ash.Changeset.change_attribute(:workspace_id, socket.assigns.current_workspace.id)
         end,
         transform_params: fn params, _meta ->
           case params["expires_at"] do
@@ -42,7 +45,10 @@ defmodule CitadelWeb.PreferencesLive.ApiKeyNew do
   def handle_event("save", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form,
            params: params,
-           action_opts: [actor: socket.assigns.current_user]
+           action_opts: [
+             actor: socket.assigns.current_user,
+             tenant: socket.assigns.current_workspace.id
+           ]
          ) do
       {:ok, api_key} ->
         plaintext_key = api_key.__metadata__.plaintext_api_key
@@ -111,6 +117,15 @@ defmodule CitadelWeb.PreferencesLive.ApiKeyNew do
         <% else %>
           <.card class="bg-base-200 border-base-300">
             <:title>Create API Key</:title>
+
+            <div class="alert alert-info mb-4">
+              <.icon name="hero-information-circle" class="size-5" />
+              <span>
+                This API key will be scoped to the <strong>{@current_workspace.name}</strong>
+                workspace.
+              </span>
+            </div>
+
             <.form for={@form} phx-submit="save" class="space-y-4" id="api-key-form">
               <.input
                 field={@form[:name]}
