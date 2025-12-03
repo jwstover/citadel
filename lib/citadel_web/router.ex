@@ -31,6 +31,14 @@ defmodule CitadelWeb.Router do
       required?: true
   end
 
+  pipeline :mcp do
+    plug AshAuthentication.Strategy.ApiKey.Plug,
+      resource: Citadel.Accounts.User,
+      required?: true
+
+    plug CitadelWeb.Plugs.SetTenantFromApiKey
+  end
+
   scope "/", CitadelWeb do
     pipe_through :browser
 
@@ -43,6 +51,7 @@ defmodule CitadelWeb.Router do
       live "/preferences/workspaces/new", PreferencesLive.WorkspaceForm, :new
       live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
       live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
+      live "/preferences/api-keys/new", PreferencesLive.ApiKeyNew, :new
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -59,6 +68,21 @@ defmodule CitadelWeb.Router do
     ash_authentication_live_session :public_routes do
       live "/invitations/:token", InvitationLive.Accept, :show
     end
+  end
+
+  scope "/mcp" do
+    pipe_through :mcp
+
+    forward "/", AshAi.Mcp.Router,
+      tools: [
+        :list_tasks,
+        :create_task,
+        :update_task,
+        :list_task_states
+      ],
+      # For many tools, you will need to set the `protocol_version_statement` to the older version.
+      protocol_version_statement: "2024-11-05",
+      otp_app: :citadel
   end
 
   scope "/", CitadelWeb do

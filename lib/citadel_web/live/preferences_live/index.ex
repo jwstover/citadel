@@ -15,7 +15,7 @@ defmodule CitadelWeb.PreferencesLive.Index do
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
       <h1 class="text-2xl mb-4">Preferences</h1>
 
-      <div>
+      <div class="space-y-6">
         <.card class="bg-base-200 border-base-300">
           <:title>
             <div class="flex justify-between items-center w-full">
@@ -42,6 +42,12 @@ defmodule CitadelWeb.PreferencesLive.Index do
             </:col>
           </.table>
         </.card>
+
+        <.live_component
+          module={CitadelWeb.Components.ApiKeysSection}
+          id="api-keys-section"
+          current_user={@current_user}
+        />
       </div>
     </Layouts.app>
     """

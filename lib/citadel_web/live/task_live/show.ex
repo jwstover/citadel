@@ -18,7 +18,7 @@ defmodule CitadelWeb.TaskLive.Show do
         load: [:task_state, :user]
       )
 
-    can_edit = Tasks.can_update_task?(socket.assigns.current_user, task)
+    can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
 
     socket =
       socket
