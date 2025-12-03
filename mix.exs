@@ -67,7 +67,7 @@ defmodule Citadel.MixProject do
       {:tidewave, "~> 0.5", only: [:dev]},
       {:live_debugger, "~> 0.4", only: [:dev]},
       {:oban_web, "~> 2.0"},
-      {:ash_oban, "~> 0.4"},
+      {:ash_oban, "~> 0.6"},
       {:ash_admin, "~> 0.13"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},
