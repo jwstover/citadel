@@ -13,7 +13,7 @@ defmodule Citadel.Tasks do
     end
 
     tool :create_task, Citadel.Tasks.Task, :create do
-      description "Creates a new task with a title, optional description, and task state"
+      description "Creates a new task with a title, optional description, and task state. To create a sub-task, provide a parent_task_id."
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
@@ -34,6 +34,8 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read
+      define :list_sub_tasks, action: :list_sub_tasks, args: [:parent_task_id]
+      define :list_top_level_tasks, action: :list_top_level
       define :get_task, action: :read, get_by: [:id]
       define :update_task, action: :update, get_by: [:id]
       define :parse_task_from_text, action: :parse_task_from_text, args: [:text]

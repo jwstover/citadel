@@ -154,7 +154,8 @@ defmodule Citadel.Generator do
         [
           defaults: [
             title: sequence(:task_title, &"Task #{&1}"),
-            description: "Test task description"
+            description: "Test task description",
+            parent_task_id: nil
           ],
           overrides: overrides
         ],

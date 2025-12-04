@@ -15,7 +15,7 @@ defmodule CitadelWeb.TaskLive.Show do
       Tasks.get_task!(id,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :user]
+        load: [:task_state, :user, :parent_task, sub_tasks: [:task_state]]
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
@@ -26,8 +26,17 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:can_edit, can_edit)
       |> assign(:editing, false)
       |> assign(:form, nil)
+      |> assign(:show_sub_task_form, false)
 
     {:ok, socket}
+  end
+
+  def handle_event("new-sub-task", _params, socket) do
+    {:noreply, assign(socket, :show_sub_task_form, true)}
+  end
+
+  def handle_event("close-sub-task-form", _params, socket) do
+    {:noreply, assign(socket, :show_sub_task_form, false)}
   end
 
   def handle_event("edit", _params, socket) do
@@ -71,13 +80,42 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_info({:task_created, _sub_task}, socket) do
+    task =
+      Ash.load!(socket.assigns.task, [sub_tasks: [:task_state]],
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    socket =
+      socket
+      |> assign(:task, task)
+      |> assign(:show_sub_task_form, false)
+      |> put_flash(:info, "Sub-task created successfully")
+
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
       <div class="p-4">
         <div class="mb-4">
-          <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
-            <.icon name="hero-arrow-left" class="size-4" /> Back to Tasks
+          <%= if @task.parent_task do %>
+            <.link navigate={~p"/tasks/#{@task.parent_task.id}"} class="btn btn-ghost btn-sm">
+              <.icon name="hero-arrow-left" class="size-4" /> Back to Parent Task
+            </.link>
+          <% else %>
+            <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
+              <.icon name="hero-arrow-left" class="size-4" /> Back to Tasks
+            </.link>
+          <% end %>
+        </div>
+
+        <div :if={@task.parent_task} class="mb-4 text-sm text-base-content/70">
+          <span>Parent: </span>
+          <.link navigate={~p"/tasks/#{@task.parent_task.id}"} class="hover:underline font-medium">
+            {@task.parent_task.title}
           </.link>
         </div>
 
@@ -102,6 +140,13 @@ defmodule CitadelWeb.TaskLive.Show do
             </.button>
           </div>
 
+          <div class="pt-4">
+            <div class="flex gap-2">
+              <span class="text-sm text-base-content/70">ID: </span>
+              <span class="text-sm text-base-content/70 font-semibold">{@task.id}</span>
+            </div>
+          </div>
+
           <div class="py-4">
             <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
             <%= if @task.description do %>
@@ -110,8 +155,47 @@ defmodule CitadelWeb.TaskLive.Show do
               <p class="text-base-content/50 italic">No description provided</p>
             <% end %>
           </div>
+
+          <div class="py-4 border-t border-base-300">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-semibold text-base-content/70">
+                Sub-tasks ({length(@task.sub_tasks)})
+              </h2>
+              <.button :if={@can_edit} class="btn btn-xs btn-outline" phx-click="new-sub-task">
+                <.icon name="hero-plus" class="size-3" /> Add
+              </.button>
+            </div>
+
+            <%= if Enum.empty?(@task.sub_tasks) do %>
+              <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
+            <% else %>
+              <div class="space-y-2">
+                <%= for sub_task <- @task.sub_tasks do %>
+                  <.link
+                    navigate={~p"/tasks/#{sub_task.id}"}
+                    class="block p-2 rounded hover:bg-base-200"
+                  >
+                    <div class="flex items-center gap-2">
+                      <.task_state_icon task_state={sub_task.task_state} />
+                      <span>{sub_task.title}</span>
+                    </div>
+                  </.link>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
         <% end %>
       </div>
+
+      <.live_component
+        :if={@show_sub_task_form}
+        module={CitadelWeb.Components.NewTaskModal}
+        id="new-sub-task-modal"
+        current_user={@current_user}
+        current_workspace={@current_workspace}
+        parent_task_id={@task.id}
+        close_event="close-sub-task-form"
+      />
     </Layouts.app>
     """
   end

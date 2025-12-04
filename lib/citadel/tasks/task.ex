@@ -18,15 +18,30 @@ defmodule Citadel.Tasks.Task do
   postgres do
     table "tasks"
     repo Citadel.Repo
+
+    references do
+      reference :parent_task, index?: true
+    end
   end
 
   actions do
     defaults [:read, :destroy]
 
+    read :list_sub_tasks do
+      argument :parent_task_id, :uuid, allow_nil?: false
+      filter expr(parent_task_id == ^arg(:parent_task_id))
+    end
+
+    read :list_top_level do
+      filter expr(is_nil(parent_task_id))
+    end
+
     create :create do
-      accept [:title, :description, :task_state_id, :workspace_id]
+      accept [:title, :description, :task_state_id, :workspace_id, :parent_task_id]
       change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritParentWorkspace
       change Citadel.Tasks.Changes.SetDefaultTaskState
+      validate Citadel.Tasks.Validations.NoCircularParent
     end
 
     update :update do
@@ -91,5 +106,7 @@ defmodule Citadel.Tasks.Task do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task_state, Citadel.Tasks.TaskState, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
+    belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
+    has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
   end
 end
