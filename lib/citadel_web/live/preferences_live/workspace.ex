@@ -88,7 +88,7 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
     {:noreply, assign(socket, :show_leave_confirmation, false)}
   end
 
-  def handle_event("leave-workspace", _params, socket) do
+  def handle_event("confirm-leave-workspace", _params, socket) do
     current_user = socket.assigns.current_user
     workspace = socket.assigns.workspace
 
@@ -121,6 +121,10 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
          |> assign(:show_leave_confirmation, false)
          |> put_flash(:error, "Membership not found")}
     end
+  end
+
+  def handle_event("cancel-leave-workspace", _, socket) do
+    {:noreply, assign(socket, :show_leave_confirmation, false)}
   end
 
   def handle_event("remove-member", %{"id" => membership_id}, socket) do
@@ -196,14 +200,6 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
      |> assign(:invitations, invitations)
      |> assign(:show_invite_modal, false)
      |> put_flash(:info, "Invitation sent successfully")}
-  end
-
-  def handle_info({:confirm_action, "leave-workspace-modal"}, socket) do
-    handle_event("leave-workspace", %{}, socket)
-  end
-
-  def handle_info({:cancel_confirmation, _id}, socket) do
-    {:noreply, assign(socket, :show_leave_confirmation, false)}
   end
 
   def render(assigns) do
@@ -298,8 +294,8 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
         message="Are you sure you want to leave this workspace? You will lose access to all conversations and tasks in this workspace."
         confirm_label="Leave Workspace"
         cancel_label="Cancel"
-        on_confirm="confirm"
-        on_cancel="cancel"
+        on_confirm="confirm-leave-workspace"
+        on_cancel="cancel-leave-workspace"
       />
     </Layouts.app>
     """
