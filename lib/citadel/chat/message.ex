@@ -21,6 +21,7 @@ defmodule Citadel.Chat.Message do
     triggers do
       trigger :respond do
         actor_persister Citadel.AiAgentActorPersister
+        read_action :read
         action :respond
         queue :chat_responses
         lock_for_update? false
