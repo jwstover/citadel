@@ -22,6 +22,7 @@ defmodule Citadel.Chat.Conversation do
       trigger :name_conversation do
         actor_persister Citadel.AiAgentActorPersister
         action :generate_name
+        read_action :read
         queue :conversations
         lock_for_update? false
         worker_module_name Citadel.Chat.Message.Workers.NameConversation
