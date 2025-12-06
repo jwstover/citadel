@@ -21,7 +21,7 @@ defmodule Citadel.Chat.Message do
     triggers do
       trigger :respond do
         actor_persister Citadel.AiAgentActorPersister
-        read_action :read
+        read_action :needs_response
         action :respond
         queue :chat_responses
         lock_for_update? false
@@ -40,6 +40,12 @@ defmodule Citadel.Chat.Message do
 
   actions do
     defaults [:read, :destroy]
+
+    read :needs_response do
+      multitenancy :allow_global
+      pagination keyset?: true
+      filter expr(needs_response)
+    end
 
     read :for_conversation do
       pagination keyset?: true, required?: false
