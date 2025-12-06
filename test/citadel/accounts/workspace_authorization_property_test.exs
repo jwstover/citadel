@@ -251,7 +251,10 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         user = generate(user())
 
         # Create multiple workspaces for this user
-        workspaces = generate_many(workspace([], actor: user), workspace_count)
+        workspaces =
+          Enum.map(1..workspace_count, fn _ ->
+            generate(workspace([], actor: user))
+          end)
 
         workspace_ids = Enum.map(workspaces, & &1.id) |> MapSet.new()
 
