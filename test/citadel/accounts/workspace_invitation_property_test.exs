@@ -20,13 +20,14 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
 
         # Generate multiple invitations
         invitations =
-          generate_many(
-            workspace_invitation(
-              [workspace_id: workspace.id],
-              actor: owner
-            ),
-            invitation_count
-          )
+          Enum.map(1..invitation_count, fn _ ->
+            generate(
+              workspace_invitation(
+                [workspace_id: workspace.id],
+                actor: owner
+              )
+            )
+          end)
 
         tokens = Enum.map(invitations, & &1.token)
 

@@ -69,7 +69,7 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
 
       # Owner1 should be able to see their message
       messages = Ash.read!(Citadel.Chat.Message, actor: owner1)
-      assert length(messages) >= 1
+      refute Enum.empty?(messages)
       assert Enum.any?(messages, fn m -> m.id == message.id end)
     end
 
