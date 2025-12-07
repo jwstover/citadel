@@ -1186,4 +1186,272 @@ defmodule Citadel.Tasks.TaskTest do
       end
     end
   end
+
+  describe "human_id" do
+    test "task is assigned a human_id on creation", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert task.human_id != nil
+      assert is_binary(task.human_id)
+    end
+
+    test "human_id follows PREFIX-NUMBER format", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Human ID should match PREFIX-NUMBER format (1-3 uppercase letters, hyphen, number)
+      assert Regex.match?(~r/^[A-Z]{1,3}-\d+$/, task.human_id)
+    end
+
+    test "human_id uses workspace prefix", %{
+      user: user,
+      task_state: task_state
+    } do
+      # Create workspace with a known name to get predictable prefix
+      workspace =
+        Accounts.create_workspace!("Test Project", actor: user)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # "Test Project" has uppercase T and P, so prefix should be "TP"
+      assert String.starts_with?(task.human_id, "TP-")
+    end
+
+    test "human_ids increment sequentially within workspace", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task1 =
+        Tasks.create_task!(
+          %{
+            title: "Task 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      task2 =
+        Tasks.create_task!(
+          %{
+            title: "Task 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      task3 =
+        Tasks.create_task!(
+          %{
+            title: "Task 3 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Extract numbers from human_ids
+      [_, num1] = String.split(task1.human_id, "-")
+      [_, num2] = String.split(task2.human_id, "-")
+      [_, num3] = String.split(task3.human_id, "-")
+
+      num1 = String.to_integer(num1)
+      num2 = String.to_integer(num2)
+      num3 = String.to_integer(num3)
+
+      assert num2 == num1 + 1
+      assert num3 == num2 + 1
+    end
+
+    test "different workspaces have independent human_id sequences", %{
+      user: user,
+      task_state: task_state
+    } do
+      workspace1 = Accounts.create_workspace!("Workspace One", actor: user)
+      workspace2 = Accounts.create_workspace!("Workspace Two", actor: user)
+
+      task1 =
+        Tasks.create_task!(
+          %{
+            title: "Task in WS1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace1.id
+          },
+          actor: user,
+          tenant: workspace1.id
+        )
+
+      task2 =
+        Tasks.create_task!(
+          %{
+            title: "Task in WS2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace2.id
+          },
+          actor: user,
+          tenant: workspace2.id
+        )
+
+      # Both should be the first task in their workspace
+      assert String.ends_with?(task1.human_id, "-1")
+      assert String.ends_with?(task2.human_id, "-1")
+
+      # But they should have different prefixes
+      [prefix1, _] = String.split(task1.human_id, "-")
+      [prefix2, _] = String.split(task2.human_id, "-")
+      assert prefix1 == "WO"
+      assert prefix2 == "WT"
+    end
+
+    test "sub-tasks get their own human_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert sub_task.human_id != nil
+      assert sub_task.human_id != parent_task.human_id
+
+      # Sub-task should have the next sequential number
+      [_, parent_num] = String.split(parent_task.human_id, "-")
+      [_, sub_num] = String.split(sub_task.human_id, "-")
+      assert String.to_integer(sub_num) == String.to_integer(parent_num) + 1
+    end
+
+    test "human_id cannot be manually set on creation", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      # Attempting to pass human_id should raise an error since it's not writable
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            human_id: "CUSTOM-999"
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+  end
+
+  describe "get_task_by_human_id/2" do
+    test "retrieves task by human_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Find Me #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      found_task = Tasks.get_task_by_human_id!(task.human_id, actor: user, tenant: workspace.id)
+
+      assert found_task.id == task.id
+      assert found_task.title == task.title
+      assert found_task.human_id == task.human_id
+    end
+
+    test "raises error for non-existent human_id", %{user: user, workspace: workspace} do
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.get_task_by_human_id!("FAKE-9999", actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "cannot retrieve task from different workspace by human_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_user = generate(user())
+      other_workspace = generate(workspace([], actor: other_user))
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Secret Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Try to retrieve from different workspace's tenant
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.get_task_by_human_id!(task.human_id, actor: other_user, tenant: other_workspace.id)
+      end
+    end
+  end
 end

@@ -29,6 +29,7 @@ defmodule Citadel.Accounts.Workspace do
       accept [:name]
 
       change relate_actor(:owner)
+      change Citadel.Accounts.Workspace.Changes.GenerateTaskPrefix
 
       change fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn changeset, workspace ->
@@ -37,6 +38,11 @@ defmodule Citadel.Accounts.Workspace do
             workspace.owner_id,
             workspace.id,
             actor: context.actor
+          )
+
+          # Initialize the task counter for this workspace
+          Citadel.Tasks.create_workspace_task_counter!(%{workspace_id: workspace.id},
+            authorize?: false
           )
 
           {:ok, workspace}
@@ -82,6 +88,15 @@ defmodule Citadel.Accounts.Workspace do
       constraints min_length: 1,
                   max_length: 100,
                   trim?: true
+    end
+
+    attribute :task_prefix, :string do
+      allow_nil? false
+      public? true
+
+      constraints min_length: 1,
+                  max_length: 3,
+                  match: ~r/^[A-Z]+$/
     end
 
     create_timestamp :inserted_at

@@ -252,4 +252,70 @@ defmodule Citadel.Accounts.WorkspaceTest do
       end
     end
   end
+
+  describe "task_prefix" do
+    test "workspace is assigned a task_prefix on creation" do
+      user = create_user()
+
+      workspace = Accounts.create_workspace!("Test Workspace", actor: user)
+
+      assert workspace.task_prefix != nil
+      assert is_binary(workspace.task_prefix)
+    end
+
+    test "task_prefix is 1-3 uppercase letters" do
+      user = create_user()
+
+      workspace = Accounts.create_workspace!("Test Workspace", actor: user)
+
+      assert Regex.match?(~r/^[A-Z]{1,3}$/, workspace.task_prefix)
+    end
+
+    test "generates prefix from uppercase letters in name" do
+      user = create_user()
+
+      # "My Project" has uppercase M and P
+      workspace = Accounts.create_workspace!("My Project", actor: user)
+      assert workspace.task_prefix == "MP"
+
+      # "Super Long Name" has uppercase S, L, N - takes all 3
+      workspace2 = Accounts.create_workspace!("Super Long Name", actor: user)
+      assert workspace2.task_prefix == "SLN"
+    end
+
+    test "truncates prefix to 3 letters when more than 3 uppercase" do
+      user = create_user()
+
+      # "ABCD Project" has 4 uppercase letters, should take first 3
+      workspace = Accounts.create_workspace!("ABCD Project", actor: user)
+      assert workspace.task_prefix == "ABC"
+    end
+
+    test "falls back to uppercasing first letters when no uppercase in name" do
+      user = create_user()
+
+      # "acme corp" has no uppercase, takes first 3 letters uppercased
+      workspace = Accounts.create_workspace!("acme corp", actor: user)
+      assert workspace.task_prefix == "ACM"
+    end
+
+    test "falls back to WS for empty or non-letter names" do
+      user = create_user()
+
+      # Name with only numbers/special chars should fallback to WS
+      workspace = Accounts.create_workspace!("123", actor: user)
+      assert workspace.task_prefix == "WS"
+    end
+
+    test "task_prefix is not changed on workspace update" do
+      user = create_user()
+
+      workspace = Accounts.create_workspace!("Original Name", actor: user)
+      original_prefix = workspace.task_prefix
+
+      updated = Accounts.update_workspace!(workspace, %{name: "New Name"}, actor: user)
+
+      assert updated.task_prefix == original_prefix
+    end
+  end
 end

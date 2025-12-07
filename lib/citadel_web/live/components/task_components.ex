@@ -24,67 +24,74 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   def tasks_list(assigns) do
     ~H"""
-    <div class="divide-y divide-border" phx-hook="TaskDragDrop" id="tasks-container">
-      <div :for={state <- @task_states} class="py-4">
-        <div class="px-6 mb-3 flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-base-content">
-            {state.name}
-          </h2>
-          <span class="badge badge-neutral badge-sm">
-            {length(Map.get(@tasks_by_state, state.id, []))}
-          </span>
-        </div>
-
-        <div data-dropzone data-state-id={state.id} class="min-h-[50px]">
-          <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
-            <.task :for={task <- tasks} task={task} />
-          <% end %>
-        </div>
-      </div>
-    </div>
+    <table class="w-full" phx-hook="TaskDragDrop" id="tasks-container">
+      <tbody
+        :for={state <- @task_states}
+        data-dropzone
+        data-state-id={state.id}
+        class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border"
+      >
+        <tr>
+          <td colspan="4" class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <h2 class="text-lg font-semibold text-base-content">
+                {state.name}
+              </h2>
+              <span class="badge badge-neutral badge-sm">
+                {length(Map.get(@tasks_by_state, state.id, []))}
+              </span>
+            </div>
+          </td>
+        </tr>
+        <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
+          <.task_row :for={task <- tasks} task={task} />
+        <% end %>
+      </tbody>
+    </table>
     """
   end
 
   attr :task, :map, required: true
 
-  def task(assigns) do
+  def task_row(assigns) do
     ~H"""
-    <div
-      class="task-item flex flex-row justify-between pl-6 py-2 hover:bg-base-100"
-      data-task-id={@task.id}
-    >
-      <div class="flex flex-row items-center gap-2 flex-1">
+    <tr class="task-item hover:bg-base-100" data-task-id={@task.id}>
+      <td class="pl-6 p-2 w-8 align-middle">
         <div class="task-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
         </div>
-        <.task_state_icon task_state={@task.task_state} />
-        <.link
-          navigate={~p"/tasks/#{@task.id}"}
-          class="flex flex-col flex-1 cursor-pointer hover:underline"
-        >
-          <div class="font-medium text-base-content">{@task.title}</div>
-          <div :if={@task.description} class="text-sm text-base-content/70">
-            {@task.description}
-          </div>
+      </td>
+      <td class="p-2 w-6">
+        <div class="flex items-center">
+          <.task_state_icon task_state={@task.task_state} />
+        </div>
+      </td>
+      <td class="p-2 w-px text-base-content/50 whitespace-nowrap align-middle">
+        <.link navigate={~p"/tasks/#{@task.human_id}"} class="hover:underline">
+          {@task.human_id}
         </.link>
-      </div>
-
-      <div></div>
-    </div>
+      </td>
+      <td class="py-2 font-medium text-base-content align-middle">
+        <.link navigate={~p"/tasks/#{@task.human_id}"} class="hover:underline">
+          {@task.title}
+        </.link>
+      </td>
+    </tr>
     """
   end
 
   attr :task_state, TaskState, required: true
+  attr :size, :string, default: "size-4"
 
   def task_state_icon(assigns) do
     ~H"""
     <%= case @task_state.name do %>
       <% "Todo" -> %>
-        <.icon name="fa-circle-regular" class="text-sky-600 size-4" />
+        <.icon name="fa-circle-regular" class={"text-sky-600 #{@size}"} />
       <% "In Progress" -> %>
-        <.icon name="fa-circle-half-stroke-solid" class="text-yellow-500 size-4" />
+        <.icon name="fa-circle-half-stroke-solid" class={"text-yellow-500 #{@size}"} />
       <% "Complete" -> %>
-        <.icon name="fa-circle-solid" class="size-4" />
+        <.icon name="fa-circle-solid" class={"text-green-600 #{@size}"} />
     <% end %>
     """
   end
