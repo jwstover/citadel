@@ -597,6 +597,298 @@ defmodule Citadel.Tasks.TaskTest do
     end
   end
 
+  describe "sub-tasks" do
+    test "creates a sub-task with parent_task_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert sub_task.parent_task_id == parent_task.id
+      assert sub_task.workspace_id == parent_task.workspace_id
+    end
+
+    test "sub-task inherits workspace_id from parent task", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Create sub-task without explicitly setting workspace_id
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert sub_task.workspace_id == workspace.id
+    end
+
+    test "can load parent_task relationship", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded_sub_task = Ash.load!(sub_task, :parent_task, actor: user, tenant: workspace.id)
+      assert loaded_sub_task.parent_task.id == parent_task.id
+    end
+
+    test "can load sub_tasks relationship", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task1 =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task2 =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded_parent = Ash.load!(parent_task, :sub_tasks, actor: user, tenant: workspace.id)
+      sub_task_ids = Enum.map(loaded_parent.sub_tasks, & &1.id)
+
+      assert sub_task1.id in sub_task_ids
+      assert sub_task2.id in sub_task_ids
+    end
+
+    test "task without parent has nil parent_task_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Top Level Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(task.parent_task_id)
+    end
+
+    test "raises error when parent_task_id does not exist", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      fake_parent_id = Ash.UUID.generate()
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Orphan Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: fake_parent_id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+  end
+
+  describe "sub-tasks circular reference prevention" do
+    test "sub-tasks can have their own independent task states", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_state =
+        Tasks.create_task_state!(%{
+          name: "Different State #{System.unique_integer([:positive])}",
+          order: 5
+        })
+
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: other_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert sub_task.task_state_id == other_state.id
+      assert parent_task.task_state_id == task_state.id
+      assert sub_task.task_state_id != parent_task.task_state_id
+    end
+
+    test "allows valid parent-child relationship", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert child.parent_task_id == parent.id
+    end
+
+    test "allows multi-level hierarchy without cycles", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      grandparent =
+        Tasks.create_task!(
+          %{
+            title: "Grandparent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: grandparent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert grandparent.parent_task_id == nil
+      assert parent.parent_task_id == grandparent.id
+      assert child.parent_task_id == parent.id
+    end
+  end
+
   describe "destroy task" do
     test "destroys a task", %{user: user, workspace: workspace, task_state: task_state} do
       task =
@@ -642,6 +934,255 @@ defmodule Citadel.Tasks.TaskTest do
       # Gets Forbidden because other_user doesn't own the task (policy check on user_id)
       assert_raise Ash.Error.Forbidden, fn ->
         Ash.destroy!(task, actor: other_user, tenant: other_workspace.id)
+      end
+    end
+  end
+
+  describe "list_sub_tasks/2" do
+    test "returns only sub-tasks of the specified parent", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task1 =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_task2 =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Create another top-level task (should not be included)
+      _other_task =
+        Tasks.create_task!(
+          %{
+            title: "Other Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_tasks = Tasks.list_sub_tasks!(parent_task.id, actor: user, tenant: workspace.id)
+      sub_task_ids = Enum.map(sub_tasks, & &1.id)
+
+      assert length(sub_tasks) == 2
+      assert sub_task1.id in sub_task_ids
+      assert sub_task2.id in sub_task_ids
+    end
+
+    test "returns empty list when parent has no sub-tasks", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      sub_tasks = Tasks.list_sub_tasks!(parent_task.id, actor: user, tenant: workspace.id)
+
+      assert sub_tasks == []
+    end
+  end
+
+  describe "list_top_level_tasks/1" do
+    test "returns only tasks without parents", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      top_level_task1 =
+        Tasks.create_task!(
+          %{
+            title: "Top Level 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      top_level_task2 =
+        Tasks.create_task!(
+          %{
+            title: "Top Level 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Create a sub-task (should not be included)
+      _sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: top_level_task1.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      top_level_tasks = Tasks.list_top_level_tasks!(actor: user, tenant: workspace.id)
+      top_level_ids = Enum.map(top_level_tasks, & &1.id)
+
+      assert top_level_task1.id in top_level_ids
+      assert top_level_task2.id in top_level_ids
+
+      # Verify the sub-task is not in the list
+      refute Enum.any?(top_level_tasks, fn t -> t.parent_task_id != nil end)
+    end
+
+    test "returns empty list when no tasks exist", %{user: user, workspace: workspace} do
+      top_level_tasks = Tasks.list_top_level_tasks!(actor: user, tenant: workspace.id)
+
+      assert top_level_tasks == []
+    end
+  end
+
+  describe "sub-task authorization" do
+    test "workspace member can create sub-task on task in their workspace", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      # Create another user and add them as a workspace member
+      other_user = create_user()
+      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+
+      # First user creates a parent task
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Second user (workspace member) can create a sub-task
+      sub_task =
+        Tasks.create_task!(
+          %{
+            title: "Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: other_user,
+          tenant: workspace.id
+        )
+
+      assert sub_task.parent_task_id == parent_task.id
+      assert sub_task.workspace_id == workspace.id
+      assert sub_task.user_id == other_user.id
+    end
+
+    test "non-member cannot create sub-task on task in workspace they don't belong to", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      # Create another user with their own workspace (not a member of first workspace)
+      other_user = generate(user())
+      other_workspace = generate(workspace([], actor: other_user))
+
+      # First user creates a parent task in their workspace
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Second user (not a member) cannot create a sub-task
+      # They can't even see the parent task due to tenant isolation
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Unauthorized Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: other_user,
+          tenant: other_workspace.id
+        )
+      end
+    end
+
+    test "user cannot create sub-task with parent from different workspace", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      # Create a second workspace for the same user
+      second_workspace = generate(workspace([], actor: user))
+
+      # Create parent task in first workspace
+      parent_task =
+        Tasks.create_task!(
+          %{
+            title: "Parent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Try to create sub-task in second workspace with parent from first workspace
+      # This should fail because parent doesn't exist in the tenant
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Cross-workspace Sub Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent_task.id
+          },
+          actor: user,
+          tenant: second_workspace.id
+        )
       end
     end
   end

@@ -50,7 +50,7 @@ defmodule CitadelWeb.HomeLive.Index do
 
   defp assign_tasks(socket) do
     tasks =
-      Tasks.list_tasks!(
+      Tasks.list_top_level_tasks!(
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
         load: [:task_state]
