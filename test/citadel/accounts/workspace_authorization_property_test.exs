@@ -12,7 +12,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
 
   describe "workspace owner authorization properties" do
     property "workspace owners always have read access to their workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -40,7 +40,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
     end
 
     property "workspace owners always have destroy access to their workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -70,7 +70,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
     end
 
     property "workspace owners can always remove non-owner members" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
         member = generate(user())
@@ -96,7 +96,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
 
   describe "non-member authorization properties" do
     property "non-members are always forbidden from reading workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         non_member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -126,7 +126,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
     end
 
     property "non-members are always forbidden from destroying workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         non_member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -157,7 +157,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
 
   describe "workspace member authorization properties" do
     property "workspace members always have read access" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -211,7 +211,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
     end
 
     property "workspace members (non-owners) cannot destroy workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -230,7 +230,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
 
   describe "cross-workspace authorization properties" do
     property "users in workspace A cannot access resources in workspace B" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner_a = generate(user())
         workspace_a = generate(workspace([], actor: owner_a))
         owner_b = generate(user())

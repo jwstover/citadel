@@ -22,8 +22,11 @@ config :citadel, Citadel.Repo,
   port: 5435,
   database: "citadel_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2,
-  ownership_timeout: 60_000
+  # Increased for property tests which create many records concurrently
+  pool_size: max(System.schedulers_online() * 4, 32),
+  ownership_timeout: 120_000,
+  queue_target: 5000,
+  queue_interval: 10_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

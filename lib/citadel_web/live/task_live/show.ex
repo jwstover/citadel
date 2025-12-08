@@ -20,14 +20,17 @@ defmodule CitadelWeb.TaskLive.Show do
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
+    can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
     socket =
       socket
       |> assign(:task, task)
       |> assign(:can_edit, can_edit)
+      |> assign(:can_delete, can_delete)
       |> assign(:editing, false)
       |> assign(:form, nil)
       |> assign(:show_sub_task_form, false)
+      |> assign(:confirm_delete, false)
 
     {:ok, socket}
   end
@@ -81,6 +84,35 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_event("confirm_delete", _params, socket) do
+    {:noreply, assign(socket, :confirm_delete, true)}
+  end
+
+  def handle_event("cancel_delete", _params, socket) do
+    {:noreply, assign(socket, :confirm_delete, false)}
+  end
+
+  def handle_event("delete", _params, socket) do
+    task = socket.assigns.task
+    parent_task = task.parent_task
+
+    case Tasks.destroy_task(task, actor: socket.assigns.current_user) do
+      :ok ->
+        redirect_path = if parent_task, do: ~p"/tasks/#{parent_task.human_id}", else: ~p"/"
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Task deleted successfully")
+         |> push_navigate(to: redirect_path)}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:confirm_delete, false)
+         |> put_flash(:error, "Failed to delete task")}
+    end
+  end
+
   def handle_info({:task_created, _sub_task}, socket) do
     task =
       Ash.load!(socket.assigns.task, [sub_tasks: [:task_state]],
@@ -129,9 +161,18 @@ defmodule CitadelWeb.TaskLive.Show do
                 {@task.title}
               </h1>
             </div>
-            <.button :if={@can_edit} class="btn btn-sm btn-secondary" phx-click="edit">
-              <.icon name="hero-pencil" class="size-4" /> Edit
-            </.button>
+            <div class="flex gap-2">
+              <.button :if={@can_edit} class="btn btn-sm btn-secondary" phx-click="edit">
+                <.icon name="hero-pencil" class="size-4" /> Edit
+              </.button>
+              <.button
+                :if={@can_delete}
+                class="btn btn-sm btn-secondary text-error"
+                phx-click="confirm_delete"
+              >
+                <.icon name="hero-trash" class="size-4" /> Delete
+              </.button>
+            </div>
           </div>
 
           <div class="pt-4"></div>
@@ -184,6 +225,18 @@ defmodule CitadelWeb.TaskLive.Show do
         current_workspace={@current_workspace}
         parent_task_id={@task.id}
         close_event="close-sub-task-form"
+      />
+
+      <.live_component
+        :if={@confirm_delete}
+        module={CitadelWeb.Components.ConfirmationModal}
+        id="delete-task-modal"
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirm_label="Delete"
+        cancel_label="Cancel"
+        on_confirm="delete"
+        on_cancel="cancel_delete"
       />
     </Layouts.app>
     """
