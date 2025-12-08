@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources1 do
+defmodule Citadel.Repo.Migrations.CascadeTaskDeletes do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
