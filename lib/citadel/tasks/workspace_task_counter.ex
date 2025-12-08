@@ -6,7 +6,8 @@ defmodule Citadel.Tasks.WorkspaceTaskCounter do
   use Ash.Resource,
     otp_app: :citadel,
     domain: Citadel.Tasks,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "workspace_task_counters"
@@ -15,6 +16,8 @@ defmodule Citadel.Tasks.WorkspaceTaskCounter do
     references do
       reference :workspace, on_delete: :delete
     end
+
+    migration_types last_task_number: :bigint
   end
 
   actions do
@@ -26,6 +29,13 @@ defmodule Citadel.Tasks.WorkspaceTaskCounter do
 
     update :increment do
       change atomic_update(:last_task_number, expr(last_task_number + 1))
+    end
+  end
+
+  policies do
+    policy always() do
+      description "Only system processes can access counters (via authorize?: false)"
+      forbid_if always()
     end
   end
 

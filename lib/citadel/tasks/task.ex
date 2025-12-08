@@ -122,6 +122,6 @@ defmodule Citadel.Tasks.Task do
   end
 
   identities do
-    identity :unique_human_id, [:human_id]
+    identity :unique_human_id, [:workspace_id, :human_id]
   end
 end
