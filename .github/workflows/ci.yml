@@ -14,6 +14,22 @@ permissions:
   pull-requests: write
 
 jobs:
+  check_dev_migrations:
+    name: Check for dev migrations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for dev migrations
+        run: |
+          if ls priv/repo/migrations/*_dev.exs 1> /dev/null 2>&1; then
+            echo "::error::Dev migrations found! Please squash them with 'mix ash.codegen <feature_name>' before merging."
+            ls -la priv/repo/migrations/*_dev.exs
+            exit 1
+          fi
+          echo "No dev migrations found."
+
   dialyzer:
     name: Run Dialyzer
     runs-on: ubuntu-latest

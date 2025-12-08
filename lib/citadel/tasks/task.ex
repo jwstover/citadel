@@ -40,6 +40,7 @@ defmodule Citadel.Tasks.Task do
       accept [:title, :description, :task_state_id, :workspace_id, :parent_task_id]
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritParentWorkspace
+      change Citadel.Tasks.Changes.AssignHumanId
       change Citadel.Tasks.Changes.SetDefaultTaskState
       validate Citadel.Tasks.Validations.NoCircularParent
     end
@@ -96,6 +97,12 @@ defmodule Citadel.Tasks.Task do
   attributes do
     uuid_v7_primary_key :id
 
+    attribute :human_id, :string do
+      allow_nil? false
+      public? true
+      writable? false
+    end
+
     attribute :title, :string, public?: true, allow_nil?: false
     attribute :description, :string, public?: true
 
@@ -108,5 +115,13 @@ defmodule Citadel.Tasks.Task do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
+  end
+
+  calculations do
+    calculate :ancestors, {:array, :map}, Citadel.Tasks.Calculations.Ancestors
+  end
+
+  identities do
+    identity :unique_human_id, [:workspace_id, :human_id]
   end
 end

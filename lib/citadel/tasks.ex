@@ -26,6 +26,12 @@ defmodule Citadel.Tasks do
   end
 
   resources do
+    resource Citadel.Tasks.WorkspaceTaskCounter do
+      define :create_workspace_task_counter, action: :create
+      define :increment_task_counter, action: :increment
+      define :get_task_counter, action: :read, get_by: [:workspace_id]
+    end
+
     resource Citadel.Tasks.TaskState do
       define :create_task_state, action: :create
       define :list_task_states, action: :read
@@ -37,6 +43,7 @@ defmodule Citadel.Tasks do
       define :list_sub_tasks, action: :list_sub_tasks, args: [:parent_task_id]
       define :list_top_level_tasks, action: :list_top_level
       define :get_task, action: :read, get_by: [:id]
+      define :get_task_by_human_id, action: :read, get_by: [:human_id]
       define :update_task, action: :update, get_by: [:id]
       define :parse_task_from_text, action: :parse_task_from_text, args: [:text]
     end

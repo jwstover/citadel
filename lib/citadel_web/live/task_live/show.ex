@@ -6,16 +6,17 @@ defmodule CitadelWeb.TaskLive.Show do
   alias Citadel.Tasks
 
   import CitadelWeb.Components.Markdown
+  import CitadelWeb.Components.TaskComponents, only: [task_state_icon: 1]
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(%{"id" => id}, _session, socket) do
     task =
-      Tasks.get_task!(id,
+      Tasks.get_task_by_human_id!(id,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :user, :parent_task, sub_tasks: [:task_state]]
+        load: [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]]
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
@@ -99,24 +100,15 @@ defmodule CitadelWeb.TaskLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
-      <div class="p-4">
-        <div class="mb-4">
-          <%= if @task.parent_task do %>
-            <.link navigate={~p"/tasks/#{@task.parent_task.id}"} class="btn btn-ghost btn-sm">
-              <.icon name="hero-arrow-left" class="size-4" /> Back to Parent Task
-            </.link>
-          <% else %>
-            <.link navigate={~p"/"} class="btn btn-ghost btn-sm">
-              <.icon name="hero-arrow-left" class="size-4" /> Back to Tasks
-            </.link>
-          <% end %>
-        </div>
-
-        <div :if={@task.parent_task} class="mb-4 text-sm text-base-content/70">
-          <span>Parent: </span>
-          <.link navigate={~p"/tasks/#{@task.parent_task.id}"} class="hover:underline font-medium">
-            {@task.parent_task.title}
-          </.link>
+      <div class="p-4 bg-base-200 border border-base-300">
+        <div class="breadcrumbs text-sm mb-4">
+          <ul>
+            <li><.link navigate={~p"/"}>Tasks</.link></li>
+            <li :for={ancestor <- @task.ancestors}>
+              <.link navigate={~p"/tasks/#{ancestor.human_id}"}>{ancestor.human_id}</.link>
+            </li>
+            <li><span>{@task.human_id}</span></li>
+          </ul>
         </div>
 
         <%= if @editing do %>
@@ -132,20 +124,17 @@ defmodule CitadelWeb.TaskLive.Show do
         <% else %>
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-3 flex-1">
-              <.task_state_icon task_state={@task.task_state} />
-              <h1 class="card-title text-2xl">{@task.title}</h1>
+              <.task_state_icon task_state={@task.task_state} size="size-5" />
+              <h1 class="card-title text-2xl">
+                {@task.title}
+              </h1>
             </div>
-            <.button :if={@can_edit} class="btn btn-sm btn-outline" phx-click="edit">
+            <.button :if={@can_edit} class="btn btn-sm btn-secondary" phx-click="edit">
               <.icon name="hero-pencil" class="size-4" /> Edit
             </.button>
           </div>
 
-          <div class="pt-4">
-            <div class="flex gap-2">
-              <span class="text-sm text-base-content/70">ID: </span>
-              <span class="text-sm text-base-content/70 font-semibold">{@task.id}</span>
-            </div>
-          </div>
+          <div class="pt-4"></div>
 
           <div class="py-4">
             <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
@@ -161,7 +150,7 @@ defmodule CitadelWeb.TaskLive.Show do
               <h2 class="text-sm font-semibold text-base-content/70">
                 Sub-tasks ({length(@task.sub_tasks)})
               </h2>
-              <.button :if={@can_edit} class="btn btn-xs btn-outline" phx-click="new-sub-task">
+              <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
                 <.icon name="hero-plus" class="size-3" /> Add
               </.button>
             </div>
@@ -172,7 +161,7 @@ defmodule CitadelWeb.TaskLive.Show do
               <div class="space-y-2">
                 <%= for sub_task <- @task.sub_tasks do %>
                   <.link
-                    navigate={~p"/tasks/#{sub_task.id}"}
+                    navigate={~p"/tasks/#{sub_task.human_id}"}
                     class="block p-2 rounded hover:bg-base-200"
                   >
                     <div class="flex items-center gap-2">
@@ -197,19 +186,6 @@ defmodule CitadelWeb.TaskLive.Show do
         close_event="close-sub-task-form"
       />
     </Layouts.app>
-    """
-  end
-
-  defp task_state_icon(assigns) do
-    ~H"""
-    <%= case @task_state.name do %>
-      <% "Todo" -> %>
-        <.icon name="fa-circle-regular" class="text-sky-600 size-6" />
-      <% "In Progress" -> %>
-        <.icon name="fa-circle-half-stroke-solid" class="text-yellow-500 size-6" />
-      <% "Complete" -> %>
-        <.icon name="fa-circle-solid" class="size-6" />
-    <% end %>
     """
   end
 end

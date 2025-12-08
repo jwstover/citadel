@@ -22,7 +22,8 @@ config :citadel, Citadel.Repo,
   port: 5435,
   database: "citadel_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  pool_size: System.schedulers_online() * 2,
+  ownership_timeout: 60_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
