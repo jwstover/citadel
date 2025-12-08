@@ -1,3 +1,20 @@
+# [0.6.0](https://github.com/jwstover/citadel/compare/v0.5.0...v0.6.0) (2025-12-08)
+
+
+### Bug Fixes
+
+* allow users to leave workspaces ([80b273a](https://github.com/jwstover/citadel/commit/80b273a58f086a87cbf0e2694a7beb25a4f6e5bb))
+* resolve issue loading task page ([7f10c79](https://github.com/jwstover/citadel/commit/7f10c791bf4332c909f62946dfa54dd3be577df1))
+
+
+### Features
+
+* add API key management to preferences ([d590c9a](https://github.com/jwstover/citadel/commit/d590c9a2ecb9d7bb1e12bd9f3016357981ee41d8))
+* add human-readable IDs to tasks ([37ac3e9](https://github.com/jwstover/citadel/commit/37ac3e9e61777cc61e89854bcd76bd124bbb9e6d))
+* add sub-tasks ([b755f4e](https://github.com/jwstover/citadel/commit/b755f4ebe903d1e83a3563637f3665c8a61cc891))
+
+
+
 # [0.5.0](https://github.com/jwstover/citadel/compare/v0.4.0...v0.5.0) (2025-12-02)
 
 
