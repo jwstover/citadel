@@ -15,6 +15,9 @@
    Font Awesome SVGs should be placed in assets/vendor/fontawesome/ */
 @plugin "../vendor/fontawesome";
 
+/* Tailwind Typography plugin for styling prose content */
+@plugin "@tailwindcss/typography";
+
 /* daisyUI Tailwind Plugin. You can update this file by fetching the latest version with:
    curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.js
    Make sure to look at the daisyUI changelog: https://daisyui.com/docs/changelog/ */
