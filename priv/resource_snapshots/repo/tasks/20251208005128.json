@@ -21,6 +21,18 @@
       "references": null,
       "scale": null,
       "size": null,
+      "source": "human_id",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
       "source": "title",
       "type": "text"
     },
@@ -190,8 +202,27 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "1E205D1848DF0A53AA90D80ACB4C30941C3C828E6400F4F53803AEDDD7FCFD2F",
-  "identities": [],
+  "hash": "56DAFE7865161314DF253BA419DD4EB101D2DE4CCD085CA2D0A331248CA6E326",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "tasks_unique_human_id_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "workspace_id"
+        },
+        {
+          "type": "atom",
+          "value": "human_id"
+        }
+      ],
+      "name": "unique_human_id",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": "workspace_id",
     "global": false,
