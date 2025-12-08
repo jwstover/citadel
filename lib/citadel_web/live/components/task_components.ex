@@ -21,6 +21,8 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   attr :task_states, :list, required: true
   attr :tasks_by_state, :map, required: true
+  attr :current_user, :any, required: true
+  attr :current_workspace, :any, required: true
 
   def tasks_list(assigns) do
     ~H"""
@@ -44,7 +46,12 @@ defmodule CitadelWeb.Components.TaskComponents do
           </td>
         </tr>
         <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
-          <.task_row :for={task <- tasks} task={task} />
+          <.task_row
+            :for={task <- tasks}
+            task={task}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
         <% end %>
       </tbody>
     </table>
@@ -52,6 +59,8 @@ defmodule CitadelWeb.Components.TaskComponents do
   end
 
   attr :task, :map, required: true
+  attr :current_user, :any, required: true
+  attr :current_workspace, :any, required: true
 
   def task_row(assigns) do
     ~H"""
@@ -63,7 +72,14 @@ defmodule CitadelWeb.Components.TaskComponents do
       </td>
       <td class="p-2 w-6">
         <div class="flex items-center">
-          <.task_state_icon task_state={@task.task_state} />
+          <.live_component
+            module={CitadelWeb.Components.TaskStateDropdown}
+            id={"task-state-#{@task.id}"}
+            task={@task}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+            size="size-4"
+          />
         </div>
       </td>
       <td class="p-2 w-px text-base-content/50 whitespace-nowrap align-middle">

@@ -129,6 +129,16 @@ defmodule CitadelWeb.TaskLive.Show do
     {:noreply, socket}
   end
 
+  def handle_info({:task_state_changed, _task}, socket) do
+    task =
+      Ash.load!(socket.assigns.task, [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]],
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    {:noreply, assign(socket, :task, task)}
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
@@ -156,7 +166,18 @@ defmodule CitadelWeb.TaskLive.Show do
         <% else %>
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-3 flex-1">
-              <.task_state_icon task_state={@task.task_state} size="size-5" />
+              <%= if @can_edit do %>
+                <.live_component
+                  module={CitadelWeb.Components.TaskStateDropdown}
+                  id={"task-state-#{@task.id}"}
+                  task={@task}
+                  current_user={@current_user}
+                  current_workspace={@current_workspace}
+                  size="size-5"
+                />
+              <% else %>
+                <.task_state_icon task_state={@task.task_state} size="size-5" />
+              <% end %>
               <h1 class="card-title text-2xl">
                 {@task.title}
               </h1>
@@ -201,15 +222,23 @@ defmodule CitadelWeb.TaskLive.Show do
             <% else %>
               <div class="space-y-2">
                 <%= for sub_task <- @task.sub_tasks do %>
-                  <.link
-                    navigate={~p"/tasks/#{sub_task.human_id}"}
-                    class="block p-2 rounded hover:bg-base-200"
-                  >
-                    <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 p-2 rounded hover:bg-base-200">
+                    <%= if @can_edit do %>
+                      <.live_component
+                        module={CitadelWeb.Components.TaskStateDropdown}
+                        id={"task-state-#{sub_task.id}"}
+                        task={sub_task}
+                        current_user={@current_user}
+                        current_workspace={@current_workspace}
+                        size="size-4"
+                      />
+                    <% else %>
                       <.task_state_icon task_state={sub_task.task_state} />
-                      <span>{sub_task.title}</span>
-                    </div>
-                  </.link>
+                    <% end %>
+                    <.link navigate={~p"/tasks/#{sub_task.human_id}"} class="hover:underline flex-1">
+                      {sub_task.title}
+                    </.link>
+                  </div>
                 <% end %>
               </div>
             <% end %>
