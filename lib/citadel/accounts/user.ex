@@ -67,7 +67,7 @@ defmodule Citadel.Accounts.User do
         user_info = Ash.Changeset.get_argument(changeset, :user_info)
 
         changeset
-        |> Ash.Changeset.change_attributes(Map.take(user_info, ["email"]))
+        |> Ash.Changeset.change_attributes(Map.take(user_info, ["email", "name"]))
       end
 
       change fn changeset, _context ->
@@ -112,6 +112,8 @@ defmodule Citadel.Accounts.User do
       allow_nil? false
       public? true
     end
+
+    attribute :name, :string, public?: true
   end
 
   relationships do

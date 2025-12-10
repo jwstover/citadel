@@ -39,6 +39,23 @@ defmodule Citadel.Tasks.TaskTest do
       assert task.user_id == user.id
     end
 
+    test "creates a task with an assignee", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      attrs = %{
+        title: "Test Task #{System.unique_integer([:positive])}",
+        description: "A test task",
+        task_state_id: task_state.id,
+        workspace_id: workspace.id,
+        assignees: [user.id]
+      }
+
+      assert task = Tasks.create_task!(attrs, load: [:assignees], actor: user, tenant: workspace.id)
+      assert length(task.assignees) == 1
+    end
+
     test "creates a task without optional description", %{
       user: user,
       workspace: workspace,

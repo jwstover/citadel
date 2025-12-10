@@ -9,9 +9,9 @@ defmodule Citadel.Repo.Migrations.AddIconAndColorsToStates do
 
   def up do
     alter table(:task_states) do
-      add :icon, :text
-      add :foreground_color, :text
-      add :background_color, :text
+      add_if_not_exists :icon, :text
+      add_if_not_exists :foreground_color, :text
+      add_if_not_exists :background_color, :text
     end
   end
 

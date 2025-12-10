@@ -32,7 +32,7 @@ defmodule Citadel.Tasks.TaskAssignment do
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if Citadel.Tasks.Checks.TaskWorkspaceMember
     end
 
     policy action_type([:update, :destroy]) do

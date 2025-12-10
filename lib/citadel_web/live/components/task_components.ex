@@ -190,15 +190,7 @@ defmodule CitadelWeb.Components.TaskComponents do
       <%= if @assignees == [] do %>
         <span class="text-base-content/30">—</span>
       <% else %>
-        <div
-          :for={assignee <- @visible_assignees}
-          class="avatar avatar-placeholder"
-          title={assignee.email}
-        >
-          <div class="w-6 h-6 rounded-full bg-base-300 text-xs flex items-center justify-center">
-            {get_initial(assignee.email)}
-          </div>
-        </div>
+        <.user_avatar :for={assignee <- @visible_assignees} user={assignee} />
         <div
           :if={@overflow_count > 0}
           class="avatar avatar-placeholder"
@@ -212,6 +204,22 @@ defmodule CitadelWeb.Components.TaskComponents do
     </div>
     """
   end
+
+  attr :user, :any, required: true
+  attr :size, :string, default: "w-6 h-6"
+  attr :text_size, :string, default: "text-xs"
+
+  def user_avatar(assigns) do
+    ~H"""
+    <div class="avatar avatar-placeholder" title={to_string(@user.email)}>
+      <div class={["rounded-full bg-base-300 flex items-center justify-center", @size, @text_size]}>
+        {get_initial(@user.email)}
+      </div>
+    </div>
+    """
+  end
+
+  defp get_initial(%Ash.CiString{string: string}), do: get_initial(string)
 
   defp get_initial(email) when is_binary(email) do
     email
