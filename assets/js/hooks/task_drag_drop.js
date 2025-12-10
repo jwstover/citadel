@@ -27,7 +27,7 @@ const TaskDragDrop = {
 
           // Only send event if the state actually changed
           if (oldStateId !== newStateId) {
-            this.pushEvent("task-moved", {
+            this.pushEventTo(this.el, "task-moved", {
               task_id: taskId,
               new_state_id: newStateId
             })
