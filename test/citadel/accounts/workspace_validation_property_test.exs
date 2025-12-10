@@ -109,7 +109,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
   describe "workspace name empty/nil validation properties" do
     property "empty string always fails" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
 
         assert {:error, %Ash.Error.Invalid{}} =

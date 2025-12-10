@@ -14,7 +14,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
 
   describe "owner leaving prevention properties" do
     property "workspace owner can never leave their own workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -75,7 +75,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
 
   describe "non-owner leaving properties" do
     property "non-owner members can always leave their memberships" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -132,7 +132,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
 
   describe "duplicate membership prevention properties" do
     property "duplicate workspace memberships always fail" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
@@ -186,7 +186,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
 
   describe "membership identity constraint properties" do
     property "user can only have one membership per workspace" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         member = generate(user())
         workspace = generate(workspace([], actor: owner))

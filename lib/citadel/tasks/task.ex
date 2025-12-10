@@ -20,7 +20,7 @@ defmodule Citadel.Tasks.Task do
     repo Citadel.Repo
 
     references do
-      reference :parent_task, index?: true
+      reference :parent_task, index?: true, on_delete: :delete
     end
   end
 

@@ -48,6 +48,10 @@ defmodule CitadelWeb.HomeLive.Index do
     {:noreply, assign_tasks(socket) |> assign(:show_task_form, false)}
   end
 
+  def handle_info({:task_state_changed, _task}, socket) do
+    {:noreply, assign_tasks(socket)}
+  end
+
   defp assign_tasks(socket) do
     tasks =
       Tasks.list_top_level_tasks!(
@@ -67,7 +71,12 @@ defmodule CitadelWeb.HomeLive.Index do
       <div class="bg-base-200 border border-base-300">
         <.control_bar />
 
-        <.tasks_list task_states={@task_states} tasks_by_state={@tasks_by_state} />
+        <.tasks_list
+          task_states={@task_states}
+          tasks_by_state={@tasks_by_state}
+          current_user={@current_user}
+          current_workspace={@current_workspace}
+        />
 
         <.live_component
           :if={@show_task_form}

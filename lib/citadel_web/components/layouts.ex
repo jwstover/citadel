@@ -52,7 +52,7 @@ defmodule CitadelWeb.Layouts do
             </label>
           </div>
           <div class="flex-1">
-            <span class="text-xl font-bold">Citadel</span>
+            <span class="text-xl font-bold">Pyllar</span>
           </div>
         </div>
 
@@ -65,7 +65,7 @@ defmodule CitadelWeb.Layouts do
                 <div class="btn btn-primary btn-square btn-sm pointer-events-none">
                   <.icon name="hero-building-library" class="size-4" />
                 </div>
-                <h2>Citadel</h2>
+                <h2>Pyllar</h2>
               </div>
 
               <%!-- Workspace switcher --%>

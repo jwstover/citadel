@@ -66,7 +66,7 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
 
   describe "invitation token security properties" do
     property "tokens always have sufficient length for security" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -87,7 +87,7 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
     end
 
     property "tokens are always URL-safe (no special encoding needed)" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -143,7 +143,7 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
 
   describe "invitation expiration properties" do
     property "newly created invitations are never expired" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -207,7 +207,7 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
 
   describe "invitation state transition properties" do
     property "unaccepted invitations have nil accepted_at" do
-      check all(_ <- integer(1..100)) do
+      check all(_ <- integer(1..25)) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 

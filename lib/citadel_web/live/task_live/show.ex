@@ -20,14 +20,17 @@ defmodule CitadelWeb.TaskLive.Show do
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
+    can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
     socket =
       socket
       |> assign(:task, task)
       |> assign(:can_edit, can_edit)
+      |> assign(:can_delete, can_delete)
       |> assign(:editing, false)
       |> assign(:form, nil)
       |> assign(:show_sub_task_form, false)
+      |> assign(:confirm_delete, false)
 
     {:ok, socket}
   end
@@ -81,6 +84,35 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_event("confirm_delete", _params, socket) do
+    {:noreply, assign(socket, :confirm_delete, true)}
+  end
+
+  def handle_event("cancel_delete", _params, socket) do
+    {:noreply, assign(socket, :confirm_delete, false)}
+  end
+
+  def handle_event("delete", _params, socket) do
+    task = socket.assigns.task
+    parent_task = task.parent_task
+
+    case Tasks.destroy_task(task, actor: socket.assigns.current_user) do
+      :ok ->
+        redirect_path = if parent_task, do: ~p"/tasks/#{parent_task.human_id}", else: ~p"/"
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Task deleted successfully")
+         |> push_navigate(to: redirect_path)}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:confirm_delete, false)
+         |> put_flash(:error, "Failed to delete task")}
+    end
+  end
+
   def handle_info({:task_created, _sub_task}, socket) do
     task =
       Ash.load!(socket.assigns.task, [sub_tasks: [:task_state]],
@@ -95,6 +127,18 @@ defmodule CitadelWeb.TaskLive.Show do
       |> put_flash(:info, "Sub-task created successfully")
 
     {:noreply, socket}
+  end
+
+  def handle_info({:task_state_changed, _task}, socket) do
+    task =
+      Ash.load!(
+        socket.assigns.task,
+        [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]],
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    {:noreply, assign(socket, :task, task)}
   end
 
   def render(assigns) do
@@ -124,14 +168,34 @@ defmodule CitadelWeb.TaskLive.Show do
         <% else %>
           <div class="flex items-start justify-between">
             <div class="flex items-center gap-3 flex-1">
-              <.task_state_icon task_state={@task.task_state} size="size-5" />
+              <%= if @can_edit do %>
+                <.live_component
+                  module={CitadelWeb.Components.TaskStateDropdown}
+                  id={"task-state-#{@task.id}"}
+                  task={@task}
+                  current_user={@current_user}
+                  current_workspace={@current_workspace}
+                  size="size-5"
+                />
+              <% else %>
+                <.task_state_icon task_state={@task.task_state} size="size-5" />
+              <% end %>
               <h1 class="card-title text-2xl">
                 {@task.title}
               </h1>
             </div>
-            <.button :if={@can_edit} class="btn btn-sm btn-secondary" phx-click="edit">
-              <.icon name="hero-pencil" class="size-4" /> Edit
-            </.button>
+            <div class="flex gap-2">
+              <.button :if={@can_edit} class="btn btn-sm btn-secondary" phx-click="edit">
+                <.icon name="hero-pencil" class="size-4" /> Edit
+              </.button>
+              <.button
+                :if={@can_delete}
+                class="btn btn-sm btn-secondary text-error"
+                phx-click="confirm_delete"
+              >
+                <.icon name="hero-trash" class="size-4" /> Delete
+              </.button>
+            </div>
           </div>
 
           <div class="pt-4"></div>
@@ -160,15 +224,23 @@ defmodule CitadelWeb.TaskLive.Show do
             <% else %>
               <div class="space-y-2">
                 <%= for sub_task <- @task.sub_tasks do %>
-                  <.link
-                    navigate={~p"/tasks/#{sub_task.human_id}"}
-                    class="block p-2 rounded hover:bg-base-200"
-                  >
-                    <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 p-2 rounded hover:bg-base-200">
+                    <%= if @can_edit do %>
+                      <.live_component
+                        module={CitadelWeb.Components.TaskStateDropdown}
+                        id={"task-state-#{sub_task.id}"}
+                        task={sub_task}
+                        current_user={@current_user}
+                        current_workspace={@current_workspace}
+                        size="size-4"
+                      />
+                    <% else %>
                       <.task_state_icon task_state={sub_task.task_state} />
-                      <span>{sub_task.title}</span>
-                    </div>
-                  </.link>
+                    <% end %>
+                    <.link navigate={~p"/tasks/#{sub_task.human_id}"} class="hover:underline flex-1">
+                      {sub_task.title}
+                    </.link>
+                  </div>
                 <% end %>
               </div>
             <% end %>
@@ -184,6 +256,18 @@ defmodule CitadelWeb.TaskLive.Show do
         current_workspace={@current_workspace}
         parent_task_id={@task.id}
         close_event="close-sub-task-form"
+      />
+
+      <.live_component
+        :if={@confirm_delete}
+        module={CitadelWeb.Components.ConfirmationModal}
+        id="delete-task-modal"
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        confirm_label="Delete"
+        cancel_label="Cancel"
+        on_confirm="delete"
+        on_cancel="cancel_delete"
       />
     </Layouts.app>
     """
