@@ -41,7 +41,7 @@ defmodule CitadelWeb.Components.TaskStateDropdown do
       </div>
       <ul
         tabindex="0"
-        class="dropdown-content menu bg-base-200 rounded-box z-50 w-48 p-2 shadow-lg"
+        class="dropdown-content menu bg-base-300 border border-base-content/20 rounded-box z-50 w-48 p-2 shadow-lg"
       >
         <li :for={state <- @task_states}>
           <button

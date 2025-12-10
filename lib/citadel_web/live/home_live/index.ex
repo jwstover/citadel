@@ -52,12 +52,16 @@ defmodule CitadelWeb.HomeLive.Index do
     {:noreply, assign_tasks(socket)}
   end
 
+  def handle_info({:task_priority_changed, _task}, socket) do
+    {:noreply, assign_tasks(socket)}
+  end
+
   defp assign_tasks(socket) do
     tasks =
       Tasks.list_top_level_tasks!(
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state]
+        load: [:task_state, :assignees, :overdue?]
       )
 
     tasks_by_state = Enum.group_by(tasks, & &1.task_state_id)
@@ -68,15 +72,17 @@ defmodule CitadelWeb.HomeLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
-      <div class="bg-base-200 border border-base-300">
+      <div class="relative h-full overflow-hidden card bg-base-200 border border-base-300">
         <.control_bar />
 
-        <.tasks_list
-          task_states={@task_states}
-          tasks_by_state={@tasks_by_state}
-          current_user={@current_user}
-          current_workspace={@current_workspace}
-        />
+        <div class="h-full overflow-auto">
+          <.tasks_list
+            task_states={@task_states}
+            tasks_by_state={@tasks_by_state}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
+        </div>
 
         <.live_component
           :if={@show_task_form}

@@ -13,6 +13,7 @@ defmodule CitadelWeb.Components.NewTaskModal do
       |> assign(assigns)
       |> assign_new(:parent_task_id, fn -> nil end)
       |> assign_new(:close_event, fn -> "close-new-task-form" end)
+      |> assign(:assignee_ids, [])
       |> assign_form()
 
     {:ok, socket}
@@ -71,6 +72,31 @@ defmodule CitadelWeb.Components.NewTaskModal do
         <.form for={@form} phx-submit="create" phx-target={@myself}>
           <.input field={@form[:title]} placeholder="Title" />
           <.input type="textarea" field={@form[:description]} placeholder="Description" />
+
+          <div class="grid grid-cols-2 gap-4">
+            <.input
+              field={@form[:priority]}
+              type="select"
+              label="Priority"
+              options={[Low: :low, Medium: :medium, High: :high, Urgent: :urgent]}
+            />
+            <.input field={@form[:due_date]} type="date" label="Due Date" />
+          </div>
+
+          <div class="fieldset mb-2">
+            <label>
+              <span class="label mb-1">Assignees</span>
+              <.live_component
+                module={CitadelWeb.Components.AssigneeSelect}
+                id="new-task-assignees"
+                workspace={@current_workspace}
+                selected_ids={@assignee_ids}
+                field_name="form[assignees][]"
+                current_user={@current_user}
+              />
+            </label>
+          </div>
+
           <.button variant="primary" type="submit">Save</.button>
         </.form>
       </div>

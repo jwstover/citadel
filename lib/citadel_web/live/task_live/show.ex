@@ -16,7 +16,7 @@ defmodule CitadelWeb.TaskLive.Show do
       Tasks.get_task_by_human_id!(id,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]]
+        load: [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]]
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
@@ -29,6 +29,7 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:can_delete, can_delete)
       |> assign(:editing, false)
       |> assign(:form, nil)
+      |> assign(:assignee_ids, Enum.map(task.assignees, & &1.id))
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
 
@@ -44,8 +45,11 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("edit", _params, socket) do
+    task = socket.assigns.task
+    assignee_ids = Enum.map(task.assignees, & &1.id)
+
     form =
-      socket.assigns.task
+      task
       |> AshPhoenix.Form.for_update(:update,
         domain: Tasks,
         actor: socket.assigns.current_user,
@@ -53,7 +57,13 @@ defmodule CitadelWeb.TaskLive.Show do
       )
       |> to_form()
 
-    {:noreply, socket |> assign(:editing, true) |> assign(:form, form)}
+    socket =
+      socket
+      |> assign(:editing, true)
+      |> assign(:form, form)
+      |> assign(:assignee_ids, assignee_ids)
+
+    {:noreply, socket}
   end
 
   def handle_event("cancel", _params, socket) do
@@ -68,13 +78,17 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save", %{"form" => params}, socket) do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, task} ->
-        task = Ash.load!(task, [:task_state, :user], tenant: socket.assigns.current_workspace.id)
+        task =
+          Ash.load!(task, [:task_state, :user, :assignees],
+            tenant: socket.assigns.current_workspace.id
+          )
 
         socket =
           socket
           |> assign(:task, task)
           |> assign(:editing, false)
           |> assign(:form, nil)
+          |> assign(:assignee_ids, Enum.map(task.assignees, & &1.id))
           |> put_flash(:info, "Task updated successfully")
 
         {:noreply, socket}
@@ -144,7 +158,7 @@ defmodule CitadelWeb.TaskLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
-      <div class="p-4 bg-base-200 border border-base-300">
+      <div class="h-full overflow-auto p-4 bg-base-200 border border-base-300">
         <div class="breadcrumbs text-sm mb-4">
           <ul>
             <li><.link navigate={~p"/"}>Tasks</.link></li>
@@ -159,6 +173,30 @@ defmodule CitadelWeb.TaskLive.Show do
           <.form for={@form} id="task-form" phx-change="validate" phx-submit="save">
             <.input field={@form[:title]} type="text" label="Title" />
             <.input field={@form[:description]} type="textarea" label="Description" />
+
+            <div class="grid grid-cols-2 gap-4">
+              <.input
+                field={@form[:priority]}
+                type="select"
+                label="Priority"
+                options={[Low: :low, Medium: :medium, High: :high, Urgent: :urgent]}
+              />
+              <.input field={@form[:due_date]} type="date" label="Due Date" />
+            </div>
+
+            <div class="fieldset mb-2">
+              <label>
+                <span class="label mb-1">Assignees</span>
+                <.live_component
+                  module={CitadelWeb.Components.AssigneeSelect}
+                  id="task-assignees"
+                  workspace={@current_workspace}
+                  selected_ids={@assignee_ids}
+                  field_name="form[assignees][]"
+                  current_user={@current_user}
+                />
+              </label>
+            </div>
 
             <div class="flex gap-2">
               <.button type="submit" class="btn btn-primary">Save</.button>

@@ -130,7 +130,14 @@ defmodule Citadel.MixProject do
         "esbuild citadel --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warning-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "test",
+        "credo --strict",
+        "sobelow --config --exit"
+      ]
     ]
   end
 
