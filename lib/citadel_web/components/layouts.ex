@@ -110,8 +110,8 @@ defmodule CitadelWeb.Layouts do
           </div>
 
           <%!-- Main content --%>
-          <main class="flex-grow my-4 mx-4">
-            <div class="card-body p-0">
+          <main class="flex-grow py-4 px-4 h-full w-full overflow-hidden">
+            <div class="card-body p-0 h-full w-full overflow-hidden">
               {render_slot(@inner_block)}
             </div>
           </main>
