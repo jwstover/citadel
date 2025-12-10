@@ -52,7 +52,9 @@ defmodule Citadel.Tasks.TaskTest do
         assignees: [user.id]
       }
 
-      assert task = Tasks.create_task!(attrs, load: [:assignees], actor: user, tenant: workspace.id)
+      assert task =
+               Tasks.create_task!(attrs, load: [:assignees], actor: user, tenant: workspace.id)
+
       assert length(task.assignees) == 1
     end
 

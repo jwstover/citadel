@@ -76,8 +76,6 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("save", %{"form" => params}, socket) do
-    IO.inspect(params, label: "================== PARAMS\n")
-
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, task} ->
         task =
@@ -96,7 +94,6 @@ defmodule CitadelWeb.TaskLive.Show do
         {:noreply, socket}
 
       {:error, form} ->
-        IO.inspect(form, label: "================== FORM error\n")
         {:noreply, assign(socket, :form, form)}
     end
   end
