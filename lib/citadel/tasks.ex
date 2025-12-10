@@ -13,11 +13,11 @@ defmodule Citadel.Tasks do
     end
 
     tool :create_task, Citadel.Tasks.Task, :create do
-      description "Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id."
+      description "Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id. Can also set assignees (array of user IDs), due_date, and priority (low, medium, high, urgent)."
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
-      description "Updates an existing task's title, description, or state"
+      description "Updates an existing task's title, description, state, assignees, due_date, or priority"
     end
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
@@ -39,6 +39,12 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.TaskState do
       define :create_task_state, action: :create
       define :list_task_states, action: :read
+    end
+
+    resource Citadel.Tasks.TaskAssignment do
+      define :create_task_assignment, action: :create
+      define :list_task_assignments, action: :read
+      define :destroy_task_assignment, action: :destroy
     end
 
     resource Citadel.Tasks.Task do

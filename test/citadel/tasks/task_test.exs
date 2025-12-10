@@ -350,8 +350,8 @@ defmodule Citadel.Tasks.TaskTest do
         )
 
       # Try to update as the other user (with their own workspace tenant)
-      # Will get NotFound/Invalid because task doesn't exist in their workspace
-      assert_raise Ash.Error.Invalid, fn ->
+      # Will get Forbidden because user doesn't have access to the task
+      assert_raise Ash.Error.Forbidden, fn ->
         Ash.update!(task, %{title: "Unauthorized Update"},
           actor: other_user,
           tenant: other_workspace.id
@@ -1452,6 +1452,522 @@ defmodule Citadel.Tasks.TaskTest do
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.get_task_by_human_id!(task.human_id, actor: other_user, tenant: other_workspace.id)
       end
+    end
+  end
+
+  describe "priority" do
+    test "task defaults to medium priority", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert task.priority == :medium
+    end
+
+    test "can create task with explicit priority", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Urgent Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            priority: :urgent
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert task.priority == :urgent
+    end
+
+    test "can update task priority", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            priority: :low
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      updated = Tasks.update_task!(task.id, %{priority: :high}, actor: user, tenant: workspace.id)
+
+      assert updated.priority == :high
+    end
+
+    test "rejects invalid priority value", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            priority: :invalid
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+  end
+
+  describe "due_date" do
+    test "can create task with due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      due_date = Date.add(Date.utc_today(), 7)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: due_date
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert task.due_date == due_date
+    end
+
+    test "due_date is optional and defaults to nil", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(task.due_date)
+    end
+
+    test "can update task due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      new_due_date = Date.add(Date.utc_today(), 14)
+
+      updated =
+        Tasks.update_task!(task.id, %{due_date: new_due_date}, actor: user, tenant: workspace.id)
+
+      assert updated.due_date == new_due_date
+    end
+  end
+
+  describe "overdue? calculation" do
+    test "returns false when no due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :overdue?, actor: user, tenant: workspace.id)
+      assert loaded.overdue? == false
+    end
+
+    test "returns false when due_date is in the future", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      future_date = Date.add(Date.utc_today(), 7)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: future_date
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :overdue?, actor: user, tenant: workspace.id)
+      assert loaded.overdue? == false
+    end
+
+    test "returns true when due_date is in the past", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      past_date = Date.add(Date.utc_today(), -1)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: past_date
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :overdue?, actor: user, tenant: workspace.id)
+      assert loaded.overdue? == true
+    end
+
+    test "returns false when due_date is today", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      today = Date.utc_today()
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: today
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :overdue?, actor: user, tenant: workspace.id)
+      assert loaded.overdue? == false
+    end
+  end
+
+  describe "days_until_due calculation" do
+    test "returns nil when no due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :days_until_due, actor: user, tenant: workspace.id)
+      assert is_nil(loaded.days_until_due)
+    end
+
+    test "returns positive number for future due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      future_date = Date.add(Date.utc_today(), 7)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: future_date
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :days_until_due, actor: user, tenant: workspace.id)
+      assert loaded.days_until_due == 7
+    end
+
+    test "returns negative number for past due_date", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      past_date = Date.add(Date.utc_today(), -3)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: past_date
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :days_until_due, actor: user, tenant: workspace.id)
+      assert loaded.days_until_due == -3
+    end
+
+    test "returns 0 when due_date is today", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      today = Date.utc_today()
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            due_date: today
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :days_until_due, actor: user, tenant: workspace.id)
+      assert loaded.days_until_due == 0
+    end
+  end
+
+  describe "assignees" do
+    test "can create task with single assignee", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [user.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :assignees, actor: user, tenant: workspace.id)
+      assert length(loaded.assignees) == 1
+      assert hd(loaded.assignees).id == user.id
+    end
+
+    test "can create task with multiple assignees", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_user = create_user()
+      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [user.id, other_user.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :assignees, actor: user, tenant: workspace.id)
+      assignee_ids = Enum.map(loaded.assignees, & &1.id)
+
+      assert length(assignee_ids) == 2
+      assert user.id in assignee_ids
+      assert other_user.id in assignee_ids
+    end
+
+    test "can update task to add assignees", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_user = create_user()
+      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      updated =
+        Tasks.update_task!(task.id, %{assignees: [user.id, other_user.id]},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(updated, :assignees, actor: user, tenant: workspace.id)
+      assignee_ids = Enum.map(loaded.assignees, & &1.id)
+
+      assert length(assignee_ids) == 2
+      assert user.id in assignee_ids
+      assert other_user.id in assignee_ids
+    end
+
+    test "can update task to remove assignees", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_user = create_user()
+      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [user.id, other_user.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      updated =
+        Tasks.update_task!(task.id, %{assignees: [user.id]},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(updated, :assignees, actor: user, tenant: workspace.id)
+
+      assert length(loaded.assignees) == 1
+      assert hd(loaded.assignees).id == user.id
+    end
+
+    test "rejects non-workspace-member as assignee", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      non_member = generate(user())
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [non_member.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "workspace owner can be assigned", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [user.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :assignees, actor: user, tenant: workspace.id)
+      assert length(loaded.assignees) == 1
+      assert hd(loaded.assignees).id == user.id
+    end
+
+    test "workspace member can be assigned", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      member = create_user()
+      Accounts.add_workspace_member!(member.id, workspace.id, actor: user)
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            assignees: [member.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      loaded = Ash.load!(task, :assignees, actor: user, tenant: workspace.id)
+      assert length(loaded.assignees) == 1
+      assert hd(loaded.assignees).id == member.id
     end
   end
 end

@@ -33,8 +33,8 @@ defmodule CitadelWeb.Components.TaskComponents do
         data-state-id={state.id}
         class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border"
       >
-        <tr>
-          <td colspan="4" class="px-6 py-4">
+        <tr class="sticky top-0 bg-base-200 z-100">
+          <td colspan="7" class="px-6 py-4">
             <div class="flex items-center justify-between">
               <h2 class="text-lg font-semibold text-base-content">
                 {state.name}
@@ -44,6 +44,21 @@ defmodule CitadelWeb.Components.TaskComponents do
               </span>
             </div>
           </td>
+        </tr>
+        <tr class="sticky top-[60px] bg-base-200 z-100">
+          <th></th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">ID</th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left ">Name</th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+            Priority
+          </th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+            Due Date
+          </th>
+          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+            Assignee
+          </th>
         </tr>
         <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
           <.task_row
@@ -71,7 +86,7 @@ defmodule CitadelWeb.Components.TaskComponents do
         </div>
       </td>
       <td class="p-2 w-6">
-        <div class="flex items-center">
+        <div class="flex items-center justify-center">
           <.live_component
             module={CitadelWeb.Components.TaskStateDropdown}
             id={"task-state-#{@task.id}"}
@@ -92,6 +107,21 @@ defmodule CitadelWeb.Components.TaskComponents do
           {@task.title}
         </.link>
       </td>
+      <td class="p-2 w-24 align-middle">
+        <.live_component
+          module={CitadelWeb.Components.PriorityDropdown}
+          id={"task-priority-#{@task.id}"}
+          task={@task}
+          current_user={@current_user}
+          current_workspace={@current_workspace}
+        />
+      </td>
+      <td class="p-2 w-28 align-middle whitespace-nowrap">
+        <.due_date_display due_date={@task.due_date} overdue={@task.overdue?} />
+      </td>
+      <td class="p-2 w-24 align-middle">
+        <.assignee_avatars assignees={@task.assignees} />
+      </td>
     </tr>
     """
   end
@@ -111,4 +141,90 @@ defmodule CitadelWeb.Components.TaskComponents do
     <% end %>
     """
   end
+
+  attr :priority, :atom, required: true
+
+  def priority_badge(assigns) do
+    ~H"""
+    <span class={[
+      "badge badge-sm",
+      priority_badge_class(@priority)
+    ]}>
+      {@priority}
+    </span>
+    """
+  end
+
+  defp priority_badge_class(:low), do: "badge-ghost"
+  defp priority_badge_class(:medium), do: "badge-info"
+  defp priority_badge_class(:high), do: "badge-warning"
+  defp priority_badge_class(:urgent), do: "badge-error"
+  defp priority_badge_class(_), do: "badge-ghost"
+
+  attr :due_date, :any, required: true
+  attr :overdue, :boolean, default: false
+
+  def due_date_display(assigns) do
+    ~H"""
+    <%= cond do %>
+      <% is_nil(@due_date) -> %>
+        <span class="text-base-content/30">—</span>
+      <% @due_date == Date.utc_today() -> %>
+        <span class="text-warning font-medium">Today</span>
+      <% @overdue -> %>
+        <span class="text-error font-medium">{format_date(@due_date)}</span>
+      <% true -> %>
+        <span class="text-base-content/70">{format_date(@due_date)}</span>
+    <% end %>
+    """
+  end
+
+  defp format_date(date) do
+    Calendar.strftime(date, "%b %d")
+  end
+
+  attr :assignees, :list, required: true
+  attr :max_display, :integer, default: 3
+
+  def assignee_avatars(assigns) do
+    assigns =
+      assigns
+      |> assign(:visible_assignees, Enum.take(assigns.assignees, assigns.max_display))
+      |> assign(:overflow_count, max(0, length(assigns.assignees) - assigns.max_display))
+
+    ~H"""
+    <div class="flex -space-x-2">
+      <%= if @assignees == [] do %>
+        <span class="text-base-content/30">—</span>
+      <% else %>
+        <div
+          :for={assignee <- @visible_assignees}
+          class="avatar avatar-placeholder"
+          title={assignee.email}
+        >
+          <div class="w-6 h-6 rounded-full bg-base-300 text-xs flex items-center justify-center">
+            {get_initial(assignee.email)}
+          </div>
+        </div>
+        <div
+          :if={@overflow_count > 0}
+          class="avatar avatar-placeholder"
+          title={"#{@overflow_count} more"}
+        >
+          <div class="w-6 h-6 rounded-full bg-base-300 text-xs flex items-center justify-center">
+            +{@overflow_count}
+          </div>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp get_initial(email) when is_binary(email) do
+    email
+    |> String.first()
+    |> String.upcase()
+  end
+
+  defp get_initial(_), do: "?"
 end

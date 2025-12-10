@@ -37,17 +37,38 @@ defmodule Citadel.Tasks.Task do
     end
 
     create :create do
-      accept [:title, :description, :task_state_id, :workspace_id, :parent_task_id]
+      accept [
+        :title,
+        :description,
+        :task_state_id,
+        :workspace_id,
+        :parent_task_id,
+        :due_date,
+        :priority
+      ]
+
+      argument :assignees, {:array, :uuid}
+
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritParentWorkspace
       change Citadel.Tasks.Changes.AssignHumanId
       change Citadel.Tasks.Changes.SetDefaultTaskState
+      change manage_relationship(:assignees, type: :append_and_remove, on_lookup: :relate)
+
       validate Citadel.Tasks.Validations.NoCircularParent
+      validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
     end
 
     update :update do
       primary? true
-      accept [:title, :description, :task_state_id]
+      require_atomic? false
+      accept [:title, :description, :task_state_id, :due_date, :priority]
+
+      argument :assignees, {:array, :uuid}
+
+      change manage_relationship(:assignees, type: :append_and_remove, on_lookup: :relate)
+
+      validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
     end
 
     action :parse_task_from_text, :map do
@@ -105,6 +126,12 @@ defmodule Citadel.Tasks.Task do
 
     attribute :title, :string, public?: true, allow_nil?: false
     attribute :description, :string, public?: true
+    attribute :due_date, :date, public?: true
+
+    attribute :priority, Citadel.Tasks.Task.Types.Priority do
+      public? true
+      default :medium
+    end
 
     timestamps()
   end
@@ -115,10 +142,19 @@ defmodule Citadel.Tasks.Task do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
+
+    many_to_many :assignees, Citadel.Accounts.User do
+      through Citadel.Tasks.TaskAssignment
+      source_attribute_on_join_resource :task_id
+      destination_attribute_on_join_resource :assignee_id
+      public? true
+    end
   end
 
   calculations do
     calculate :ancestors, {:array, :map}, Citadel.Tasks.Calculations.Ancestors
+    calculate :overdue?, :boolean, expr(not is_nil(due_date) and due_date < today())
+    calculate :days_until_due, :integer, Citadel.Tasks.Calculations.DaysUntilDue
   end
 
   identities do
