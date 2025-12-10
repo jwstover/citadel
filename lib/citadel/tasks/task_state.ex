@@ -18,7 +18,16 @@ defmodule Citadel.Tasks.TaskState do
 
     update :update do
       primary? true
-      accept [:name, :description, :order, :is_complete]
+
+      accept [
+        :name,
+        :description,
+        :order,
+        :is_complete,
+        :icon,
+        :foreground_color,
+        :background_color
+      ]
     end
   end
 
@@ -37,6 +46,9 @@ defmodule Citadel.Tasks.TaskState do
     attribute :description, :string, public?: true
     attribute :order, :integer, public?: true, allow_nil?: false
     attribute :is_complete, :boolean, public?: true, default: false
+    attribute :icon, :string, public?: true
+    attribute :foreground_color, :string, public?: true
+    attribute :background_color, :string, public?: true
 
     timestamps()
   end

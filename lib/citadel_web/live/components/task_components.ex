@@ -131,14 +131,7 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   def task_state_icon(assigns) do
     ~H"""
-    <%= case @task_state.name do %>
-      <% "Todo" -> %>
-        <.icon name="fa-circle-regular" class={"text-sky-600 #{@size}"} />
-      <% "In Progress" -> %>
-        <.icon name="fa-circle-half-stroke-solid" class={"text-yellow-500 #{@size}"} />
-      <% "Complete" -> %>
-        <.icon name="fa-circle-solid" class={"text-green-600 #{@size}"} />
-    <% end %>
+    <.icon name={@task_state.icon} class={@size} style={"color: #{@task_state.background_color}"} />
     """
   end
 

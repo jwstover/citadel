@@ -31,7 +31,8 @@ defmodule Citadel.Repo.Migrations.AddAdditioalTaskFields do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
 
       add :assignee_id,
           references(:users,
@@ -40,7 +41,8 @@ defmodule Citadel.Repo.Migrations.AddAdditioalTaskFields do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
     end
 
     create index(:task_assignments, [:task_id])
