@@ -131,7 +131,9 @@ defmodule CitadelWeb.TaskLive.Show do
 
   def handle_info({:task_state_changed, _task}, socket) do
     task =
-      Ash.load!(socket.assigns.task, [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]],
+      Ash.load!(
+        socket.assigns.task,
+        [:task_state, :user, :parent_task, :ancestors, sub_tasks: [:task_state]],
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )
