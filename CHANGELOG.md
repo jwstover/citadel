@@ -1,3 +1,12 @@
+## [0.10.1](https://github.com/jwstover/citadel/compare/v0.10.0...v0.10.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* resolve issue loading fontawesome classes from db ([c37cd25](https://github.com/jwstover/citadel/commit/c37cd25bb3f057100fedcf944fb579f38fd2a602))
+
+
+
 # [0.10.0](https://github.com/jwstover/citadel/compare/v0.9.0...v0.10.0) (2025-12-11)
 
 
@@ -34,23 +43,6 @@
 
 * add ability to change task state from state icon ([f6abe97](https://github.com/jwstover/citadel/commit/f6abe9749e924749fb428c32da65700291931567))
 * add ability to delete tasks to task page ([1f790ef](https://github.com/jwstover/citadel/commit/1f790ef1453e83933923c82fb786d3e62d4775a0))
-
-
-
-# [0.6.0](https://github.com/jwstover/citadel/compare/v0.5.0...v0.6.0) (2025-12-08)
-
-
-### Bug Fixes
-
-* allow users to leave workspaces ([80b273a](https://github.com/jwstover/citadel/commit/80b273a58f086a87cbf0e2694a7beb25a4f6e5bb))
-* resolve issue loading task page ([7f10c79](https://github.com/jwstover/citadel/commit/7f10c791bf4332c909f62946dfa54dd3be577df1))
-
-
-### Features
-
-* add API key management to preferences ([d590c9a](https://github.com/jwstover/citadel/commit/d590c9a2ecb9d7bb1e12bd9f3016357981ee41d8))
-* add human-readable IDs to tasks ([37ac3e9](https://github.com/jwstover/citadel/commit/37ac3e9e61777cc61e89854bcd76bd124bbb9e6d))
-* add sub-tasks ([b755f4e](https://github.com/jwstover/citadel/commit/b755f4ebe903d1e83a3563637f3665c8a61cc891))
 
 
 
