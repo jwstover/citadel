@@ -26,12 +26,13 @@ import {hooks as colocatedHooks} from "phoenix-colocated/citadel"
 import topbar from "../vendor/topbar"
 import TaskDragDrop from "./hooks/task_drag_drop.js"
 import Clipboard from "./hooks/clipboard.js"
+import MilkdownEditor from "./hooks/milkdown_editor.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, TaskDragDrop, Clipboard},
+  hooks: {...colocatedHooks, TaskDragDrop, Clipboard, MilkdownEditor},
 })
 
 // Show progress bar on live navigation and form submits

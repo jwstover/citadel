@@ -123,3 +123,36 @@ html { font-family: "Exo 2", sans-serif; }
 
 
 /* This file is for your main application CSS */
+
+/* Milkdown Editor - DaisyUI Theme Integration */
+.milkdown-container {
+  min-height: 100px;
+}
+
+.milkdown-container.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.milkdown-container .milkdown {
+  outline: none;
+}
+
+.milkdown-container .ProseMirror {
+  outline: none;
+  min-height: 80px;
+}
+
+.milkdown-container .ProseMirror:focus {
+  outline: none;
+}
+
+/* Editor placeholder when empty */
+.milkdown-container .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: oklch(var(--color-base-content) / 0.4);
+  font-style: italic;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}

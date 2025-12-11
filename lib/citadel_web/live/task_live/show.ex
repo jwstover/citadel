@@ -5,7 +5,6 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias Citadel.Tasks
 
-  import CitadelWeb.Components.Markdown
   import CitadelWeb.Components.TaskComponents, only: [task_state_icon: 1]
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
@@ -86,7 +85,7 @@ defmodule CitadelWeb.TaskLive.Show do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, task} ->
         task =
-          Ash.load!(task, [:task_state, :user, :assignees],
+          Ash.load!(task, [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
             tenant: socket.assigns.current_workspace.id
           )
 
@@ -131,6 +130,24 @@ defmodule CitadelWeb.TaskLive.Show do
          socket
          |> assign(:confirm_delete, false)
          |> put_flash(:error, "Failed to delete task")}
+    end
+  end
+
+  def handle_event("save-description", %{"content" => content}, socket) do
+    case Tasks.update_task(socket.assigns.task.id, %{description: content},
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.current_workspace.id
+         ) do
+      {:ok, task} ->
+        task =
+          Ash.load!(task, [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
+            tenant: socket.assigns.current_workspace.id
+          )
+
+        {:noreply, assign(socket, :task, task)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to save description")}
     end
   end
 
@@ -278,11 +295,14 @@ defmodule CitadelWeb.TaskLive.Show do
 
           <div class="py-4">
             <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
-            <%= if @task.description do %>
-              <div class="text-base-content prose max-w-none">{to_markdown(@task.description)}</div>
-            <% else %>
-              <p class="text-base-content/50 italic">No description provided</p>
-            <% end %>
+            <div
+              id={"description-editor-#{@task.id}"}
+              phx-hook="MilkdownEditor"
+              phx-update="ignore"
+              data-content={@task.description || ""}
+              data-readonly={to_string(not @can_edit)}
+              class="milkdown-container prose max-w-none"
+            />
           </div>
 
           <div class="py-4 border-t border-base-300">

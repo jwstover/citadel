@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "dependencies": {
+    "@milkdown/kit": "^7.6.0"
+  }
+}
