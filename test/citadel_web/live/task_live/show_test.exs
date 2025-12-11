@@ -532,6 +532,94 @@ defmodule CitadelWeb.TaskLive.ShowTest do
     end
   end
 
+  describe "sub-task drag and drop" do
+    setup :register_and_log_in_user
+
+    setup %{user: user, workspace: workspace} do
+      todo_state = create_task_state("Todo", 1)
+      done_state = create_task_state("Done", 2, is_complete: true)
+
+      task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Parent Task"],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: todo_state.id,
+              title: "Draggable Sub Task",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, sub_task: sub_task, todo_state: todo_state, done_state: done_state}
+    end
+
+    test "moves sub-task to new state via task-moved event", %{
+      conn: conn,
+      task: task,
+      sub_task: sub_task,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      # Simulate the drag-and-drop by sending the task-moved event to the component
+      view
+      |> element("#sub-tasks-#{task.id}")
+      |> render_hook("task-moved", %{
+        "task_id" => sub_task.id,
+        "new_state_id" => done_state.id
+      })
+
+      # Verify the sub-task state was updated in the database
+      updated_sub_task =
+        Tasks.get_task!(sub_task.id,
+          actor: user,
+          tenant: workspace.id,
+          load: [:task_state]
+        )
+
+      assert updated_sub_task.task_state.id == done_state.id
+    end
+
+    test "preserves sub-task count after drag and drop", %{
+      conn: conn,
+      task: task,
+      sub_task: sub_task,
+      done_state: done_state
+    } do
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Sub-tasks (1)"
+      assert html =~ sub_task.title
+
+      # Simulate the drag-and-drop
+      html =
+        view
+        |> element("#sub-tasks-#{task.id}")
+        |> render_hook("task-moved", %{
+          "task_id" => sub_task.id,
+          "new_state_id" => done_state.id
+        })
+
+      # Sub-task count should still be 1
+      assert html =~ "Sub-tasks (1)"
+      assert html =~ sub_task.title
+    end
+  end
+
   describe "read-only mode for non-editors" do
     setup :register_and_log_in_user
 
