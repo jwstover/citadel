@@ -6,9 +6,47 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Citadel" suffix=" · Phoenix Framework">
+    <.live_title default="Citadel" suffix=" · Citadel">
       {assigns[:page_title]}
     </.live_title>
+
+    <meta
+      name="description"
+      content={
+        assigns[:meta_description] ||
+          "AI-powered task management. Create tasks with natural language, collaborate with your team, and let AI help you stay organized."
+      }
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={assigns[:og_url] || "https://citadel.app"} />
+    <meta
+      property="og:title"
+      content={assigns[:page_title] || "Citadel - AI-Powered Task Management"}
+    />
+    <meta
+      property="og:description"
+      content={
+        assigns[:meta_description] ||
+          "AI-powered task management. Create tasks with natural language, collaborate with your team, and let AI help you stay organized."
+      }
+    />
+    <meta property="og:image" content={assigns[:og_image] || "/images/og-image.png"} />
+    <meta property="og:site_name" content="Citadel" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content={assigns[:page_title] || "Citadel - AI-Powered Task Management"}
+    />
+    <meta
+      name="twitter:description"
+      content={
+        assigns[:meta_description] ||
+          "AI-powered task management. Create tasks with natural language, collaborate with your team, and let AI help you stay organized."
+      }
+    />
+    <meta name="twitter:image" content={assigns[:og_image] || "/images/og-image.png"} />
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <link phx-track-static rel="stylesheet" href={~p"/assets/js/app.css"} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

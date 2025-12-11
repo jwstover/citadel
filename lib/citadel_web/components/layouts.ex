@@ -81,13 +81,13 @@ defmodule CitadelWeb.Layouts do
               <%!-- Navigation menu --%>
               <ul class="menu-compact">
                 <li>
-                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                  <.link navigate={~p"/dashboard"} class="flex items-center gap-2">
                     <.icon name="hero-home" class="size-4 text-base-content/70" />
                     <span>Home</span>
                   </.link>
                 </li>
                 <li>
-                  <.link navigate={~p"/"} class="flex items-center gap-2">
+                  <.link navigate={~p"/dashboard"} class="flex items-center gap-2">
                     <.icon name="hero-chart-bar" class="size-4 text-base-content/70" />
                     <span>Dashboard</span>
                   </.link>
@@ -202,6 +202,99 @@ defmodule CitadelWeb.Layouts do
       >
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders the marketing layout for public pages like the landing page.
+
+  This layout features a clean navigation header without the sidebar,
+  optimized for marketing and conversion.
+
+  ## Examples
+
+      <Layouts.marketing flash={@flash} current_user={@current_user}>
+        <section>Hero content</section>
+      </Layouts.marketing>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :current_user, :map, default: nil, doc: "the current user, if authenticated"
+
+  slot :inner_block, required: true
+
+  def marketing(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-base-100 relative overflow-x-hidden">
+      <div class="fixed inset-0 pointer-events-none overflow-hidden">
+        <div class="absolute -top-1/2 -right-1/4 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-primary/5 to-transparent blur-3xl" />
+        <div class="absolute top-1/3 -left-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-accent/5 to-transparent blur-3xl" />
+      </div>
+
+      <header class="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-base-100/80 border-b border-base-300/50">
+        <nav class="container mx-auto px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16 lg:h-20">
+            <.link navigate={~p"/"} class="flex items-center gap-3 group">
+              <div class="relative">
+                <div class="absolute inset-0 bg-primary/20 blur-lg rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div class="relative btn btn-primary btn-square btn-sm pointer-events-none">
+                  <.icon name="hero-building-library" class="size-4" />
+                </div>
+              </div>
+              <span class="text-xl font-bold tracking-tight">Citadel</span>
+            </.link>
+
+            <div class="hidden md:flex items-center gap-8">
+              <a
+                href="#features"
+                class="text-sm font-medium text-base-content/70 hover:text-base-content transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+              >
+                Features
+              </a>
+              <a
+                href="#pricing"
+                class="text-sm font-medium text-base-content/70 hover:text-base-content transition-colors duration-200 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-primary hover:after:w-full after:transition-all after:duration-300"
+              >
+                Pricing
+              </a>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="hidden sm:block">
+                <.theme_toggle />
+              </div>
+              <%= if @current_user do %>
+                <.link
+                  navigate={~p"/dashboard"}
+                  class="btn btn-primary btn-sm px-5 font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                >
+                  Go to Dashboard <.icon name="hero-arrow-right-micro" class="size-4" />
+                </.link>
+              <% else %>
+                <.link
+                  navigate={~p"/sign-in"}
+                  class="btn btn-ghost btn-sm font-medium text-base-content/70 hover:text-base-content"
+                >
+                  Sign In
+                </.link>
+                <.link
+                  navigate={~p"/register"}
+                  class="btn btn-primary btn-sm px-5 font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                >
+                  Get Started
+                </.link>
+              <% end %>
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <main class="pt-16 lg:pt-20">
+        {render_slot(@inner_block)}
+      </main>
+
+      <.flash_group flash={@flash} />
     </div>
     """
   end
