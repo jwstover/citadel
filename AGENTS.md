@@ -30,6 +30,12 @@ custom classes must fully style the input
 
 - **Always use and maintain this import syntax** in the app.css file for projects generated with `phx.new`
 - **Never** use `@apply` when writing raw css
+- **Safelisting dynamic classes**: When CSS classes are stored in the database or generated dynamically at runtime, Tailwind cannot detect them during build. Use `@source inline()` to force generation:
+
+      /* Safelist: Task state icons stored in database */
+      @source inline("fa-circle-regular fa-circle-solid fa-circle-half-stroke-solid");
+
+  This is necessary for any classes that don't appear literally in source files (e.g., icon names from database records)
 - **Always** manually write your own tailwind-based components instead of using daisyUI for a unique, world-class design
 - Out of the box **only the app.js and app.css bundles are supported**
   - You cannot reference an external vendor'd script `src` or link `href` in the layouts
