@@ -16,26 +16,53 @@ defmodule CitadelWeb.Components.TasksListComponent do
       end)
       |> load_task_states()
       |> maybe_load_tasks()
-      |> group_tasks()
+      |> init_streams()
 
     {:ok, socket}
   end
 
   def handle_event("task-moved", %{"task_id" => task_id, "new_state_id" => new_state_id}, socket) do
-    Tasks.update_task!(task_id, %{task_state_id: new_state_id},
-      actor: socket.assigns.current_user,
-      tenant: socket.assigns.current_workspace.id
-    )
+    # Get the task before update to know old state
+    task =
+      Tasks.get_task!(task_id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
+      )
+
+    old_state_id = task.task_state_id
+
+    # Update in database
+    updated_task =
+      Tasks.update_task!(task_id, %{task_state_id: new_state_id},
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    updated_task =
+      Ash.load!(updated_task, [:task_state, :assignees, :overdue?],
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    # Update streams - delete from old state, insert into new state
+    old_count = Map.get(socket.assigns.tasks_by_state_count, old_state_id, 1)
+    new_count = Map.get(socket.assigns.tasks_by_state_count, new_state_id, 0)
+
+    updated_counts =
+      socket.assigns.tasks_by_state_count
+      |> Map.put(old_state_id, old_count - 1)
+      |> Map.put(new_state_id, new_count + 1)
 
     socket =
-      case socket.assigns.mode do
-        :self_managed ->
-          socket |> maybe_load_tasks() |> group_tasks()
+      socket
+      |> stream_delete(stream_name(old_state_id), task)
+      |> stream_insert(stream_name(new_state_id), updated_task)
+      |> assign(:tasks_by_state_count, updated_counts)
 
-        :prop_driven ->
-          send(self(), {:tasks_list_task_moved, socket.assigns.id})
-          socket
-      end
+    # Notify parent in prop_driven mode
+    if socket.assigns.mode == :prop_driven do
+      send(self(), {:tasks_list_task_moved, socket.assigns.id})
+    end
 
     {:noreply, socket}
   end
@@ -58,56 +85,76 @@ defmodule CitadelWeb.Components.TasksListComponent do
 
   defp maybe_load_tasks(socket), do: socket
 
-  defp group_tasks(socket) do
-    tasks_by_state = Enum.group_by(socket.assigns.tasks || [], & &1.task_state_id)
-    assign(socket, :tasks_by_state, tasks_by_state)
+  defp init_streams(socket) do
+    tasks = socket.assigns.tasks || []
+    task_states = socket.assigns.task_states
+    tasks_by_state = Enum.group_by(tasks, & &1.task_state_id)
+
+    # Track counts separately (streams aren't enumerable)
+    counts = Map.new(tasks_by_state, fn {k, v} -> {k, length(v)} end)
+
+    socket = assign(socket, :tasks_by_state_count, counts)
+
+    # Initialize a stream for each task state
+    Enum.reduce(task_states, socket, fn state, acc ->
+      state_tasks = Map.get(tasks_by_state, state.id, [])
+      stream(acc, stream_name(state.id), state_tasks, reset: true)
+    end)
   end
+
+  # sobelow_skip ["DOS.BinToAtom"]
+  defp stream_name(state_id), do: :"tasks_#{state_id}"
 
   def render(assigns) do
     ~H"""
     <table class="w-full" phx-hook="TaskDragDrop" id={@id} phx-target={@myself}>
-      <tbody
-        :for={state <- @task_states}
-        data-dropzone
-        data-state-id={state.id}
-        class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border"
-      >
-        <tr class="sticky top-0 bg-base-200 z-100">
-          <td colspan="7" class="px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-base-content">
-                {state.name}
-              </h2>
-              <span class="badge badge-neutral badge-sm">
-                {length(Map.get(@tasks_by_state, state.id, []))}
-              </span>
-            </div>
-          </td>
-        </tr>
-        <tr class="sticky top-[60px] bg-base-200 z-100">
-          <th></th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">ID</th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left">Name</th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Priority
-          </th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Due Date
-          </th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Assignee
-          </th>
-        </tr>
-        <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
+      <%= for state <- @task_states do %>
+        <thead class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border">
+          <tr class="sticky top-0 bg-base-200 z-100">
+            <td colspan="7" class="px-6 py-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-base-content">
+                  {state.name}
+                </h2>
+                <span class="badge badge-neutral badge-sm">
+                  {@tasks_by_state_count[state.id] || 0}
+                </span>
+              </div>
+            </td>
+          </tr>
+          <tr class="sticky top-[60px] bg-base-200 z-100">
+            <th></th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+              ID
+            </th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left">Name</th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+              Priority
+            </th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+              Due Date
+            </th>
+            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+              Assignee
+            </th>
+          </tr>
+        </thead>
+        <tbody
+          id={"#{@id}-state-#{state.id}"}
+          phx-update="stream"
+          data-dropzone
+          data-state-id={state.id}
+        >
           <.task_row
-            :for={task <- tasks}
+            :for={{dom_id, task} <- @streams[stream_name(state.id)] || []}
+            id={dom_id}
             task={task}
             current_user={@current_user}
             current_workspace={@current_workspace}
           />
-        <% end %>
-      </tbody>
+        </tbody>
+      <% end %>
     </table>
     """
   end

@@ -35,7 +35,7 @@ defmodule CitadelWeb.Components.TaskStateDropdown do
 
   def render(assigns) do
     ~H"""
-    <div class="dropdown">
+    <div id={@id} class="dropdown">
       <div tabindex="0" role="button" class="cursor-pointer">
         <.task_state_icon task_state={@task.task_state} size={@size} />
       </div>

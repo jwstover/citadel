@@ -13,7 +13,8 @@ defmodule CitadelWeb.Components.PriorityDropdown do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:priorities, @priorities)}
+     |> assign(:priorities, @priorities)
+     |> assign_new(:align_right, fn -> false end)}
   end
 
   def handle_event("change-priority", %{"priority" => priority}, socket) do
@@ -33,13 +34,13 @@ defmodule CitadelWeb.Components.PriorityDropdown do
 
   def render(assigns) do
     ~H"""
-    <div class="dropdown">
+    <div id={@id} class={["dropdown", @align_right && "dropdown-end"]}>
       <div tabindex="0" role="button" class="cursor-pointer">
         <.priority_badge priority={@task.priority} />
       </div>
       <ul
         tabindex="0"
-        class="dropdown-content menu bg-base-300 border border-base-content/20 rounded-box z-50 w-32 p-2 shadow-lg"
+        class="dropdown-content menu bg-base-200 border border-base-content/20 rounded-box z-50 w-32 p-2 shadow-lg"
       >
         <li :for={priority <- @priorities}>
           <button
