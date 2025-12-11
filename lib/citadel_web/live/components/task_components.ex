@@ -19,60 +19,6 @@ defmodule CitadelWeb.Components.TaskComponents do
     """
   end
 
-  attr :task_states, :list, required: true
-  attr :tasks_by_state, :map, required: true
-  attr :current_user, :any, required: true
-  attr :current_workspace, :any, required: true
-
-  def tasks_list(assigns) do
-    ~H"""
-    <table class="w-full" phx-hook="TaskDragDrop" id="tasks-container">
-      <tbody
-        :for={state <- @task_states}
-        data-dropzone
-        data-state-id={state.id}
-        class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border"
-      >
-        <tr class="sticky top-0 bg-base-200 z-100">
-          <td colspan="7" class="px-6 py-4">
-            <div class="flex items-center justify-between">
-              <h2 class="text-lg font-semibold text-base-content">
-                {state.name}
-              </h2>
-              <span class="badge badge-neutral badge-sm">
-                {length(Map.get(@tasks_by_state, state.id, []))}
-              </span>
-            </div>
-          </td>
-        </tr>
-        <tr class="sticky top-[60px] bg-base-200 z-100">
-          <th></th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">ID</th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left ">Name</th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Priority
-          </th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Due Date
-          </th>
-          <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-            Assignee
-          </th>
-        </tr>
-        <%= if tasks = Map.get(@tasks_by_state, state.id) do %>
-          <.task_row
-            :for={task <- tasks}
-            task={task}
-            current_user={@current_user}
-            current_workspace={@current_workspace}
-          />
-        <% end %>
-      </tbody>
-    </table>
-    """
-  end
-
   attr :task, :map, required: true
   attr :current_user, :any, required: true
   attr :current_workspace, :any, required: true
