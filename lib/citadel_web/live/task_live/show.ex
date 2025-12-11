@@ -22,9 +22,15 @@ defmodule CitadelWeb.TaskLive.Show do
           :parent_task,
           :ancestors,
           :assignees,
-          :overdue?,
-          sub_tasks: [:task_state, :assignees, :overdue?]
+          :overdue?
         ]
+      )
+
+    sub_tasks =
+      Tasks.list_sub_tasks!(task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
       )
 
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
@@ -33,6 +39,8 @@ defmodule CitadelWeb.TaskLive.Show do
     socket =
       socket
       |> assign(:task, task)
+      |> assign(:sub_tasks, sub_tasks)
+      |> assign(:sub_tasks_count, length(sub_tasks))
       |> assign(:can_edit, can_edit)
       |> assign(:can_delete, can_delete)
       |> assign(:show_sub_task_form, false)
@@ -93,8 +101,7 @@ defmodule CitadelWeb.TaskLive.Show do
               :parent_task,
               :ancestors,
               :assignees,
-              :overdue?,
-              sub_tasks: [:task_state, :assignees, :overdue?]
+              :overdue?
             ],
             tenant: socket.assigns.current_workspace.id
           )
@@ -126,8 +133,7 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?,
-                sub_tasks: [:task_state, :assignees, :overdue?]
+                :overdue?
               ],
               tenant: socket.assigns.current_workspace.id
             )
@@ -160,8 +166,7 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?,
-                sub_tasks: [:task_state, :assignees, :overdue?]
+                :overdue?
               ],
               tenant: socket.assigns.current_workspace.id
             )
@@ -175,20 +180,22 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info({:task_created, _sub_task}, socket) do
-    task =
-      Ash.load!(socket.assigns.task, [sub_tasks: [:task_state, :assignees, :overdue?]],
+    sub_tasks =
+      Tasks.list_sub_tasks!(socket.assigns.task.id,
         actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
       )
 
     send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{task.id}",
-      tasks: task.sub_tasks
+      id: "sub-tasks-#{socket.assigns.task.id}",
+      tasks: sub_tasks
     )
 
     socket =
       socket
-      |> assign(:task, task)
+      |> assign(:sub_tasks, sub_tasks)
+      |> assign(:sub_tasks_count, length(sub_tasks))
       |> assign(:show_sub_task_form, false)
       |> put_flash(:info, "Sub-task created successfully")
 
@@ -196,7 +203,8 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info({:task_priority_changed, task}, socket) do
-    {:noreply, assign(socket, :task, %{socket.assigns.task | priority: task.priority})}
+    updated_task = %{socket.assigns.task | priority: task.priority}
+    {:noreply, assign(socket, :task, updated_task)}
   end
 
   def handle_info({:assignees_changed, assignee_ids}, socket) do
@@ -214,8 +222,7 @@ defmodule CitadelWeb.TaskLive.Show do
               :parent_task,
               :ancestors,
               :assignees,
-              :overdue?,
-              sub_tasks: [:task_state, :assignees, :overdue?]
+              :overdue?
             ],
             tenant: socket.assigns.current_workspace.id
           )
@@ -236,33 +243,53 @@ defmodule CitadelWeb.TaskLive.Show do
           :user,
           :parent_task,
           :ancestors,
-          sub_tasks: [:task_state, :assignees, :overdue?]
+          :assignees,
+          :overdue?
         ],
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )
 
-    send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{task.id}",
-      tasks: task.sub_tasks
-    )
-
-    {:noreply, assign(socket, :task, task)}
-  end
-
-  def handle_info({:tasks_list_task_moved, _component_id}, socket) do
-    task =
-      Ash.load!(socket.assigns.task, [sub_tasks: [:task_state, :assignees, :overdue?]],
+    sub_tasks =
+      Tasks.list_sub_tasks!(task.id,
         actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
       )
 
     send_update(CitadelWeb.Components.TasksListComponent,
       id: "sub-tasks-#{task.id}",
-      tasks: task.sub_tasks
+      tasks: sub_tasks
     )
 
-    {:noreply, assign(socket, :task, task)}
+    socket =
+      socket
+      |> assign(:task, task)
+      |> assign(:sub_tasks, sub_tasks)
+      |> assign(:sub_tasks_count, length(sub_tasks))
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:tasks_list_task_moved, _component_id}, socket) do
+    sub_tasks =
+      Tasks.list_sub_tasks!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
+      )
+
+    send_update(CitadelWeb.Components.TasksListComponent,
+      id: "sub-tasks-#{socket.assigns.task.id}",
+      tasks: sub_tasks
+    )
+
+    socket =
+      socket
+      |> assign(:sub_tasks, sub_tasks)
+      |> assign(:sub_tasks_count, length(sub_tasks))
+
+    {:noreply, socket}
   end
 
   def render(assigns) do
@@ -421,20 +448,20 @@ defmodule CitadelWeb.TaskLive.Show do
           <div class="py-4 border-t border-base-300">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-sm font-semibold text-base-content/70">
-                Sub-tasks ({length(@task.sub_tasks)})
+                Sub-tasks ({@sub_tasks_count})
               </h2>
               <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
                 <.icon name="hero-plus" class="size-3" /> Add
               </.button>
             </div>
 
-            <%= if Enum.empty?(@task.sub_tasks) do %>
+            <%= if @sub_tasks_count == 0 do %>
               <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
             <% else %>
               <.live_component
                 module={CitadelWeb.Components.TasksListComponent}
                 id={"sub-tasks-#{@task.id}"}
-                tasks={@task.sub_tasks}
+                tasks={@sub_tasks}
                 current_user={@current_user}
                 current_workspace={@current_workspace}
               />

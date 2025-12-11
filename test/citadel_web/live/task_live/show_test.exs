@@ -58,7 +58,21 @@ defmodule CitadelWeb.TaskLive.ShowTest do
           )
         )
 
-      %{task: task, task_state: task_state}
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Sub Task",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, task_state: task_state, sub_task: sub_task}
     end
 
     test "saves title on blur", %{conn: conn, task: task, user: user, workspace: workspace} do
@@ -129,6 +143,20 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       assert updated_task.title == "Original Title"
     end
+
+    test "preserves sub-tasks after title update", %{conn: conn, task: task, sub_task: sub_task} do
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ sub_task.title
+
+      html =
+        view
+        |> element("input[name=\"title\"]")
+        |> render_blur(%{value: "New Title"})
+
+      assert html =~ sub_task.title
+      assert html =~ "Sub-tasks (1)"
+    end
   end
 
   describe "inline due date editing" do
@@ -195,6 +223,40 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       assert is_nil(updated_task.due_date)
     end
+
+    test "preserves sub-tasks after due date update", %{
+      conn: conn,
+      task: task,
+      task_state: task_state,
+      user: user,
+      workspace: workspace
+    } do
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Sub Task for Due Date",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ sub_task.title
+
+      html =
+        view
+        |> element("input[name=\"due_date\"]")
+        |> render_blur(%{value: "2025-12-25"})
+
+      assert html =~ sub_task.title
+      assert html =~ "Sub-tasks (1)"
+    end
   end
 
   describe "priority dropdown" do
@@ -251,6 +313,40 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         |> render_click()
 
       assert html =~ "urgent"
+    end
+
+    test "preserves sub-tasks after priority change", %{
+      conn: conn,
+      task: task,
+      task_state: task_state,
+      user: user,
+      workspace: workspace
+    } do
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Sub Task for Priority",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ sub_task.title
+
+      html =
+        view
+        |> element("#task-priority-#{task.id} button[phx-value-priority=\"urgent\"]")
+        |> render_click()
+
+      assert html =~ sub_task.title
+      assert html =~ "Sub-tasks (1)"
     end
   end
 
@@ -311,6 +407,45 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       assert html =~ "checked"
     end
+
+    test "preserves sub-tasks after assignee change", %{
+      conn: conn,
+      task: task,
+      task_state: task_state,
+      user: user,
+      workspace: workspace
+    } do
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Sub Task for Assignee",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ sub_task.title
+
+      # Open dropdown and select user
+      view
+      |> element("#task-assignees-#{task.id} > div[phx-click=\"toggle\"]")
+      |> render_click()
+
+      html =
+        view
+        |> element("#task-assignees-#{task.id} button[phx-value-id=\"#{user.id}\"]")
+        |> render_click()
+
+      assert html =~ sub_task.title
+      assert html =~ "Sub-tasks (1)"
+    end
   end
 
   describe "task state dropdown" do
@@ -359,6 +494,41 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       assert updated_task.task_state.id == done_state.id
+    end
+
+    test "preserves sub-tasks after task state change", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      sub_task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: todo_state.id,
+              title: "Sub Task for State",
+              parent_task_id: task.id
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ sub_task.title
+
+      html =
+        view
+        |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
+        |> render_click()
+
+      assert html =~ sub_task.title
+      assert html =~ "Sub-tasks (1)"
     end
   end
 

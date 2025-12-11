@@ -19,13 +19,14 @@ defmodule CitadelWeb.Components.TaskComponents do
     """
   end
 
+  attr :id, :string, required: true
   attr :task, :map, required: true
   attr :current_user, :any, required: true
   attr :current_workspace, :any, required: true
 
   def task_row(assigns) do
     ~H"""
-    <tr class="task-item hover:bg-base-100" data-task-id={@task.id}>
+    <tr id={@id} class="task-item hover:bg-base-100" data-task-id={@task.id}>
       <td class="pl-6 p-2 w-8 align-middle">
         <div class="task-drag-handle flex items-center cursor-grab active:cursor-grabbing">
           <.icon name="hero-bars-3" class="size-4 text-base-content/50" />
