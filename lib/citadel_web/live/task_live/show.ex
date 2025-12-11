@@ -85,7 +85,9 @@ defmodule CitadelWeb.TaskLive.Show do
     case AshPhoenix.Form.submit(socket.assigns.form, params: params) do
       {:ok, task} ->
         task =
-          Ash.load!(task, [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
+          Ash.load!(
+            task,
+            [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
             tenant: socket.assigns.current_workspace.id
           )
 
@@ -140,7 +142,9 @@ defmodule CitadelWeb.TaskLive.Show do
          ) do
       {:ok, task} ->
         task =
-          Ash.load!(task, [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
+          Ash.load!(
+            task,
+            [:task_state, :user, :parent_task, :ancestors, :assignees, sub_tasks: [:task_state]],
             tenant: socket.assigns.current_workspace.id
           )
 
