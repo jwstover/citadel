@@ -123,3 +123,147 @@ html { font-family: "Exo 2", sans-serif; }
 
 
 /* This file is for your main application CSS */
+
+/* Milkdown Editor - DaisyUI Theme Integration */
+.milkdown-container {
+  min-height: 100px;
+}
+
+.milkdown-container.prose p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.milkdown-container.prose h2 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.milkdown-container .milkdown {
+  outline: none;
+}
+
+.milkdown-container .ProseMirror {
+  outline: none;
+  min-height: 80px;
+}
+
+.milkdown-container .ProseMirror:focus {
+  outline: none;
+}
+
+/* Make links clickable and visually distinct */
+.milkdown-container .ProseMirror a {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: oklch(var(--color-primary) / 0.5);
+  text-underline-offset: 2px;
+}
+
+.milkdown-container .ProseMirror a:hover {
+  text-decoration-color: oklch(var(--color-primary) / 1);
+}
+
+/* Editor placeholder when empty */
+.milkdown-container .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: oklch(var(--color-base-content) / 0.4);
+  font-style: italic;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+/* Code Highlighting - GitHub Dark Theme */
+.milkdown-container .hljs {
+  color: #c9d1d9;
+  background: oklch(var(--color-base-300) / 1);
+}
+
+.milkdown-container .hljs-doctag,
+.milkdown-container .hljs-keyword,
+.milkdown-container .hljs-meta .hljs-keyword,
+.milkdown-container .hljs-template-tag,
+.milkdown-container .hljs-template-variable,
+.milkdown-container .hljs-type,
+.milkdown-container .hljs-variable.language_ {
+  color: #ff7b72;
+}
+
+.milkdown-container .hljs-title,
+.milkdown-container .hljs-title.class_,
+.milkdown-container .hljs-title.class_.inherited__,
+.milkdown-container .hljs-title.function_ {
+  color: #d2a8ff;
+}
+
+.milkdown-container .hljs-attr,
+.milkdown-container .hljs-attribute,
+.milkdown-container .hljs-literal,
+.milkdown-container .hljs-meta,
+.milkdown-container .hljs-number,
+.milkdown-container .hljs-operator,
+.milkdown-container .hljs-variable,
+.milkdown-container .hljs-selector-attr,
+.milkdown-container .hljs-selector-class,
+.milkdown-container .hljs-selector-id {
+  color: #79c0ff;
+}
+
+.milkdown-container .hljs-regexp,
+.milkdown-container .hljs-string,
+.milkdown-container .hljs-meta .hljs-string {
+  color: #a5d6ff;
+}
+
+.milkdown-container .hljs-built_in,
+.milkdown-container .hljs-symbol {
+  color: #ffa657;
+}
+
+.milkdown-container .hljs-comment,
+.milkdown-container .hljs-code,
+.milkdown-container .hljs-formula {
+  color: #8b949e;
+}
+
+.milkdown-container .hljs-name,
+.milkdown-container .hljs-quote,
+.milkdown-container .hljs-selector-tag,
+.milkdown-container .hljs-selector-pseudo {
+  color: #7ee787;
+}
+
+.milkdown-container .hljs-subst {
+  color: #c9d1d9;
+}
+
+.milkdown-container .hljs-section {
+  color: #1f6feb;
+  font-weight: bold;
+}
+
+.milkdown-container .hljs-bullet {
+  color: #f2cc60;
+}
+
+.milkdown-container .hljs-emphasis {
+  color: #c9d1d9;
+  font-style: italic;
+}
+
+.milkdown-container .hljs-strong {
+  color: #c9d1d9;
+  font-weight: bold;
+}
+
+.milkdown-container .hljs-addition {
+  color: #aff5b4;
+  background-color: #033a16;
+}
+
+.milkdown-container .hljs-deletion {
+  color: #ffdcd7;
+  background-color: #67060c;
+}
+
