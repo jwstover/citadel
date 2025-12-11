@@ -1,10 +1,3 @@
-import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx } from "@milkdown/kit/core"
-import { commonmark } from "@milkdown/kit/preset/commonmark"
-import { gfm } from "@milkdown/kit/preset/gfm"
-import { listener, listenerCtx } from "@milkdown/kit/plugin/listener"
-import { history } from "@milkdown/kit/plugin/history"
-import "@milkdown/kit/prose/view/style/prosemirror.css"
-
 const MilkdownEditor = {
   editor: null,
   saveTimeout: null,
@@ -14,6 +7,58 @@ const MilkdownEditor = {
     const content = this.el.dataset.content || ""
     const readonly = this.el.dataset.readonly === "true"
     this.editable = { current: !readonly }
+
+    // Dynamic imports - Milkdown is only loaded when this hook mounts
+    const [
+      { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx },
+      { commonmark },
+      { gfm },
+      { listener, listenerCtx },
+      { history },
+      { highlight, highlightPluginConfig },
+      { createParser },
+      { common, createLowlight },
+      { default: elixir },
+      { $prose },
+      { Plugin, PluginKey }
+    ] = await Promise.all([
+      import("@milkdown/kit/core"),
+      import("@milkdown/kit/preset/commonmark"),
+      import("@milkdown/kit/preset/gfm"),
+      import("@milkdown/kit/plugin/listener"),
+      import("@milkdown/kit/plugin/history"),
+      import("@milkdown/plugin-highlight"),
+      import("@milkdown/plugin-highlight/lowlight"),
+      import("lowlight"),
+      import("highlight.js/lib/languages/elixir"),
+      import("@milkdown/kit/utils"),
+      import("@milkdown/kit/prose/state")
+    ])
+
+    // Import CSS
+    await import("@milkdown/kit/prose/view/style/prosemirror.css")
+
+    const lowlight = createLowlight(common)
+    lowlight.register("elixir", elixir)
+    const parser = createParser(lowlight)
+
+    // Plugin to make links clickable
+    const clickableLinkPlugin = $prose(() => {
+      return new Plugin({
+        key: new PluginKey("clickable-links"),
+        props: {
+          handleClick(view, pos, event) {
+            const target = event.target
+            if (target.tagName === "A" && target.href) {
+              event.preventDefault()
+              window.open(target.href, "_blank", "noopener,noreferrer")
+              return true
+            }
+            return false
+          }
+        }
+      })
+    })
 
     this.editor = await Editor.make()
       .config((ctx) => {
@@ -28,11 +73,14 @@ const MilkdownEditor = {
             this.debouncedSave(markdown)
           }
         })
+        ctx.set(highlightPluginConfig.key, { parser })
       })
       .use(commonmark)
       .use(gfm)
       .use(listener)
       .use(history)
+      .use(highlight)
+      .use(clickableLinkPlugin)
       .create()
   },
 
