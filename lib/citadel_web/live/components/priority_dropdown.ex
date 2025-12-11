@@ -34,7 +34,7 @@ defmodule CitadelWeb.Components.PriorityDropdown do
 
   def render(assigns) do
     ~H"""
-    <div class={["dropdown", @align_right && "dropdown-end"]}>
+    <div id={@id} class={["dropdown", @align_right && "dropdown-end"]}>
       <div tabindex="0" role="button" class="cursor-pointer">
         <.priority_badge priority={@task.priority} />
       </div>

@@ -77,7 +77,11 @@ defmodule CitadelWeb.Components.TaskComponents do
 
   def task_state_icon(assigns) do
     ~H"""
-    <.icon name={@task_state.icon} class={@size} style={"color: #{@task_state.background_color}"} />
+    <.icon
+      name={@task_state.icon || "fa-circle-solid"}
+      class={@size}
+      style={"color: #{@task_state.background_color || "#6b7280"}"}
+    />
     """
   end
 

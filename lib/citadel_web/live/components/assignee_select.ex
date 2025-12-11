@@ -81,7 +81,7 @@ defmodule CitadelWeb.Components.AssigneeSelect do
       |> assign(:selected_members, selected_members(assigns.members, assigns.selected))
 
     ~H"""
-    <div class="relative" phx-click-away="close" phx-target={@myself}>
+    <div id={@id} class="relative" phx-click-away="close" phx-target={@myself}>
       <input
         :for={id <- @selected}
         type="hidden"
