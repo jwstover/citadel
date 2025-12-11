@@ -121,6 +121,16 @@
 /* set root font family */
 html { font-family: "Exo 2", sans-serif; }
 
+/* Landing page gradient animation */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  animation: gradient-shift 6s ease infinite;
+}
+
 
 /* This file is for your main application CSS */
 
