@@ -23,6 +23,7 @@ defmodule CitadelWeb.Components.AssigneeSelect do
       |> assign(:selected, selected)
       |> assign(:search, "")
       |> assign(:open, false)
+      |> assign_new(:compact, fn -> false end)
 
     {:ok, socket}
   end
@@ -47,7 +48,13 @@ defmodule CitadelWeb.Components.AssigneeSelect do
         MapSet.put(socket.assigns.selected, id)
       end
 
-    {:noreply, assign(socket, :selected, selected)}
+    socket = assign(socket, :selected, selected)
+
+    if socket.assigns[:on_change] do
+      send(self(), {:assignees_changed, MapSet.to_list(selected)})
+    end
+
+    {:noreply, socket}
   end
 
   defp filtered_members(members, search) do
@@ -83,39 +90,69 @@ defmodule CitadelWeb.Components.AssigneeSelect do
       />
 
       <div
-        class="flex items-center gap-2 cursor-pointer px-3 py-2 border border-base-content/20 rounded-lg bg-base-100 hover:border-base-content/40 transition-colors"
+        class={[
+          "flex items-center gap-2 cursor-pointer transition-colors",
+          if(@compact,
+            do: "hover:text-base-content",
+            else:
+              "px-3 py-2 border border-base-content/20 rounded-lg bg-base-100 hover:border-base-content/40"
+          )
+        ]}
         phx-click="toggle"
         phx-target={@myself}
       >
         <%= if Enum.empty?(@selected_members) do %>
-          <span class="text-base-content/50">Select assignees...</span>
+          <span class={[
+            "text-sm",
+            @compact && "text-base-content/60",
+            !@compact && "text-base-content/50"
+          ]}>
+            {if @compact, do: "None", else: "Select assignees..."}
+          </span>
         <% else %>
-          <div class="flex items-center gap-1 flex-wrap">
-            <div
-              :for={member <- Enum.take(@selected_members, 3)}
-              class="flex items-center gap-1 bg-base-200 rounded-full px-2 py-0.5 text-sm"
-            >
-              <.user_avatar user={member} size="w-4 h-4" text_size="text-[10px]" />
-              <span class="truncate max-w-20">{member.name || member.email}</span>
+          <%= if @compact do %>
+            <div class="flex items-center gap-1">
+              <.user_avatar
+                :for={member <- Enum.take(@selected_members, 3)}
+                user={member}
+                size="w-6 h-6"
+                text_size="text-[10px]"
+              />
+              <span :if={length(@selected_members) > 3} class="text-xs text-base-content/70">
+                +{length(@selected_members) - 3}
+              </span>
             </div>
-            <span :if={length(@selected_members) > 3} class="text-sm text-base-content/70">
-              +{length(@selected_members) - 3} more
-            </span>
-          </div>
+          <% else %>
+            <div class="flex items-center gap-1 flex-wrap">
+              <div
+                :for={member <- Enum.take(@selected_members, 3)}
+                class="flex items-center gap-1 bg-base-200 rounded-full px-2 py-0.5 text-sm"
+              >
+                <.user_avatar user={member} size="w-4 h-4" text_size="text-[10px]" />
+                <span class="truncate max-w-20">{member.name || member.email}</span>
+              </div>
+              <span :if={length(@selected_members) > 3} class="text-sm text-base-content/70">
+                +{length(@selected_members) - 3} more
+              </span>
+            </div>
+          <% end %>
         <% end %>
         <.icon
           name="hero-chevron-down"
           class={
-            if @open,
-              do: "size-4 ml-auto transition-transform rotate-180",
-              else: "size-4 ml-auto transition-transform"
+            "size-4 transition-transform" <>
+              if(!@compact, do: " ml-auto", else: "") <>
+              if(@open, do: " rotate-180", else: "")
           }
         />
       </div>
 
       <div
         :if={@open}
-        class="absolute z-50 mt-1 w-full bg-base-200 border border-base-content/20 rounded-lg shadow-lg overflow-hidden"
+        class={[
+          "absolute z-50 mt-1 bg-base-200 border border-base-content/20 rounded-lg shadow-lg overflow-hidden",
+          if(@compact, do: "right-0 min-w-64", else: "w-full")
+        ]}
       >
         <div class="p-2 border-b border-base-content/10">
           <input

@@ -142,6 +142,10 @@ html { font-family: "Exo 2", sans-serif; }
   margin-bottom: 0.5em;
 }
 
+.milkdown-container.prose code {
+  color: var(--color-blue-300);
+}
+
 .milkdown-container .milkdown {
   outline: none;
 }
