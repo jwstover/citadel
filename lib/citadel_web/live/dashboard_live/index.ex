@@ -1,4 +1,4 @@
-defmodule CitadelWeb.HomeLive.Index do
+defmodule CitadelWeb.DashboardLive.Index do
   @moduledoc false
 
   use CitadelWeb, :live_view

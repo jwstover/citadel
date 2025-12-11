@@ -31,6 +31,8 @@ config :citadel, CitadelWeb.Endpoint,
     tailwind: {Tailwind, :install_and_run, [:citadel, ~w(--watch)]}
   ]
 
+config :live_debugger, :disabled?, true
+
 # ## SSL Support
 #
 # In order to use HTTPS in development, a self-signed
