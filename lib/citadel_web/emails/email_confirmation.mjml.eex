@@ -1,0 +1,28 @@
+<mj-section background-color="#ffffff" padding="30px">
+  <mj-column>
+    <mj-text font-size="22px" font-weight="bold" color="#1a1a1a">
+      Confirm your email address
+    </mj-text>
+
+    <mj-text padding-top="20px">
+      Welcome to Citadel! Please confirm your email address to complete your registration.
+    </mj-text>
+
+    <mj-button href="<%= @confirm_url %>" padding-top="24px">
+      Confirm Email
+    </mj-button>
+
+    <mj-text font-size="14px" color="#666666" padding-top="24px">
+      Or copy and paste this link into your browser:
+    </mj-text>
+    <mj-text font-size="14px" color="#666666">
+      <%= @confirm_url %>
+    </mj-text>
+
+    <mj-divider border-color="#e5e5e5" padding-top="24px" />
+
+    <mj-text font-size="12px" color="#999999" padding-top="16px">
+      If you didn't create an account, you can safely ignore this email.
+    </mj-text>
+  </mj-column>
+</mj-section>

@@ -9,9 +9,17 @@ defmodule CitadelWeb.AuthController do
 
     message =
       case activity do
-        {:confirm_new_user, :confirm} -> "Your email address has now been confirmed"
-        {:password, :reset} -> "Your password has successfully been reset"
-        _ -> "You are now signed in"
+        {:confirm_new_user, :confirm} ->
+          "Your email address has now been confirmed"
+
+        {:password, :reset_password_with_token} ->
+          "Your password has successfully been reset"
+
+        {:password, :register_with_password} ->
+          "Welcome! Please check your email to confirm your account."
+
+        _ ->
+          "You are now signed in"
       end
 
     conn
