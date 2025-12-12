@@ -10,7 +10,16 @@ defmodule Citadel.Accounts do
 
   resources do
     resource Citadel.Accounts.Token
-    resource Citadel.Accounts.User
+
+    resource Citadel.Accounts.User do
+      define :set_password, action: :set_password, args: [:password, :password_confirmation]
+
+      define :change_password,
+        action: :change_password,
+        args: [:current_password, :password, :password_confirmation]
+
+      define :get_user_by_id, action: :read, get_by: [:id]
+    end
 
     resource Citadel.Accounts.Workspace do
       define :create_workspace, action: :create, args: [:name]

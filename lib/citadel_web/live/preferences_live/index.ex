@@ -48,6 +48,12 @@ defmodule CitadelWeb.PreferencesLive.Index do
           id="api-keys-section"
           current_user={@current_user}
         />
+
+        <.live_component
+          module={CitadelWeb.Components.PasswordSection}
+          id="password-section"
+          current_user={@current_user}
+        />
       </div>
     </Layouts.app>
     """
