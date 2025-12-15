@@ -1,3 +1,12 @@
+# [0.12.0](https://github.com/jwstover/citadel/compare/v0.11.0...v0.12.0) (2025-12-15)
+
+
+### Features
+
+* add ability to log in with password ([88f9501](https://github.com/jwstover/citadel/commit/88f9501431e38c0477cb3f6bca203794d6c99f75))
+
+
+
 # [0.11.0](https://github.com/jwstover/citadel/compare/v0.10.1...v0.11.0) (2025-12-15)
 
 
@@ -36,17 +45,6 @@
 ### Features
 
 * use task list on task show page ([1399c25](https://github.com/jwstover/citadel/commit/1399c25e3a0b45b36b48f978c19103216e88e39a))
-
-
-
-# [0.8.0](https://github.com/jwstover/citadel/compare/v0.7.0...v0.8.0) (2025-12-10)
-
-
-### Features
-
-* add ability to set assignee, priority, and due date ([6c51d04](https://github.com/jwstover/citadel/commit/6c51d04c29d03d6f80423cefc87939651a3e48cb))
-* add additional task fields ([1f2d606](https://github.com/jwstover/citadel/commit/1f2d60695e2bf71504e60e19f2f28a789400c42e))
-* add color and icon to task states ([b83fac8](https://github.com/jwstover/citadel/commit/b83fac89f7d824e5d18efdd5bebcee7cb7e6b46c))
 
 
 
