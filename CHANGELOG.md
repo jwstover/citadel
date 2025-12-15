@@ -1,3 +1,12 @@
+# [0.13.0](https://github.com/jwstover/citadel/compare/v0.12.0...v0.13.0) (2025-12-15)
+
+
+### Features
+
+* make task pages auto update with changes ([956f885](https://github.com/jwstover/citadel/commit/956f88510679754b84b3d4e820fd4efcdfe5bc27))
+
+
+
 # [0.12.0](https://github.com/jwstover/citadel/compare/v0.11.0...v0.12.0) (2025-12-15)
 
 
@@ -36,15 +45,6 @@
 ### Features
 
 * add inline markdown editing with milkdown ([a2b1296](https://github.com/jwstover/citadel/commit/a2b12966f04f167028081641bcfddc2097a0d483))
-
-
-
-# [0.9.0](https://github.com/jwstover/citadel/compare/v0.8.0...v0.9.0) (2025-12-11)
-
-
-### Features
-
-* use task list on task show page ([1399c25](https://github.com/jwstover/citadel/commit/1399c25e3a0b45b36b48f978c19103216e88e39a))
 
 
 
