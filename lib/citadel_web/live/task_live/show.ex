@@ -522,7 +522,7 @@ defmodule CitadelWeb.TaskLive.Show do
           </div>
 
           <div class="py-4 border-t border-base-300">
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-3 mr-6">
               <h2 class="text-sm font-semibold text-base-content/70">
                 Sub-tasks ({@sub_tasks_count})
               </h2>
