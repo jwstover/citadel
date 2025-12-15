@@ -1,3 +1,17 @@
+# [0.11.0](https://github.com/jwstover/citadel/compare/v0.10.1...v0.11.0) (2025-12-15)
+
+
+### Bug Fixes
+
+* convert task list to use streams ([6d610b2](https://github.com/jwstover/citadel/commit/6d610b2ff55dc0456692f3233406ddac6508c8f2))
+
+
+### Features
+
+* add a sidebar to task show page with additional fields ([f4b798a](https://github.com/jwstover/citadel/commit/f4b798a20d20e783777cc6dddc0d68b8300976bf))
+
+
+
 ## [0.10.1](https://github.com/jwstover/citadel/compare/v0.10.0...v0.10.1) (2025-12-11)
 
 
@@ -33,16 +47,6 @@
 * add ability to set assignee, priority, and due date ([6c51d04](https://github.com/jwstover/citadel/commit/6c51d04c29d03d6f80423cefc87939651a3e48cb))
 * add additional task fields ([1f2d606](https://github.com/jwstover/citadel/commit/1f2d60695e2bf71504e60e19f2f28a789400c42e))
 * add color and icon to task states ([b83fac8](https://github.com/jwstover/citadel/commit/b83fac89f7d824e5d18efdd5bebcee7cb7e6b46c))
-
-
-
-# [0.7.0](https://github.com/jwstover/citadel/compare/v0.6.0...v0.7.0) (2025-12-10)
-
-
-### Features
-
-* add ability to change task state from state icon ([f6abe97](https://github.com/jwstover/citadel/commit/f6abe9749e924749fb428c32da65700291931567))
-* add ability to delete tasks to task page ([1f790ef](https://github.com/jwstover/citadel/commit/1f790ef1453e83933923c82fb786d3e62d4775a0))
 
 
 
