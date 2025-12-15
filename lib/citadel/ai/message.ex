@@ -80,7 +80,16 @@ defmodule Citadel.AI.Message do
   """
   @spec from_langchain(LangChain.Message.t()) :: t()
   def from_langchain(%LangChain.Message{role: role, content: content}) do
-    new(String.to_existing_atom(role), content)
+    role = if is_atom(role), do: role, else: String.to_existing_atom(role)
+    content = extract_content(content)
+    new(role, content)
+  end
+
+  defp extract_content([%LangChain.Message.ContentPart{content: text}]), do: text
+  defp extract_content(content) when is_binary(content), do: content
+
+  defp extract_content(content) when is_list(content) do
+    Enum.map_join(content, "", fn %LangChain.Message.ContentPart{content: text} -> text end)
   end
 
   @doc """

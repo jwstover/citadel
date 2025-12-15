@@ -205,6 +205,23 @@ custom classes must fully style the input
 - Remember anytime you use `phx-hook="MyHook"` and that js hook manages its own DOM, you **must** also set the `phx-update="ignore"` attribute
 - **Never** write embedded `<script>` tags in HEEx. Instead always write your scripts and hooks in the `assets/js` directory and integrate them with the `assets/js/app.js` file
 
+### LiveComponent batching with update_many/1
+
+When a LiveComponent makes database queries in `update/2` and multiple instances are rendered on the same page, use `update_many/1` instead to batch the queries. LiveView calls `update_many/1` once with all pending updates, allowing you to make a single query shared across all instances:
+
+    def update_many(assigns_sockets) do
+      # Query once for all component instances
+      task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
+
+      Enum.map(assigns_sockets, fn {assigns, socket} ->
+        socket
+        |> assign(assigns)
+        |> assign(:task_states, task_states)
+      end)
+    end
+
+**Important**: `update_many/1` returns a list of sockets directly (not `{:ok, socket}` tuples like `update/2`).
+
 ### LiveView streams
 
 - **Always** use LiveView streams for collections for assigning regular lists to avoid memory ballooning and runtime termination with the following operations:

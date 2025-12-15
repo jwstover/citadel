@@ -8,58 +8,50 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
   use Ash.Resource.Change
   require Ash.Query
 
-  alias LangChain.Chains.LLMChain
-  alias LangChain.ChatModels.ChatOpenAI
-
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_transaction(changeset, fn changeset ->
       conversation = changeset.data
+
+      opts = Ash.Context.to_opts(context)
 
       messages =
         Citadel.Chat.Message
         |> Ash.Query.filter(conversation_id == ^conversation.id)
         |> Ash.Query.limit(10)
         |> Ash.Query.select([:text, :source])
-        |> Ash.Query.sort(inserted_at: :asc)
-        |> Ash.read!(Ash.Context.to_opts(context))
+        |> Ash.Query.sort(inserted_at: :desc)
+        |> Ash.read!(Keyword.put(opts, :authorize?, false))
+        |> Enum.reverse()
 
-      system_prompt =
-        LangChain.Message.new_system!("""
-        Provide a short name for the current conversation.
-        2-8 words, preferring more succinct names.
-        RESPOND WITH ONLY THE NEW CONVERSATION NAME.
-        """)
+      prompt = build_prompt(messages)
+      actor = context.actor
 
-      message_chain = Enum.map(messages, &convert_to_langchain_message/1)
+      case Citadel.AI.send_message(prompt, actor, provider: :openai) do
+        {:ok, title} ->
+          Ash.Changeset.force_change_attribute(changeset, :title, String.trim(title))
 
-      %{
-        llm: ChatOpenAI.new!(%{model: "gpt-4o"}),
-        custom_context: Map.new(Ash.Context.to_opts(context)),
-        verbose?: false
-      }
-      |> LLMChain.new!()
-      |> LLMChain.add_message(system_prompt)
-      |> LLMChain.add_messages(message_chain)
-      |> LLMChain.run()
-      |> case do
-        {:ok,
-         %LangChain.Chains.LLMChain{
-           last_message: %{content: content}
-         }} ->
-          Ash.Changeset.force_change_attribute(changeset, :title, String.trim(content))
-
-        {:error, error} ->
-          {:error, error}
+        {:error, _type, _message} ->
+          changeset
       end
     end)
   end
 
-  defp convert_to_langchain_message(%{source: :agent, text: text}) do
-    LangChain.Message.new_assistant!(text)
-  end
+  defp build_prompt(messages) do
+    message_history =
+      messages
+      |> Enum.map_join("\n", fn msg ->
+        role = if msg.source == :agent, do: "Assistant", else: "User"
+        "#{role}: #{msg.text}"
+      end)
 
-  defp convert_to_langchain_message(%{text: text}) do
-    LangChain.Message.new_user!(text)
+    """
+    Based on this conversation, provide a short name/title for it.
+    2-8 words, preferring more succinct names.
+    RESPOND WITH ONLY THE NEW CONVERSATION NAME, nothing else.
+
+    Conversation:
+    #{message_history}
+    """
   end
 end

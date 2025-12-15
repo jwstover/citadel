@@ -7,6 +7,63 @@ defmodule CitadelWeb.Components.TasksListComponent do
 
   import CitadelWeb.Components.TaskComponents, only: [task_row: 1]
 
+  def update(%{deleted_task: %{id: task_id, task_state_id: task_state_id}}, socket) do
+    old_count = Map.get(socket.assigns.tasks_by_state_count, task_state_id, 1)
+    task_state_map = Map.delete(socket.assigns.task_state_map, task_id)
+
+    socket =
+      socket
+      |> stream_delete_by_dom_id(stream_name(task_state_id), "tasks-#{task_id}")
+      |> assign(
+        :tasks_by_state_count,
+        Map.put(socket.assigns.tasks_by_state_count, task_state_id, max(old_count - 1, 0))
+      )
+      |> assign(:task_state_map, task_state_map)
+
+    {:ok, socket}
+  end
+
+  def update(%{updated_task: task}, socket) do
+    task = ensure_loaded(task, socket)
+    old_state_id = Map.get(socket.assigns.task_state_map, task.id)
+
+    socket =
+      cond do
+        is_nil(old_state_id) ->
+          new_count = Map.get(socket.assigns.tasks_by_state_count, task.task_state_id, 0)
+          task_state_map = Map.put(socket.assigns.task_state_map, task.id, task.task_state_id)
+
+          socket
+          |> stream_insert(stream_name(task.task_state_id), task)
+          |> assign(
+            :tasks_by_state_count,
+            Map.put(socket.assigns.tasks_by_state_count, task.task_state_id, new_count + 1)
+          )
+          |> assign(:task_state_map, task_state_map)
+
+        old_state_id != task.task_state_id ->
+          old_count = Map.get(socket.assigns.tasks_by_state_count, old_state_id, 1)
+          new_count = Map.get(socket.assigns.tasks_by_state_count, task.task_state_id, 0)
+          task_state_map = Map.put(socket.assigns.task_state_map, task.id, task.task_state_id)
+
+          updated_counts =
+            socket.assigns.tasks_by_state_count
+            |> Map.put(old_state_id, max(old_count - 1, 0))
+            |> Map.put(task.task_state_id, new_count + 1)
+
+          socket
+          |> stream_delete_by_dom_id(stream_name(old_state_id), "tasks-#{task.id}")
+          |> stream_insert(stream_name(task.task_state_id), task)
+          |> assign(:tasks_by_state_count, updated_counts)
+          |> assign(:task_state_map, task_state_map)
+
+        true ->
+          stream_insert(socket, stream_name(task.task_state_id), task)
+      end
+
+    {:ok, socket}
+  end
+
   def update(assigns, socket) do
     socket =
       socket
@@ -19,6 +76,27 @@ defmodule CitadelWeb.Components.TasksListComponent do
       |> init_streams()
 
     {:ok, socket}
+  end
+
+  defp ensure_loaded(%{__struct__: Citadel.Tasks.Task} = task, socket) do
+    case task.task_state do
+      %Ash.NotLoaded{} ->
+        Ash.load!(task, [:task_state, :assignees, :overdue?],
+          actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id
+        )
+
+      _ ->
+        task
+    end
+  end
+
+  defp ensure_loaded(%{id: id}, socket) do
+    Tasks.get_task!(id,
+      actor: socket.assigns.current_user,
+      tenant: socket.assigns.current_workspace.id,
+      load: [:task_state, :assignees, :overdue?]
+    )
   end
 
   def handle_event("task-moved", %{"task_id" => task_id, "new_state_id" => new_state_id}, socket) do
@@ -53,11 +131,14 @@ defmodule CitadelWeb.Components.TasksListComponent do
       |> Map.put(old_state_id, old_count - 1)
       |> Map.put(new_state_id, new_count + 1)
 
+    task_state_map = Map.put(socket.assigns.task_state_map, task_id, new_state_id)
+
     socket =
       socket
       |> stream_delete(stream_name(old_state_id), task)
       |> stream_insert(stream_name(new_state_id), updated_task)
       |> assign(:tasks_by_state_count, updated_counts)
+      |> assign(:task_state_map, task_state_map)
 
     # Notify parent in prop_driven mode
     if socket.assigns.mode == :prop_driven do
@@ -93,7 +174,13 @@ defmodule CitadelWeb.Components.TasksListComponent do
     # Track counts separately (streams aren't enumerable)
     counts = Map.new(tasks_by_state, fn {k, v} -> {k, length(v)} end)
 
-    socket = assign(socket, :tasks_by_state_count, counts)
+    # Track task_id -> state_id mapping for efficient lookups during remote updates
+    task_state_map = Map.new(tasks, fn task -> {task.id, task.task_state_id} end)
+
+    socket =
+      socket
+      |> assign(:tasks_by_state_count, counts)
+      |> assign(:task_state_map, task_state_map)
 
     # Initialize a stream for each task state
     Enum.reduce(task_states, socket, fn state, acc ->

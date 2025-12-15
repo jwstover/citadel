@@ -9,7 +9,8 @@ defmodule Citadel.Tasks.Task do
     domain: Citadel.Tasks,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer],
-    extensions: [AshAi]
+    extensions: [AshAi],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Citadel.AI.Helpers
 
@@ -107,6 +108,103 @@ defmodule Citadel.Tasks.Task do
                      workspace.owner_id == ^actor(:id) or
                        exists(workspace.memberships, user_id == ^actor(:id))
                    )
+    end
+  end
+
+  pub_sub do
+    module CitadelWeb.Endpoint
+    prefix "tasks"
+
+    publish_all :create, ["tasks", :workspace_id] do
+      transform fn %{data: task} ->
+        %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          task_state_id: task.task_state_id,
+          priority: task.priority,
+          due_date: task.due_date,
+          parent_task_id: task.parent_task_id,
+          workspace_id: task.workspace_id
+        }
+      end
+    end
+
+    publish_all :update, ["tasks", :workspace_id] do
+      transform fn %{data: task} ->
+        %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          task_state_id: task.task_state_id,
+          priority: task.priority,
+          due_date: task.due_date,
+          parent_task_id: task.parent_task_id,
+          workspace_id: task.workspace_id
+        }
+      end
+    end
+
+    publish_all :destroy, ["tasks", :workspace_id] do
+      transform fn %{data: task} ->
+        %{id: task.id, task_state_id: task.task_state_id, action: :destroy}
+      end
+    end
+
+    publish :update, ["task", :id] do
+      transform fn %{data: task} ->
+        %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          task_state_id: task.task_state_id,
+          priority: task.priority,
+          due_date: task.due_date,
+          parent_task_id: task.parent_task_id,
+          workspace_id: task.workspace_id
+        }
+      end
+    end
+
+    publish :create, ["task_children", :parent_task_id] do
+      transform fn %{data: task} ->
+        %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          task_state_id: task.task_state_id,
+          priority: task.priority,
+          due_date: task.due_date,
+          parent_task_id: task.parent_task_id,
+          workspace_id: task.workspace_id
+        }
+      end
+    end
+
+    publish :update, ["task_children", :parent_task_id] do
+      transform fn %{data: task} ->
+        %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          task_state_id: task.task_state_id,
+          priority: task.priority,
+          due_date: task.due_date,
+          parent_task_id: task.parent_task_id,
+          workspace_id: task.workspace_id
+        }
+      end
+    end
+
+    publish :destroy, ["task_children", :parent_task_id] do
+      transform fn %{data: task} ->
+        %{id: task.id, task_state_id: task.task_state_id, action: :destroy}
+      end
     end
   end
 

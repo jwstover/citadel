@@ -9,6 +9,10 @@ defmodule CitadelWeb.HomeLive.Index do
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      CitadelWeb.Endpoint.subscribe("tasks:tasks:#{socket.assigns.current_workspace.id}")
+    end
+
     {:ok, assign(socket, :show_task_form, false)}
   end
 
@@ -32,6 +36,28 @@ defmodule CitadelWeb.HomeLive.Index do
 
   def handle_info({:task_priority_changed, _task}, socket) do
     send_update(CitadelWeb.Components.TasksListComponent, id: "tasks-container")
+    {:noreply, socket}
+  end
+
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "tasks:tasks:" <> _, payload: payload}, socket) do
+    case payload do
+      %{action: :destroy} ->
+        send_update(CitadelWeb.Components.TasksListComponent,
+          id: "tasks-container",
+          deleted_task: payload
+        )
+
+      %{parent_task_id: parent_id} when not is_nil(parent_id) ->
+        # Ignore sub-tasks - they're not shown in the main task list
+        :ok
+
+      task ->
+        send_update(CitadelWeb.Components.TasksListComponent,
+          id: "tasks-container",
+          updated_task: task
+        )
+    end
+
     {:noreply, socket}
   end
 
