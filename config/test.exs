@@ -1,6 +1,14 @@
 import Config
 config :citadel, Oban, testing: :manual
 
+config :citadel, Citadel.AI,
+  anthropic_api_key: "test-anthropic-key",
+  openai_api_key: "test-openai-key",
+  provider_overrides: %{
+    anthropic: Citadel.AI.MockProvider,
+    openai: Citadel.AI.MockProvider
+  }
+
 config :citadel,
   token_signing_secret: "Lu32ul4hfEE2x/l+8SkesaKOI8zopO/1",
   google_client_id: "test-client-id",

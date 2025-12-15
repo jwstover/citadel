@@ -219,6 +219,177 @@ defmodule Citadel.Accounts.UserPasswordTest do
     end
   end
 
+  describe "sign_in_with_password/2" do
+    test "signs in user with valid email and password" do
+      email = unique_user_email()
+      password = "SecurePass123"
+
+      # Create user
+      {:ok, user} =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: email,
+          password: password,
+          password_confirmation: password
+        })
+        |> Ash.create(authorize?: false)
+
+      # Sign in with correct credentials
+      {:ok, signed_in_user} =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: email,
+          password: password
+        })
+        |> Ash.read_one(authorize?: false)
+
+      assert signed_in_user.id == user.id
+      assert signed_in_user.__metadata__.token != nil
+    end
+
+    test "sign in is case-insensitive for email" do
+      email = unique_user_email()
+      password = "SecurePass123"
+
+      # Create user with lowercase email
+      {:ok, user} =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: email,
+          password: password,
+          password_confirmation: password
+        })
+        |> Ash.create(authorize?: false)
+
+      # Sign in with uppercase email
+      {:ok, signed_in_user} =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: String.upcase(email),
+          password: password
+        })
+        |> Ash.read_one(authorize?: false)
+
+      assert signed_in_user.id == user.id
+    end
+
+    test "rejects sign in with incorrect password" do
+      email = unique_user_email()
+      password = "SecurePass123"
+
+      # Create user
+      {:ok, _user} =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: email,
+          password: password,
+          password_confirmation: password
+        })
+        |> Ash.create(authorize?: false)
+
+      # Try to sign in with wrong password
+      result =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: email,
+          password: "WrongPassword123"
+        })
+        |> Ash.read_one(authorize?: false)
+
+      assert {:error, _} = result
+    end
+
+    test "rejects sign in with non-existent email" do
+      result =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: "nonexistent@example.com",
+          password: "SomePassword123"
+        })
+        |> Ash.read_one(authorize?: false)
+
+      assert {:error, _} = result
+    end
+
+    test "generates a valid JWT token on successful sign in" do
+      email = unique_user_email()
+      password = "SecurePass123"
+
+      # Create user
+      {:ok, _user} =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: email,
+          password: password,
+          password_confirmation: password
+        })
+        |> Ash.create(authorize?: false)
+
+      # Sign in
+      {:ok, signed_in_user} =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: email,
+          password: password
+        })
+        |> Ash.read_one(authorize?: false)
+
+      token = signed_in_user.__metadata__.token
+      assert token != nil
+      assert is_binary(token)
+
+      # Verify the token is a valid JWT (starts with eyJ)
+      assert String.starts_with?(token, "eyJ")
+    end
+  end
+
+  describe "sign_in_with_token/1" do
+    test "exchanges short-lived sign-in token for a full token" do
+      email = unique_user_email()
+      password = "SecurePass123"
+
+      # Create user
+      {:ok, _user} =
+        User
+        |> Ash.Changeset.for_create(:register_with_password, %{
+          email: email,
+          password: password,
+          password_confirmation: password
+        })
+        |> Ash.create(authorize?: false)
+
+      # Sign in with token_type: :sign_in to get a short-lived sign-in token
+      {:ok, signed_in_user} =
+        User
+        |> Ash.Query.for_read(:sign_in_with_password, %{
+          email: email,
+          password: password
+        })
+        |> Ash.Query.set_context(%{token_type: :sign_in})
+        |> Ash.read_one(authorize?: false)
+
+      sign_in_token = signed_in_user.__metadata__.token
+
+      # Exchange the short-lived token for a full token
+      {:ok, token_user} =
+        User
+        |> Ash.Query.for_read(:sign_in_with_token, %{token: sign_in_token})
+        |> Ash.read_one(authorize?: false)
+
+      assert token_user.id == signed_in_user.id
+      assert token_user.__metadata__.token != nil
+    end
+
+    test "rejects invalid token" do
+      result =
+        User
+        |> Ash.Query.for_read(:sign_in_with_token, %{token: "invalid_token"})
+        |> Ash.read_one(authorize?: false)
+
+      assert {:error, _} = result
+    end
+  end
+
   describe "change_password/2" do
     test "allows user to change password with correct current password" do
       email = unique_user_email()

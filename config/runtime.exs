@@ -47,10 +47,23 @@ default_provider =
   end
 
 # Configure Citadel.AI with provider settings
-config :citadel, Citadel.AI,
-  anthropic_api_key: anthropic_api_key,
-  openai_api_key: openai_api_key,
-  default_provider: default_provider
+# In test mode, preserve any existing config (like provider_overrides for mocking)
+if config_env() == :test do
+  existing_config = Application.get_env(:citadel, Citadel.AI) || []
+
+  config :citadel,
+         Citadel.AI,
+         Keyword.merge(existing_config,
+           anthropic_api_key: existing_config[:anthropic_api_key] || anthropic_api_key,
+           openai_api_key: existing_config[:openai_api_key] || openai_api_key,
+           default_provider: existing_config[:default_provider] || default_provider
+         )
+else
+  config :citadel, Citadel.AI,
+    anthropic_api_key: anthropic_api_key,
+    openai_api_key: openai_api_key,
+    default_provider: default_provider
+end
 
 if config_env() == :prod do
   database_url =
