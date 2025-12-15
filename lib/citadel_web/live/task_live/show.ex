@@ -36,6 +36,11 @@ defmodule CitadelWeb.TaskLive.Show do
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
     can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
+    if connected?(socket) do
+      CitadelWeb.Endpoint.subscribe("tasks:task:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
+    end
+
     socket =
       socket
       |> assign(:task, task)
@@ -290,6 +295,77 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:sub_tasks_count, length(sub_tasks))
 
     {:noreply, socket}
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:task:" <> task_id, payload: _payload},
+        socket
+      ) do
+    if task_id == socket.assigns.task.id do
+      task =
+        Tasks.get_task!(task_id,
+          actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id,
+          load: [:task_state, :user, :parent_task, :ancestors, :assignees, :overdue?]
+        )
+
+      {:noreply, assign(socket, :task, task)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:task_children:" <> parent_id, payload: payload},
+        socket
+      ) do
+    if parent_id == socket.assigns.task.id do
+      {:noreply, handle_sub_task_broadcast(payload, socket)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp handle_sub_task_broadcast(%{action: :destroy} = payload, socket) do
+    sub_tasks = Enum.reject(socket.assigns.sub_tasks, &(&1.id == payload.id))
+    maybe_notify_sub_task_deleted(sub_tasks, payload, socket)
+
+    socket
+    |> assign(:sub_tasks, sub_tasks)
+    |> assign(:sub_tasks_count, length(sub_tasks))
+  end
+
+  defp handle_sub_task_broadcast(_sub_task, socket) do
+    sub_tasks =
+      Tasks.list_sub_tasks!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:task_state, :assignees, :overdue?]
+      )
+
+    maybe_notify_sub_tasks_updated(sub_tasks, socket)
+
+    socket
+    |> assign(:sub_tasks, sub_tasks)
+    |> assign(:sub_tasks_count, length(sub_tasks))
+  end
+
+  defp maybe_notify_sub_task_deleted(sub_tasks, payload, socket) do
+    unless Enum.empty?(sub_tasks) do
+      send_update(CitadelWeb.Components.TasksListComponent,
+        id: "sub-tasks-#{socket.assigns.task.id}",
+        deleted_task: payload
+      )
+    end
+  end
+
+  defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
+    unless Enum.empty?(sub_tasks) do
+      send_update(CitadelWeb.Components.TasksListComponent,
+        id: "sub-tasks-#{socket.assigns.task.id}",
+        tasks: sub_tasks
+      )
+    end
   end
 
   def render(assigns) do

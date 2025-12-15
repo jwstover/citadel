@@ -1,0 +1,33 @@
+{
+  "coverage_options": {
+    "treat_no_relevant_lines_as_covered": true,
+    "minimum_coverage": 50
+  },
+  "skip_files": [
+    "deps/",
+    "lib/citadel.ex",
+    "lib/citadel/accounts.ex",
+    "lib/citadel/chat.ex",
+    "lib/citadel/tasks.ex",
+    "lib/citadel/mailer.ex",
+    "lib/citadel/release.ex",
+    "lib/citadel/accounts/token.ex",
+    "lib/citadel/accounts/api_key.ex",
+    "lib/citadel/accounts/workspace_invitation.ex",
+    "lib/citadel/tasks/task.ex",
+    "lib/citadel/tasks/task_assignment.ex",
+    "lib/citadel/tasks/task_state.ex",
+    "lib/citadel/tasks/workspace_task_counter.ex",
+    "lib/citadel/chat/conversation.ex",
+    "lib/citadel/chat/message.ex",
+    "lib/citadel/chat/message/types/source.ex",
+    "lib/citadel/tasks/task/types/priority.ex",
+    "lib/citadel_web/endpoint.ex",
+    "lib/citadel_web/gettext.ex",
+    "lib/citadel_web/auth_overrides.ex",
+    "lib/citadel_web/emails/",
+    "lib/citadel_web/controllers/error_html.ex",
+    "lib/citadel_web/controllers/error_json.ex",
+    "test/support/"
+  ]
+}

@@ -7,13 +7,14 @@ defmodule CitadelWeb.Components.TaskStateDropdown do
 
   import CitadelWeb.Components.TaskComponents, only: [task_state_icon: 1]
 
-  def update(assigns, socket) do
+  def update_many(assigns_sockets) do
     task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
 
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:task_states, task_states)}
+    Enum.map(assigns_sockets, fn {assigns, socket} ->
+      socket
+      |> assign(assigns)
+      |> assign(:task_states, task_states)
+    end)
   end
 
   def handle_event("change-state", %{"state-id" => state_id}, socket) do

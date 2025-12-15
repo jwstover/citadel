@@ -91,6 +91,9 @@ defmodule Citadel.AI.Config do
   @doc """
   Gets the provider module for a given provider atom.
 
+  In test environments, this can be overridden by setting the `:provider_overrides`
+  config option to allow mocking of specific providers.
+
   ## Parameters
     - provider: The AI provider (:anthropic or :openai)
 
@@ -101,13 +104,24 @@ defmodule Citadel.AI.Config do
 
       iex> Citadel.AI.Config.provider_module(:anthropic)
       Citadel.AI.Providers.Anthropic
+
+      # In test config:
+      # config :citadel, Citadel.AI, provider_overrides: %{anthropic: Citadel.AI.MockProvider}
   """
   @spec provider_module(provider()) :: module()
   def provider_module(provider) do
-    case provider do
-      :anthropic -> Citadel.AI.Providers.Anthropic
-      :openai -> Citadel.AI.Providers.OpenAI
-      _ -> raise ArgumentError, "Unknown provider: #{inspect(provider)}"
+    overrides = Application.get_env(:citadel, Citadel.AI)[:provider_overrides] || %{}
+
+    case Map.get(overrides, provider) do
+      nil ->
+        case provider do
+          :anthropic -> Citadel.AI.Providers.Anthropic
+          :openai -> Citadel.AI.Providers.OpenAI
+          _ -> raise ArgumentError, "Unknown provider: #{inspect(provider)}"
+        end
+
+      module ->
+        module
     end
   end
 
