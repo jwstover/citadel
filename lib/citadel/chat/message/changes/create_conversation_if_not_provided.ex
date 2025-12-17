@@ -16,7 +16,10 @@ defmodule Citadel.Chat.Message.Changes.CreateConversationIfNotProvided do
       end)
     else
       Ash.Changeset.before_action(changeset, fn changeset ->
-        conversation = Citadel.Chat.create_conversation!(Ash.Context.to_opts(context))
+        opts = Ash.Context.to_opts(context) ++ [tenant: changeset.tenant]
+
+        conversation =
+          Citadel.Chat.create_conversation!(%{workspace_id: changeset.tenant}, opts)
 
         Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation.id)
       end)
@@ -25,8 +28,9 @@ defmodule Citadel.Chat.Message.Changes.CreateConversationIfNotProvided do
 
   defp validate_conversation(changeset, context) do
     conversation_id = changeset.arguments.conversation_id
+    opts = Ash.Context.to_opts(context) ++ [tenant: changeset.tenant]
 
-    case Citadel.Chat.get_conversation(conversation_id, Ash.Context.to_opts(context)) do
+    case Citadel.Chat.get_conversation(conversation_id, opts) do
       {:ok, _conversation} ->
         # Conversation exists and actor has access to it
         Ash.Changeset.force_change_attribute(changeset, :conversation_id, conversation_id)
