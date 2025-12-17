@@ -65,6 +65,28 @@ else
     default_provider: default_provider
 end
 
+# Cloak encryption configuration for sensitive data (GitHub PATs, etc.)
+# In dev/test, use a default key. In prod, require CLOAK_KEY env var.
+cloak_key =
+  if config_env() == :prod do
+    System.get_env("CLOAK_KEY") ||
+      raise """
+      environment variable CLOAK_KEY is missing.
+      Generate one with: :crypto.strong_rand_bytes(32) |> Base.encode64()
+      """
+  else
+    # Default key for dev/test - DO NOT use in production
+    System.get_env("CLOAK_KEY") || "rkYjLw7vTj7mQxYVw8vK+KRj6bEADT5PBvxNOPkT0Oc="
+  end
+
+config :citadel, Citadel.Vault,
+  ciphers: [
+    default: {
+      Cloak.Ciphers.AES.GCM,
+      tag: "AES.GCM.V1", key: Base.decode64!(cloak_key), iv_length: 12
+    }
+  ]
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

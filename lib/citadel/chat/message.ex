@@ -148,6 +148,21 @@ defmodule Citadel.Chat.Message do
       # on update, only set complete to its new value
       upsert_fields [:complete]
     end
+
+    create :create_response do
+      upsert? true
+      upsert_identity :unique_id
+      accept [:id, :response_to_id, :conversation_id, :text]
+      argument :tool_calls, {:array, :map}
+      argument :tool_results, {:array, :map}
+
+      change set_attribute(:source, :agent)
+      change set_attribute(:complete, true)
+      change set_attribute(:tool_calls, arg(:tool_calls))
+      change set_attribute(:tool_results, arg(:tool_results))
+
+      upsert_fields [:text, :complete, :tool_calls, :tool_results]
+    end
   end
 
   policies do
@@ -205,7 +220,7 @@ defmodule Citadel.Chat.Message do
       end
     end
 
-    publish :upsert_response, ["messages", :conversation_id] do
+    publish :create_response, ["messages", :conversation_id] do
       transform fn %{data: message} ->
         %{text: message.text, id: message.id, source: message.source}
       end
@@ -251,6 +266,10 @@ defmodule Citadel.Chat.Message do
       public? true
       destination_attribute :response_to_id
     end
+  end
+
+  identities do
+    identity :unique_id, [:id]
   end
 
   calculations do
