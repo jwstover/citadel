@@ -65,7 +65,7 @@ config :spark,
 config :citadel,
   ecto_repos: [Citadel.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Citadel.Chat, Citadel.Tasks, Citadel.Accounts]
+  ash_domains: [Citadel.Chat, Citadel.Tasks, Citadel.Accounts, Citadel.Integrations]
 
 # Configures the endpoint
 config :citadel, CitadelWeb.Endpoint,

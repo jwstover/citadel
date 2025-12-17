@@ -1,6 +1,9 @@
 import Config
 config :citadel, Oban, testing: :manual
 
+# Disable GitHub token validation in tests (no real HTTP requests)
+config :citadel, :github_token_validation, enabled: false
+
 config :citadel, Citadel.AI,
   anthropic_api_key: "test-anthropic-key",
   openai_api_key: "test-openai-key",
@@ -33,6 +36,8 @@ config :citadel, Citadel.Repo,
   # Increased for property tests which create many records concurrently
   pool_size: max(System.schedulers_online() * 4, 32),
   ownership_timeout: 120_000,
+  # Increased from default 15s to handle concurrent test contention
+  checkout_timeout: 30_000,
   queue_target: 5000,
   queue_interval: 10_000
 

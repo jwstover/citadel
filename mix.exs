@@ -54,6 +54,8 @@ defmodule Citadel.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
+      {:cloak, "~> 1.1"},
+      {:cloak_ecto, "~> 1.3"},
       {:mdex, "~> 0.7"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
@@ -66,6 +68,7 @@ defmodule Citadel.MixProject do
       {:usage_rules, "~> 0.1", only: [:dev]},
       {:ash_ai, "~> 0.2"},
       {:langchain, "~> 0.3"},
+      {:hermes_mcp, "~> 0.14"},
       {:tidewave, "~> 0.5", only: [:dev]},
       {:live_debugger, "~> 0.4", only: [:dev]},
       {:oban_web, "~> 2.0"},

@@ -5,6 +5,7 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceTest do
   import Citadel.Generator
 
   alias Citadel.Accounts
+  alias Citadel.Integrations
 
   describe "handle_params/3" do
     setup :register_and_log_in_user
@@ -261,6 +262,179 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceTest do
       # Modal should be hidden
       html = render(view)
       refute html =~ "modal-open"
+    end
+  end
+
+  describe "GitHub integration" do
+    setup :register_and_log_in_user
+
+    test "displays integrations card", %{conn: conn, workspace: workspace} do
+      {:ok, _view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert html =~ "Integrations"
+      assert html =~ "GitHub"
+    end
+
+    test "shows GitHub as not connected when no connection exists", %{
+      conn: conn,
+      workspace: workspace
+    } do
+      {:ok, _view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert html =~ "Not connected"
+      assert html =~ "Connect"
+    end
+
+    test "shows GitHub as connected when connection exists", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: user)
+
+      {:ok, _view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert html =~ "Connected"
+      assert html =~ "Disconnect"
+    end
+
+    test "owner sees Connect button when not connected", %{conn: conn, workspace: workspace} do
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert has_element?(view, ~s|[phx-click="show-github-modal"]|)
+    end
+
+    test "owner sees Disconnect button when connected", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: user)
+
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert has_element?(view, ~s|[phx-click="show-disconnect-confirmation"]|)
+    end
+
+    test "member does not see Connect button", %{conn: conn, user: user} do
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
+      Accounts.add_workspace_member!(user.id, workspace.id, actor: owner)
+
+      conn = log_in_user(conn, user)
+
+      {:ok, view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      # Member should see the integration card but not the connect button
+      assert html =~ "Integrations"
+      assert html =~ "GitHub"
+      refute has_element?(view, ~s|[phx-click="show-github-modal"]|)
+    end
+
+    test "member sees badge instead of buttons when connected", %{conn: conn, user: user} do
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
+      Accounts.add_workspace_member!(user.id, workspace.id, actor: owner)
+
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: owner)
+
+      conn = log_in_user(conn, user)
+
+      {:ok, view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      assert html =~ "badge-success"
+      refute has_element?(view, ~s|[phx-click="show-disconnect-confirmation"]|)
+    end
+
+    test "clicking Connect opens GitHub modal", %{conn: conn, workspace: workspace} do
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      html =
+        view
+        |> element(~s|[phx-click="show-github-modal"]|)
+        |> render_click()
+
+      assert html =~ "Connect GitHub"
+      assert html =~ "Personal Access Token"
+    end
+
+    test "clicking Disconnect opens confirmation modal", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: user)
+
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      html =
+        view
+        |> element(~s|[phx-click="show-disconnect-confirmation"]|)
+        |> render_click()
+
+      assert html =~ "Disconnect GitHub"
+      assert html =~ "Are you sure"
+    end
+
+    test "confirming disconnect removes the connection", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: user)
+
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      # Open confirmation modal
+      view
+      |> element(~s|[phx-click="show-disconnect-confirmation"]|)
+      |> render_click()
+
+      # Confirm disconnect
+      html =
+        view
+        |> element(~s|[phx-click="confirm-disconnect-github"]|)
+        |> render_click()
+
+      assert html =~ "Not connected"
+      assert html =~ "Connect"
+
+      # Verify connection was actually deleted
+      result =
+        Integrations.get_workspace_github_connection(workspace.id,
+          tenant: workspace.id,
+          actor: user,
+          not_found_error?: false
+        )
+
+      assert result == {:ok, nil}
+    end
+
+    test "canceling disconnect closes modal", %{conn: conn, user: user, workspace: workspace} do
+      pat = "ghp_test_token_#{System.unique_integer([:positive])}"
+      Integrations.create_github_connection!(pat, tenant: workspace.id, actor: user)
+
+      {:ok, view, _html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
+
+      # Open confirmation modal
+      view
+      |> element(~s|[phx-click="show-disconnect-confirmation"]|)
+      |> render_click()
+
+      # Cancel using the Cancel button (not the X circle button)
+      html =
+        view
+        |> element(~s|button.btn-ghost:not(.btn-circle)[phx-click="cancel-disconnect-github"]|)
+        |> render_click()
+
+      # Modal should be closed, still connected
+      refute html =~ "Are you sure"
+      assert html =~ "Connected"
     end
   end
 end

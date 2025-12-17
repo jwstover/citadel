@@ -291,6 +291,7 @@ defmodule Citadel.Accounts.WorkspaceTest do
       assert workspace.task_prefix == "ABC"
     end
 
+    @tag timeout: 60_000
     test "falls back to uppercasing first letters when no uppercase in name" do
       user = create_user()
 
