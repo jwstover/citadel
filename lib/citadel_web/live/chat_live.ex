@@ -46,19 +46,6 @@ defmodule CitadelWeb.ChatLive do
             phx-update="stream"
             class="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse"
           >
-            <div :if={@streaming_message} id="streaming-message" class="chat chat-start">
-              <div class="chat-image avatar">
-                <div class="w-10 rounded-full bg-base-300 p-1">
-                  <img
-                    src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
-                    alt="Logo"
-                  />
-                </div>
-              </div>
-              <div class="chat-bubble">
-                {to_markdown(@streaming_message.text)}
-              </div>
-            </div>
             <%= for {id, message} <- @streams.messages do %>
               <div
                 id={id}
@@ -86,6 +73,19 @@ defmodule CitadelWeb.ChatLive do
                 </div>
               </div>
             <% end %>
+            <div :if={@streaming_message} id="streaming-message" class="chat chat-start">
+              <div class="chat-image avatar">
+                <div class="w-10 rounded-full bg-base-300 p-1">
+                  <img
+                    src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
+                    alt="Logo"
+                  />
+                </div>
+              </div>
+              <div class="chat-bubble">
+                {to_markdown(@streaming_message.text)}
+              </div>
+            </div>
           </div>
         </div>
         <div class="p-4 border-t h-16">
@@ -281,6 +281,16 @@ defmodule CitadelWeb.ChatLive do
     updated_streaming = %{streaming | text: streaming.text <> content}
 
     {:noreply, assign(socket, :streaming_message, updated_streaming)}
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "chat:stream:" <> _conversation_id,
+          event: "complete"
+        },
+        socket
+      ) do
+    {:noreply, assign(socket, :streaming_message, nil)}
   end
 
   # Handle complete messages - clear streaming state and insert into stream

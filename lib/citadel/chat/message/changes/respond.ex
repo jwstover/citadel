@@ -224,6 +224,14 @@ defmodule Citadel.Chat.Message.Changes.Respond do
     )
   end
 
+  defp broadcast_message_complete(conversation_id, message_id) do
+    CitadelWeb.Endpoint.broadcast(
+      "chat:stream:#{conversation_id}",
+      "complete",
+      %{message_id: message_id}
+    )
+  end
+
   defp extract_delta_content(deltas) do
     deltas
     |> Enum.map(fn delta -> extract_content(delta.content) end)
@@ -238,6 +246,8 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   defp handle_message_processed(_chain, data, message_id, message, context) do
     if should_persist_message?(data) do
       content = extract_message_content(data.content)
+
+      broadcast_message_complete(message.conversation_id, message_id)
 
       create_message_response(
         message_id,
