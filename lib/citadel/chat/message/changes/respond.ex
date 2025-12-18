@@ -278,7 +278,9 @@ defmodule Citadel.Chat.Message.Changes.Respond do
 
   defp extract_message_content(_), do: nil
 
-  defp extract_content_part(%LangChain.Message.ContentPart{type: :text, content: content}), do: content
+  defp extract_content_part(%LangChain.Message.ContentPart{type: :text, content: content}),
+    do: content
+
   defp extract_content_part(%{"type" => "text", "text" => text}), do: text
   defp extract_content_part(_), do: nil
 

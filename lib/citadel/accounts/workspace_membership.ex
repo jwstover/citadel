@@ -49,6 +49,8 @@ defmodule Citadel.Accounts.WorkspaceMembership do
           Ash.Changeset.get_argument(changeset, :workspace_id)
         )
       end
+
+      validate Citadel.Accounts.WorkspaceMembership.Validations.UserIsOrgMember
     end
 
     destroy :leave do

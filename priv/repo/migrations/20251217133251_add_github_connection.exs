@@ -22,7 +22,8 @@ defmodule Citadel.Repo.Migrations.AddGithubConnection do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
 
       add :inserted_at, :utc_datetime_usec,
         null: false,

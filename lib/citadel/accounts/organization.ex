@@ -1,7 +1,7 @@
-defmodule Citadel.Accounts.Workspace do
+defmodule Citadel.Accounts.Organization do
   @moduledoc """
-  A workspace groups users together to collaborate on tasks and conversations.
-  Each workspace has an owner who can manage the workspace and invite other users.
+  An organization is the top-level entity that owns workspaces and has a subscription.
+  Users must be members of an organization before they can be added to any of its workspaces.
   """
   use Ash.Resource,
     otp_app: :citadel,
@@ -10,7 +10,7 @@ defmodule Citadel.Accounts.Workspace do
     authorizers: [Ash.Policy.Authorizer]
 
   postgres do
-    table "workspaces"
+    table "organizations"
     repo Citadel.Repo
   end
 
@@ -18,6 +18,7 @@ defmodule Citadel.Accounts.Workspace do
     define :create, args: [:name]
     define :list, action: :read
     define :get_by_id, action: :read, get_by: [:id]
+    define :get_by_slug, action: :read, get_by: [:slug]
     define :update
     define :destroy
   end
@@ -26,26 +27,22 @@ defmodule Citadel.Accounts.Workspace do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name, :organization_id]
+      accept [:name]
 
       change relate_actor(:owner)
-      change Citadel.Accounts.Workspace.Changes.GenerateTaskPrefix
+      change Citadel.Accounts.Organization.Changes.GenerateSlug
 
       change fn changeset, context ->
-        Ash.Changeset.after_action(changeset, fn _changeset, workspace ->
-          # Automatically create membership for the owner
-          Citadel.Accounts.add_workspace_member!(
-            workspace.owner_id,
-            workspace.id,
-            actor: context.actor
-          )
-
-          # Initialize the task counter for this workspace
-          Citadel.Tasks.create_workspace_task_counter!(%{workspace_id: workspace.id},
+        Ash.Changeset.after_action(changeset, fn _changeset, organization ->
+          # Automatically create membership for the owner with :owner role
+          Citadel.Accounts.add_organization_member!(
+            organization.id,
+            organization.owner_id,
+            :owner,
             authorize?: false
           )
 
-          {:ok, workspace}
+          {:ok, organization}
         end)
       end
     end
@@ -56,23 +53,20 @@ defmodule Citadel.Accounts.Workspace do
   end
 
   policies do
-    # Any authenticated user can create a workspace
     policy action_type(:create) do
       authorize_if actor_present()
     end
 
-    # Owner and members can read the workspace
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner)
-      authorize_if Citadel.Accounts.Checks.WorkspaceMember
+      authorize_if expr(exists(memberships, user_id == ^actor(:id)))
     end
 
-    # Only the owner can update the workspace
     policy action_type(:update) do
       authorize_if relates_to_actor_via(:owner)
+      authorize_if expr(exists(memberships, user_id == ^actor(:id) and role in [:owner, :admin]))
     end
 
-    # Only the owner can destroy the workspace
     policy action_type(:destroy) do
       authorize_if relates_to_actor_via(:owner)
     end
@@ -90,13 +84,9 @@ defmodule Citadel.Accounts.Workspace do
                   trim?: true
     end
 
-    attribute :task_prefix, :string do
+    attribute :slug, :string do
       allow_nil? false
       public? true
-
-      constraints min_length: 1,
-                  max_length: 3,
-                  match: ~r/^[A-Z]+$/
     end
 
     create_timestamp :inserted_at
@@ -104,27 +94,29 @@ defmodule Citadel.Accounts.Workspace do
   end
 
   relationships do
-    belongs_to :organization, Citadel.Accounts.Organization do
-      allow_nil? true
-      attribute_writable? true
-      public? true
-    end
-
     belongs_to :owner, Citadel.Accounts.User do
       allow_nil? false
       attribute_writable? true
       public? true
     end
 
-    has_many :memberships, Citadel.Accounts.WorkspaceMembership do
+    has_many :memberships, Citadel.Accounts.OrganizationMembership do
       public? true
     end
 
     many_to_many :members, Citadel.Accounts.User do
-      through Citadel.Accounts.WorkspaceMembership
-      source_attribute_on_join_resource :workspace_id
+      through Citadel.Accounts.OrganizationMembership
+      source_attribute_on_join_resource :organization_id
       destination_attribute_on_join_resource :user_id
       public? true
     end
+
+    has_many :workspaces, Citadel.Accounts.Workspace do
+      public? true
+    end
+  end
+
+  identities do
+    identity :unique_slug, [:slug]
   end
 end

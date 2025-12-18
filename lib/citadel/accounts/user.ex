@@ -100,14 +100,25 @@ defmodule Citadel.Accounts.User do
 
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, user ->
-          existing_workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+          existing_orgs = Citadel.Accounts.list_organizations!(actor: user)
 
-          if Enum.empty?(existing_workspaces) do
-            _workspace =
-              Citadel.Accounts.create_workspace!(
+          if Enum.empty?(existing_orgs) do
+            # Create a personal organization for the user
+            organization =
+              Citadel.Accounts.create_organization!(
                 "Personal",
                 actor: user
               )
+
+            # Create a personal workspace under that organization
+            _workspace =
+              Citadel.Accounts.Workspace
+              |> Ash.Changeset.for_create(
+                :create,
+                %{name: "Personal", organization_id: organization.id},
+                actor: user
+              )
+              |> Ash.create!()
           end
 
           {:ok, user}
@@ -266,17 +277,28 @@ defmodule Citadel.Accounts.User do
       # validates password complexity (8+ chars, uppercase, lowercase, number)
       validate Citadel.Accounts.User.Validations.PasswordComplexity
 
-      # Create a personal workspace for new users (same as Google OAuth)
+      # Create a personal organization and workspace for new users
       change fn changeset, _context ->
         Ash.Changeset.after_action(changeset, fn _changeset, user ->
-          existing_workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+          existing_orgs = Citadel.Accounts.list_organizations!(actor: user)
 
-          if Enum.empty?(existing_workspaces) do
-            _workspace =
-              Citadel.Accounts.create_workspace!(
+          if Enum.empty?(existing_orgs) do
+            # Create a personal organization for the user
+            organization =
+              Citadel.Accounts.create_organization!(
                 "Personal",
                 actor: user
               )
+
+            # Create a personal workspace under that organization
+            _workspace =
+              Citadel.Accounts.Workspace
+              |> Ash.Changeset.for_create(
+                :create,
+                %{name: "Personal", organization_id: organization.id},
+                actor: user
+              )
+              |> Ash.create!()
           end
 
           {:ok, user}
@@ -382,6 +404,17 @@ defmodule Citadel.Accounts.User do
   relationships do
     has_many :valid_api_keys, Citadel.Accounts.ApiKey do
       filter expr(valid)
+    end
+
+    has_many :organization_memberships, Citadel.Accounts.OrganizationMembership do
+      public? true
+    end
+
+    many_to_many :organizations, Citadel.Accounts.Organization do
+      through Citadel.Accounts.OrganizationMembership
+      source_attribute_on_join_resource :user_id
+      destination_attribute_on_join_resource :organization_id
+      public? true
     end
   end
 
