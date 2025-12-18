@@ -99,7 +99,9 @@ defmodule Citadel.AI.SchemaNormalizer do
 
   defp remove_unsupported_from_properties(%{"properties" => properties} = schema)
        when is_map(properties) do
-    cleaned = Map.new(properties, fn {key, value} -> {key, remove_unsupported_features(value)} end)
+    cleaned =
+      Map.new(properties, fn {key, value} -> {key, remove_unsupported_features(value)} end)
+
     Map.put(schema, "properties", cleaned)
   end
 

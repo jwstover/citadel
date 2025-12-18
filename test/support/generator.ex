@@ -44,18 +44,79 @@ defmodule Citadel.Generator do
   end
 
   @doc """
-  Generates a workspace using changeset_generator.
+  Generates an organization using changeset_generator.
 
   ## Parameters
 
-    * `overrides` - Field values to override (e.g., [name: "Custom Name"])
+    * `overrides` - Field values to override (e.g., [name: "Custom Org"])
     * `generator_opts` - Options passed to changeset_generator (e.g., [actor: owner])
 
   ## Examples
 
       owner = generate(user())
-      workspace = generate(workspace([], actor: owner))
-      workspace = generate(workspace([name: "My Workspace"], actor: owner))
+      organization = generate(organization([], actor: owner))
+      organization = generate(organization([name: "My Org"], actor: owner))
+  """
+  def organization(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Accounts.Organization,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            name: sequence(:organization_name, &"Organization #{&1}")
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates an organization membership.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, user_id: user_id, role: :admin])
+    * `generator_opts` - Options passed to changeset_generator
+
+  ## Examples
+
+      membership = generate(organization_membership(
+        [organization_id: org.id, user_id: user.id, role: :member],
+        authorize?: false
+      ))
+  """
+  def organization_membership(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Accounts.OrganizationMembership,
+      :join,
+      Keyword.merge(
+        [
+          defaults: [
+            role: :member
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates a workspace using changeset_generator.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [name: "Custom Name", organization_id: org_id])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: owner])
+
+  ## Examples
+
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
   """
   def workspace(overrides \\ [], generator_opts \\ []) do
     changeset_generator(
@@ -64,7 +125,8 @@ defmodule Citadel.Generator do
       Keyword.merge(
         [
           defaults: [
-            name: sequence(:workspace_name, &"Workspace #{&1}")
+            name: sequence(:workspace_name, &"Workspace #{&1}"),
+            organization_id: nil
           ],
           overrides: overrides
         ],
