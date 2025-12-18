@@ -14,26 +14,14 @@
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "\"member\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "name",
-      "type": "text"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "task_prefix",
+      "source": "role",
       "type": "text"
     },
     {
@@ -61,11 +49,11 @@
       "type": "utc_datetime_usec"
     },
     {
-      "allow_nil?": true,
+      "allow_nil?": false,
       "default": "nil",
       "generated?": false,
       "precision": null,
-      "primary_key?": false,
+      "primary_key?": true,
       "references": {
         "deferrable": false,
         "destination_attribute": "id",
@@ -79,8 +67,39 @@
           "global": null,
           "strategy": null
         },
-        "name": "workspaces_organization_id_fkey",
-        "on_delete": null,
+        "name": "organization_memberships_user_id_fkey",
+        "on_delete": "delete",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "users"
+      },
+      "scale": null,
+      "size": null,
+      "source": "user_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": false,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": true,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "organization_memberships_organization_id_fkey",
+        "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
@@ -90,37 +109,6 @@
       "size": null,
       "source": "organization_id",
       "type": "uuid"
-    },
-    {
-      "allow_nil?": false,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": null,
-          "global": null,
-          "strategy": null
-        },
-        "name": "workspaces_owner_id_fkey",
-        "on_delete": null,
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "users"
-      },
-      "scale": null,
-      "size": null,
-      "source": "owner_id",
-      "type": "uuid"
     }
   ],
   "base_filter": null,
@@ -128,8 +116,27 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "5C1E07C9AA5FAAB58A26A34FD6DFB2BE202393FEBC8240220F6D5572039CC6E5",
-  "identities": [],
+  "hash": "EAF34071D04AFD22CD67D08064D97028D982355752F0245EB4FA2A2F2C7832E5",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "organization_memberships_unique_membership_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "user_id"
+        },
+        {
+          "type": "atom",
+          "value": "organization_id"
+        }
+      ],
+      "name": "unique_membership",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -137,5 +144,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "workspaces"
+  "table": "organization_memberships"
 }

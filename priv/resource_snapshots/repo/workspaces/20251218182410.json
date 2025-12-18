@@ -33,7 +33,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "slug",
+      "source": "task_prefix",
       "type": "text"
     },
     {
@@ -61,6 +61,37 @@
       "type": "utc_datetime_usec"
     },
     {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": null,
+          "global": null,
+          "strategy": null
+        },
+        "name": "workspaces_organization_id_fkey",
+        "on_delete": null,
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "organizations"
+      },
+      "scale": null,
+      "size": null,
+      "source": "organization_id",
+      "type": "uuid"
+    },
+    {
       "allow_nil?": false,
       "default": "nil",
       "generated?": false,
@@ -79,7 +110,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "organizations_owner_id_fkey",
+        "name": "workspaces_owner_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -97,23 +128,8 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "AB8DB31BB0F8642726E58E5477B1E25F5BF5310B715CD8D39E0F09F1DB866162",
-  "identities": [
-    {
-      "all_tenants?": false,
-      "base_filter": null,
-      "index_name": "organizations_unique_slug_index",
-      "keys": [
-        {
-          "type": "atom",
-          "value": "slug"
-        }
-      ],
-      "name": "unique_slug",
-      "nils_distinct?": true,
-      "where": null
-    }
-  ],
+  "hash": "3B0B071B5B14F41D58AAF63B069500D3532A1E15C67F216B42569BFCF50CEAB9",
+  "identities": [],
   "multitenancy": {
     "attribute": null,
     "global": null,
@@ -121,5 +137,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "organizations"
+  "table": "workspaces"
 }
