@@ -339,8 +339,8 @@ defmodule CitadelWeb.ChatLive do
         Citadel.Chat.form_to_create_message(
           actor: socket.assigns.current_user,
           tenant: socket.assigns.current_workspace.id,
-          prepare_params: fn params, _context -> 
-           Map.put(params, "conversation_id", socket.assigns.conversation.id) 
+          prepare_params: fn params, _context ->
+            Map.put(params, "conversation_id", socket.assigns.conversation.id)
           end
         )
         |> to_form()

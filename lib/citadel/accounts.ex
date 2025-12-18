@@ -21,6 +21,22 @@ defmodule Citadel.Accounts do
       define :get_user_by_id, action: :read, get_by: [:id]
     end
 
+    resource Citadel.Accounts.Organization do
+      define :create_organization, action: :create, args: [:name]
+      define :destroy_organization, action: :destroy
+      define :get_organization_by_id, action: :read, get_by: [:id]
+      define :get_organization_by_slug, action: :read, get_by: [:slug]
+      define :list_organizations, action: :read
+      define :update_organization, action: :update
+    end
+
+    resource Citadel.Accounts.OrganizationMembership do
+      define :add_organization_member, action: :join, args: [:organization_id, :user_id, :role]
+      define :list_organization_members, action: :read
+      define :update_organization_member_role, action: :update_role
+      define :remove_organization_member, action: :leave
+    end
+
     resource Citadel.Accounts.Workspace do
       define :create_workspace, action: :create, args: [:name]
       define :destroy_workspace, action: :destroy

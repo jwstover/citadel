@@ -82,7 +82,9 @@ defmodule Citadel.AI.SchemaNormalizerTest do
 
       assert result["additionalProperties"] == false
       assert result["properties"]["level1"]["additionalProperties"] == false
-      assert result["properties"]["level1"]["properties"]["level2"]["additionalProperties"] == false
+
+      assert result["properties"]["level1"]["properties"]["level2"]["additionalProperties"] ==
+               false
     end
   end
 
