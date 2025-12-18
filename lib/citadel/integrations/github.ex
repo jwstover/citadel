@@ -22,17 +22,11 @@ defmodule Citadel.Integrations.GitHub do
   """
   def validate_token(token) when is_binary(token) and byte_size(token) > 0 do
     case make_request("/user", token) do
-      {:ok, %{status: 200, body: body}} ->
-        case Jason.decode(body) do
-          {:ok, %{"login" => login, "id" => id}} ->
-            {:ok, %{login: login, id: id}}
+      {:ok, %{status: 200, body: %{"login" => login, "id" => id}}} ->
+        {:ok, %{login: login, id: id}}
 
-          {:ok, _} ->
-            {:error, :unexpected_response}
-
-          {:error, _} ->
-            {:error, :invalid_response}
-        end
+      {:ok, %{status: 200, body: _body}} ->
+        {:error, :unexpected_response}
 
       {:ok, %{status: 401}} ->
         {:error, :invalid_token}
