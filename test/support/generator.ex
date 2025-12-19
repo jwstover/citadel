@@ -291,4 +291,72 @@ defmodule Citadel.Generator do
       )
     )
   end
+
+  @doc """
+  Generates a subscription for an organization.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, tier: :pro])
+    * `generator_opts` - Options passed to changeset_generator
+
+  ## Examples
+
+      subscription = generate(subscription(
+        [organization_id: org.id],
+        authorize?: false
+      ))
+      subscription = generate(subscription(
+        [organization_id: org.id, tier: :pro, billing_period: :monthly],
+        authorize?: false
+      ))
+  """
+  def subscription(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Billing.Subscription,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            tier: :free
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates a credit ledger entry for an organization.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, amount: 500])
+    * `generator_opts` - Options passed to changeset_generator
+
+  ## Examples
+
+      entry = generate(credit_ledger_entry(
+        [organization_id: org.id, amount: 500, transaction_type: :purchase],
+        authorize?: false
+      ))
+  """
+  def credit_ledger_entry(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Billing.CreditLedger,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            amount: 100,
+            description: sequence(:credit_description, &"Credit entry #{&1}"),
+            transaction_type: :purchase
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
 end
