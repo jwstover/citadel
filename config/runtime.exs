@@ -87,6 +87,13 @@ config :citadel, Citadel.Vault,
     }
   ]
 
+# Billing configuration - Stripe price IDs for subscription plans
+config :citadel, Citadel.Billing,
+  pro_monthly_price_id: System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
+  pro_annual_price_id: System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
+  pro_seat_monthly_price_id: System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
+  pro_seat_annual_price_id: System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
