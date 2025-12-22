@@ -10,10 +10,12 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   require Ash.Query
   require Logger
 
+  alias Citadel.Chat.Message.Changes.ConsumeCredits
   alias Citadel.MCP.ClientManager
   alias LangChain.Chains.LLMChain
   alias LangChain.Message.ToolCall
   alias LangChain.Message.ToolResult
+  alias LangChain.TokenUsage
 
   @impl true
   def change(changeset, _opts, context) do
@@ -41,6 +43,20 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   defp run_response_generation(message, context) do
+    case ConsumeCredits.pre_check(message, context) do
+      {:ok, organization_id} ->
+        run_with_credit_tracking(message, context, organization_id)
+
+      {:error, :insufficient_credits} ->
+        broadcast_error(message.conversation_id, "insufficient_credits")
+        :blocked
+
+      {:error, :no_organization} ->
+        run_without_credit_tracking(message, context)
+    end
+  end
+
+  defp run_with_credit_tracking(message, context, organization_id) do
     messages = fetch_conversation_messages(message, context)
     new_message_id = Ash.UUIDv7.generate()
     workspace_id = get_workspace_id(message, context)
@@ -49,12 +65,13 @@ defmodule Citadel.Chat.Message.Changes.Respond do
     case setup_llm_chain(messages, context, message, new_message_id, github_tools) do
       {:ok, chain} ->
         case LLMChain.run(chain, mode: :while_needs_response) do
-          {:ok, _updated_chain} ->
+          {:ok, updated_chain} ->
+            token_usage = TokenUsage.get(updated_chain.last_message)
+            ConsumeCredits.post_charge(organization_id, token_usage, message.id)
             :ok
 
           {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
             Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
-
             :error
 
           {:error, %LLMChain{} = _chain} ->
@@ -71,7 +88,40 @@ defmodule Citadel.Chat.Message.Changes.Respond do
 
       {:error, reason} ->
         Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
+        :skipped
+    end
+  end
 
+  defp run_without_credit_tracking(message, context) do
+    messages = fetch_conversation_messages(message, context)
+    new_message_id = Ash.UUIDv7.generate()
+    workspace_id = get_workspace_id(message, context)
+    github_tools = get_github_tools(workspace_id)
+
+    case setup_llm_chain(messages, context, message, new_message_id, github_tools) do
+      {:ok, chain} ->
+        case LLMChain.run(chain, mode: :while_needs_response) do
+          {:ok, _updated_chain} ->
+            :ok
+
+          {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
+            :error
+
+          {:error, %LLMChain{} = _chain} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
+            :error
+
+          other ->
+            Logger.error(
+              "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
+            )
+
+            :error
+        end
+
+      {:error, reason} ->
+        Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
         :skipped
     end
   end
@@ -231,6 +281,20 @@ defmodule Citadel.Chat.Message.Changes.Respond do
       %{message_id: message_id}
     )
   end
+
+  defp broadcast_error(conversation_id, error_type) do
+    CitadelWeb.Endpoint.broadcast(
+      "chat:stream:#{conversation_id}",
+      "error",
+      %{type: error_type, message: error_message(error_type)}
+    )
+  end
+
+  defp error_message("insufficient_credits") do
+    "You've run out of credits. Please upgrade your plan to continue using AI features."
+  end
+
+  defp error_message(_), do: "An error occurred. Please try again."
 
   defp extract_delta_content(deltas) do
     deltas
