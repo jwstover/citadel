@@ -49,6 +49,22 @@ defmodule Citadel.Billing.Plan do
     }
   }
 
+  # Maps tier atoms to their config key atoms
+  @tier_config_keys %{
+    free: %{
+      monthly: :free_monthly_price_id,
+      annual: :free_annual_price_id,
+      seat_monthly: :free_seat_monthly_price_id,
+      seat_annual: :free_seat_annual_price_id
+    },
+    pro: %{
+      monthly: :pro_monthly_price_id,
+      annual: :pro_annual_price_id,
+      seat_monthly: :pro_seat_monthly_price_id,
+      seat_annual: :pro_seat_annual_price_id
+    }
+  }
+
   @doc """
   Gets the plan configuration for a tier.
 
@@ -61,12 +77,13 @@ defmodule Citadel.Billing.Plan do
   def get(tier) when tier in [:free, :pro] do
     base_plan = Map.get(@plans, tier)
     config = Application.get_env(:citadel, Citadel.Billing, [])
+    keys = Map.fetch!(@tier_config_keys, tier)
 
     base_plan
-    |> maybe_override(:stripe_monthly_price_id, config[:"#{tier}_monthly_price_id"])
-    |> maybe_override(:stripe_annual_price_id, config[:"#{tier}_annual_price_id"])
-    |> maybe_override(:stripe_seat_monthly_price_id, config[:"#{tier}_seat_monthly_price_id"])
-    |> maybe_override(:stripe_seat_annual_price_id, config[:"#{tier}_seat_annual_price_id"])
+    |> maybe_override(:stripe_monthly_price_id, config[keys.monthly])
+    |> maybe_override(:stripe_annual_price_id, config[keys.annual])
+    |> maybe_override(:stripe_seat_monthly_price_id, config[keys.seat_monthly])
+    |> maybe_override(:stripe_seat_annual_price_id, config[keys.seat_annual])
   end
 
   defp maybe_override(plan, _key, nil), do: plan

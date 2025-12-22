@@ -9,6 +9,7 @@ defmodule Citadel.AI.Providers.Anthropic do
   @behaviour Citadel.AI.Provider
 
   alias Citadel.AI.Provider
+  alias Citadel.AI.SchemaNormalizer
   alias LangChain.Chains.LLMChain
   alias LangChain.ChatModels.ChatAnthropic
   alias LangChain.Message
@@ -195,7 +196,7 @@ defmodule Citadel.AI.Providers.Anthropic do
 
         chain
         |> AshAi.setup_ash_ai(ash_ai_opts)
-        |> Citadel.AI.SchemaNormalizer.normalize_chain()
+        |> SchemaNormalizer.normalize_chain()
       else
         chain
       end

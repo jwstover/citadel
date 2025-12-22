@@ -47,6 +47,13 @@ defmodule Citadel.Chat.Conversation do
       filter expr(needs_title)
     end
 
+    read :by_id_global do
+      multitenancy :allow_global
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id))
+    end
+
     create :create do
       accept [:title, :workspace_id]
       change relate_actor(:user)
