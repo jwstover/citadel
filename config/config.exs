@@ -19,7 +19,25 @@ config :citadel, Oban,
     invitations: [limit: 5]
   ],
   repo: Citadel.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 0 1 * *", Citadel.Workers.MonthlyCreditResetWorker}
+     ]}
+  ]
+
+# Credit cost configuration for AI usage billing
+# 1 credit ~= $0.001 in AI cost
+config :citadel, Citadel.Billing.Credits,
+  default_cost_per_input_token: 0.003,
+  default_cost_per_output_token: 0.015,
+  models: %{
+    "claude-sonnet-4-20250514" => %{input: 0.003, output: 0.015},
+    "claude-3-5-sonnet-20241022" => %{input: 0.003, output: 0.015},
+    "claude-3-opus-20240229" => %{input: 0.015, output: 0.075},
+    "gpt-4o" => %{input: 0.005, output: 0.015}
+  },
+  minimum_credits_required: 1
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,

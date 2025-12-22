@@ -22,7 +22,14 @@ defmodule Citadel.Billing.Subscription do
     defaults [:read]
 
     create :create do
-      accept [:organization_id, :tier, :billing_period, :seat_count]
+      accept [
+        :organization_id,
+        :tier,
+        :billing_period,
+        :seat_count,
+        :current_period_start,
+        :current_period_end
+      ]
 
       change Citadel.Billing.Subscription.Changes.SetDefaultsForTier
       change set_attribute(:status, :active)

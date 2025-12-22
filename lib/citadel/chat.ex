@@ -12,6 +12,7 @@ defmodule Citadel.Chat do
     resource Citadel.Chat.Conversation do
       define :create_conversation, action: :create
       define :get_conversation, action: :read, get_by: [:id]
+      define :get_conversation_global, action: :by_id_global, args: [:id]
       define :my_conversations
     end
 
