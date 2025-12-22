@@ -282,7 +282,7 @@ defmodule CitadelWeb.Layouts do
                   navigate={~p"/register"}
                   class="btn btn-primary btn-sm px-5 font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                 >
-                  Get Started
+                  Start Planning
                 </.link>
               <% end %>
             </div>
