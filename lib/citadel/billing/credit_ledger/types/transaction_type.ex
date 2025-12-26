@@ -7,6 +7,9 @@ defmodule Citadel.Billing.CreditLedger.Types.TransactionType do
   - :refund - Credits refunded
   - :adjustment - Manual admin adjustment
   - :bonus - Promotional or reward credits
+  - :reservation - Credits reserved upfront before AI operation (used to prevent TOCTOU)
+  - :reservation_adjustment - Adjustment to a previous reservation (refund or additional charge)
   """
-  use Ash.Type.Enum, values: [:purchase, :usage, :refund, :adjustment, :bonus]
+  use Ash.Type.Enum,
+    values: [:purchase, :usage, :refund, :adjustment, :bonus, :reservation, :reservation_adjustment]
 end
