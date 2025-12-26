@@ -1,6 +1,5 @@
 defmodule Citadel.Accounts.WorkspaceInvitationEmailTest do
   use Citadel.DataCase, async: true
-  use Oban.Testing, repo: Citadel.Repo
 
   alias Citadel.Accounts
   alias Citadel.Workers.SendInvitationEmailWorker

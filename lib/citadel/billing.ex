@@ -14,6 +14,7 @@ defmodule Citadel.Billing do
       define :get_subscription_by_organization, action: :read, get_by: [:organization_id]
       define :get_subscription, action: :read, get_by: [:id]
       define :update_subscription, action: :update
+      define :change_tier, action: :change_tier, args: [:new_tier]
       define :upgrade_to_pro, action: :upgrade_to_pro
       define :cancel_subscription, action: :cancel
     end

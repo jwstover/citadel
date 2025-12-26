@@ -16,7 +16,8 @@ config :citadel, Oban,
     default: 10,
     chat_responses: [limit: 10],
     conversations: [limit: 10],
-    invitations: [limit: 5]
+    invitations: [limit: 5],
+    billing: [limit: 5]
   ],
   repo: Citadel.Repo,
   plugins: [

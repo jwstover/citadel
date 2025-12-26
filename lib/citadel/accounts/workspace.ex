@@ -56,8 +56,9 @@ defmodule Citadel.Accounts.Workspace do
   end
 
   policies do
-    # Any authenticated user can create a workspace
+    # Any authenticated user can create a workspace if within workspace limit
     policy action_type(:create) do
+      forbid_unless Citadel.Billing.Checks.WithinWorkspaceLimit
       authorize_if actor_present()
     end
 

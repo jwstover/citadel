@@ -60,6 +60,8 @@ defmodule Citadel.Accounts.OrganizationMembership do
           Ash.Changeset.get_argument(changeset, :role)
         )
       end
+
+      change Citadel.Accounts.OrganizationMembership.Changes.EnqueueSeatSync
     end
 
     update :update_role do
@@ -69,11 +71,13 @@ defmodule Citadel.Accounts.OrganizationMembership do
     destroy :leave do
       require_atomic? false
       validate Citadel.Accounts.OrganizationMembership.Validations.PreventOwnerLeaving
+      change Citadel.Accounts.OrganizationMembership.Changes.EnqueueSeatSync
     end
   end
 
   policies do
     policy action_type(:create) do
+      forbid_unless Citadel.Billing.Checks.WithinMemberLimit
       authorize_if Citadel.Accounts.Checks.OrganizationAdminOrOwner
     end
 
