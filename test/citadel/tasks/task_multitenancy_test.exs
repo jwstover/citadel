@@ -16,10 +16,12 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
     setup do
       # Create two separate workspaces with different owners
       owner1 = generate(user())
-      workspace1 = generate(workspace([], actor: owner1))
+      org1 = generate(organization([], actor: owner1))
+      workspace1 = generate(workspace([organization_id: org1.id], actor: owner1))
 
       owner2 = generate(user())
-      workspace2 = generate(workspace([], actor: owner2))
+      org2 = generate(organization([], actor: owner2))
+      workspace2 = generate(workspace([organization_id: org2.id], actor: owner2))
 
       # Create a task state
       task_state = Tasks.create_task_state!(%{name: "To Do", order: 1})
@@ -27,8 +29,10 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
       {:ok,
        workspace1: workspace1,
        owner1: owner1,
+       org1: org1,
        workspace2: workspace2,
        owner2: owner2,
+       org2: org2,
        task_state: task_state}
     end
 
@@ -102,13 +106,23 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
       %{
         workspace1: workspace1,
         owner1: owner1,
+        org1: org1,
         workspace2: workspace2,
         owner2: owner2,
+        org2: org2,
         task_state: task_state
       } = context
 
+      # Upgrade both orgs to pro to allow multiple members
+      upgrade_to_pro(org1)
+      upgrade_to_pro(org2)
+
       # Create a user who will be a member of both workspaces
       multi_workspace_user = generate(user())
+
+      # Add user to both organizations first (required for workspace membership)
+      Accounts.add_organization_member!(org1.id, multi_workspace_user.id, :member, actor: owner1)
+      Accounts.add_organization_member!(org2.id, multi_workspace_user.id, :member, actor: owner2)
 
       # Add user to both workspaces
       Accounts.add_workspace_member!(
@@ -270,17 +284,22 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
   describe "workspace membership changes" do
     setup do
       owner = generate(user())
-      workspace = generate(workspace([], actor: owner))
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
       task_state = Tasks.create_task_state!(%{name: "To Do", order: 1})
 
-      {:ok, workspace: workspace, owner: owner, task_state: task_state}
+      {:ok, workspace: workspace, owner: owner, org: org, task_state: task_state}
     end
 
     test "leaving workspace removes access to workspace tasks", context do
-      %{workspace: workspace, owner: owner, task_state: task_state} = context
+      %{workspace: workspace, owner: owner, org: org, task_state: task_state} = context
 
       # Create a member
       member = generate(user())
+
+      # Add to organization first (required for workspace membership)
+      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
 
       membership =
         Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
