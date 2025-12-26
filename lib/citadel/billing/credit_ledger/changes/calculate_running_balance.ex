@@ -2,16 +2,24 @@ defmodule Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance do
   @moduledoc """
   Calculates the running balance for a credit ledger entry by getting
   the previous balance and adding the current transaction amount.
+
+  Uses PostgreSQL advisory locks to prevent race conditions when multiple
+  processes attempt to modify credit balances for the same organization
+  concurrently. The lock ensures that balance reads and writes are serialized.
   """
   use Ash.Resource.Change
+
+  alias Citadel.Billing.AdvisoryLock
 
   require Ash.Query
 
   def change(changeset, _opts, _context) do
     Ash.Changeset.before_action(changeset, fn changeset ->
       organization_id = Ash.Changeset.get_attribute(changeset, :organization_id)
-      amount = Ash.Changeset.get_attribute(changeset, :amount) || 0
 
+      AdvisoryLock.acquire_credit_lock!(organization_id)
+
+      amount = Ash.Changeset.get_attribute(changeset, :amount) || 0
       previous_balance = get_latest_balance(organization_id) || 0
       new_balance = previous_balance + amount
 
