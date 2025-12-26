@@ -32,7 +32,8 @@ defmodule Citadel.Billing.Credits do
     default_cost_per_input_token: 0.003,
     default_cost_per_output_token: 0.015,
     models: %{},
-    minimum_credits_required: 1
+    minimum_credits_required: 1,
+    max_reservation_credits: 100
   }
 
   @doc """
@@ -126,6 +127,18 @@ defmodule Citadel.Billing.Credits do
   @spec minimum_credits_required() :: non_neg_integer()
   def minimum_credits_required do
     get_config(:minimum_credits_required, 1)
+  end
+
+  @doc """
+  Returns the maximum credits to reserve upfront for an AI request.
+
+  This is used to prevent TOCTOU race conditions by reserving a pessimistic
+  amount of credits before the AI call. The reservation is adjusted to
+  actual cost after completion.
+  """
+  @spec max_reservation_credits() :: non_neg_integer()
+  def max_reservation_credits do
+    get_config(:max_reservation_credits, @default_config.max_reservation_credits)
   end
 
   defp default_rates do
