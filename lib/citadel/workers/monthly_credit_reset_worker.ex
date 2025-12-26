@@ -53,35 +53,37 @@ defmodule Citadel.Workers.MonthlyCreditResetWorker do
 
   defp reset_credits_for_subscription(subscription, now) do
     credits = Plan.monthly_credits(subscription.tier)
-
-    Billing.add_credits!(
-      subscription.organization_id,
-      credits,
-      "Monthly credit allocation (#{subscription.tier} tier)",
-      %{transaction_type: :bonus},
-      authorize?: false
-    )
-
     next_period_start = DateTime.truncate(now, :second)
     next_period_end = next_month(now)
 
-    subscription
-    |> Ash.Changeset.for_update(:update, %{
-      current_period_start: next_period_start,
-      current_period_end: next_period_end
-    })
-    |> Ash.update!(authorize?: false)
+    case Citadel.Repo.transaction(fn ->
+           Billing.add_credits!(
+             subscription.organization_id,
+             credits,
+             "Monthly credit allocation (#{subscription.tier} tier)",
+             %{transaction_type: :bonus},
+             authorize?: false
+           )
 
-    Logger.info(
-      "Reset #{credits} credits for organization #{subscription.organization_id} " <>
-        "(#{subscription.tier} tier). Next reset: #{next_period_end}"
-    )
-  rescue
-    e ->
-      Logger.error(
-        "Failed to reset credits for organization #{subscription.organization_id}: " <>
-          "#{Exception.format(:error, e, __STACKTRACE__)}"
-      )
+           subscription
+           |> Ash.Changeset.for_update(:update, %{
+             current_period_start: next_period_start,
+             current_period_end: next_period_end
+           })
+           |> Ash.update!(authorize?: false)
+         end) do
+      {:ok, _} ->
+        Logger.info(
+          "Reset #{credits} credits for organization #{subscription.organization_id} " <>
+            "(#{subscription.tier} tier). Next reset: #{next_period_end}"
+        )
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to reset credits for organization #{subscription.organization_id}: " <>
+            "#{inspect(reason)}"
+        )
+    end
   end
 
   defp next_month(datetime) do
