@@ -2,9 +2,6 @@ defmodule Citadel.Accounts.WorkspaceMembership.Validations.UserIsOrgMember do
   @moduledoc """
   Validates that a user is a member of the workspace's organization
   before they can be added to the workspace.
-
-  This validation is skipped if the workspace has no organization (for backwards compatibility
-  during migration).
   """
   use Ash.Resource.Validation
 
@@ -28,8 +25,7 @@ defmodule Citadel.Accounts.WorkspaceMembership.Validations.UserIsOrgMember do
   defp validate_org_membership(user_id, workspace_id) do
     case get_workspace_organization_id(workspace_id) do
       nil ->
-        # Workspace has no organization yet (backwards compatibility)
-        :ok
+        {:error, field: :workspace_id, message: "workspace must belong to an organization"}
 
       organization_id ->
         if user_is_org_member?(user_id, organization_id) do

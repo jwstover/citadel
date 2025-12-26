@@ -27,7 +27,8 @@ defmodule CitadelWeb.StripeWebhookController do
   def handle(conn, _params) do
     with {:ok, raw_body} <- get_raw_body(conn),
          {:ok, signature} <- get_stripe_signature(conn),
-         {:ok, event} <- StripeService.construct_event(raw_body, signature) do
+         {:ok, event} <- StripeService.construct_event(raw_body, signature),
+         :ok <- check_and_record_event(event) do
       handle_event(event)
       send_resp(conn, 200, "")
     else
@@ -39,9 +40,29 @@ defmodule CitadelWeb.StripeWebhookController do
         Logger.warning("Stripe webhook received without signature")
         send_resp(conn, 400, "Missing Stripe signature")
 
+      {:error, :already_processed} ->
+        Logger.debug("Stripe webhook event already processed, acknowledging")
+        send_resp(conn, 200, "")
+
       {:error, reason} ->
         Logger.warning("Stripe webhook verification failed: #{inspect(reason)}")
         send_resp(conn, 400, "Webhook verification failed")
+    end
+  end
+
+  defp check_and_record_event(%Stripe.Event{id: event_id, type: event_type}) do
+    case Billing.event_processed?(event_id, authorize?: false) do
+      {:ok, true} ->
+        Logger.info("Duplicate webhook event detected: #{event_id}")
+        {:error, :already_processed}
+
+      {:ok, false} ->
+        Billing.record_webhook_event!(event_id, event_type, authorize?: false)
+        :ok
+
+      {:error, reason} ->
+        Logger.error("Failed to check/record webhook event: #{inspect(reason)}")
+        :ok
     end
   end
 
@@ -93,7 +114,8 @@ defmodule CitadelWeb.StripeWebhookController do
     Logger.info("Processing invoice.paid for invoice #{invoice.id}")
 
     with {:ok, stripe_sub} <- get_stripe_subscription(invoice.subscription),
-         {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id) do
+         {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id),
+         :ok <- validate_customer_ownership(subscription, invoice.customer) do
       Billing.update_subscription!(
         subscription,
         %{
@@ -109,6 +131,9 @@ defmodule CitadelWeb.StripeWebhookController do
       {:error, :no_subscription_id} ->
         Logger.debug("Invoice #{invoice.id} has no subscription, skipping")
 
+      {:error, :customer_mismatch} ->
+        Logger.warning("Rejecting invoice.paid event due to customer mismatch")
+
       error ->
         Logger.error("Failed to process invoice.paid: #{inspect(error)}")
     end
@@ -117,18 +142,21 @@ defmodule CitadelWeb.StripeWebhookController do
   defp handle_event(%Stripe.Event{type: "invoice.payment_failed", data: %{object: invoice}}) do
     Logger.info("Processing invoice.payment_failed for invoice #{invoice.id}")
 
-    case get_subscription_by_stripe_sub_id(invoice.subscription) do
-      {:ok, subscription} ->
-        Billing.update_subscription!(
-          subscription,
-          %{status: :past_due},
-          authorize?: false
-        )
+    with {:ok, subscription} <- get_subscription_by_stripe_sub_id(invoice.subscription),
+         :ok <- validate_customer_ownership(subscription, invoice.customer) do
+      Billing.update_subscription!(
+        subscription,
+        %{status: :past_due},
+        authorize?: false
+      )
 
-        Logger.info("Marked subscription #{subscription.id} as past_due")
-
+      Logger.info("Marked subscription #{subscription.id} as past_due")
+    else
       {:error, :no_subscription_id} ->
         Logger.debug("Invoice #{invoice.id} has no subscription, skipping")
+
+      {:error, :customer_mismatch} ->
+        Logger.warning("Rejecting invoice.payment_failed event due to customer mismatch")
 
       error ->
         Logger.error("Failed to process invoice.payment_failed: #{inspect(error)}")
@@ -141,15 +169,18 @@ defmodule CitadelWeb.StripeWebhookController do
        }) do
     Logger.info("Processing customer.subscription.deleted for subscription #{stripe_sub.id}")
 
-    case get_subscription_by_stripe_id(stripe_sub.id) do
-      {:ok, subscription} ->
-        Billing.update_subscription!(
-          subscription,
-          %{status: :canceled},
-          authorize?: false
-        )
+    with {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id),
+         :ok <- validate_customer_ownership(subscription, stripe_sub.customer) do
+      Billing.update_subscription!(
+        subscription,
+        %{status: :canceled},
+        authorize?: false
+      )
 
-        Logger.info("Cancelled subscription #{subscription.id}")
+      Logger.info("Cancelled subscription #{subscription.id}")
+    else
+      {:error, :customer_mismatch} ->
+        Logger.warning("Rejecting customer.subscription.deleted event due to customer mismatch")
 
       error ->
         Logger.error("Failed to process customer.subscription.deleted: #{inspect(error)}")
@@ -162,21 +193,24 @@ defmodule CitadelWeb.StripeWebhookController do
        }) do
     Logger.info("Processing customer.subscription.updated for subscription #{stripe_sub.id}")
 
-    case get_subscription_by_stripe_id(stripe_sub.id) do
-      {:ok, subscription} ->
-        status = map_stripe_status(stripe_sub.status)
+    with {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id),
+         :ok <- validate_customer_ownership(subscription, stripe_sub.customer) do
+      status = map_stripe_status(stripe_sub.status)
 
-        Billing.update_subscription!(
-          subscription,
-          %{
-            status: status,
-            current_period_start: unix_to_datetime(stripe_sub.current_period_start),
-            current_period_end: unix_to_datetime(stripe_sub.current_period_end)
-          },
-          authorize?: false
-        )
+      Billing.update_subscription!(
+        subscription,
+        %{
+          status: status,
+          current_period_start: unix_to_datetime(stripe_sub.current_period_start),
+          current_period_end: unix_to_datetime(stripe_sub.current_period_end)
+        },
+        authorize?: false
+      )
 
-        Logger.info("Synced subscription #{subscription.id} from Stripe")
+      Logger.info("Synced subscription #{subscription.id} from Stripe")
+    else
+      {:error, :customer_mismatch} ->
+        Logger.warning("Rejecting customer.subscription.updated event due to customer mismatch")
 
       error ->
         Logger.error("Failed to process customer.subscription.updated: #{inspect(error)}")
@@ -249,4 +283,27 @@ defmodule CitadelWeb.StripeWebhookController do
   defp map_stripe_status("canceled"), do: :canceled
   defp map_stripe_status("trialing"), do: :trialing
   defp map_stripe_status(_), do: :active
+
+  defp validate_customer_ownership(subscription, webhook_customer_id) do
+    cond do
+      is_nil(subscription.stripe_customer_id) ->
+        :ok
+
+      is_nil(webhook_customer_id) ->
+        :ok
+
+      subscription.stripe_customer_id == webhook_customer_id ->
+        :ok
+
+      true ->
+        Logger.error(
+          "Customer ID mismatch - potential attack. " <>
+            "Expected: #{subscription.stripe_customer_id}, " <>
+            "Received: #{webhook_customer_id}, " <>
+            "Subscription: #{subscription.id}"
+        )
+
+        {:error, :customer_mismatch}
+    end
+  end
 end

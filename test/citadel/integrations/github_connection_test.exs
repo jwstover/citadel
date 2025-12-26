@@ -9,12 +9,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   describe "create_github_connection/2" do
     test "workspace owner can create a GitHub connection" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -29,12 +25,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "encrypts the PAT and can decrypt it" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -48,13 +40,9 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "non-owner cannot create a GitHub connection" do
-      owner = create_user()
-      non_owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      non_owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -67,14 +55,13 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "workspace member (non-owner) cannot create a GitHub connection" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      member = generate(user())
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
-
+      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
       Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
@@ -88,12 +75,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "only one connection per workspace is allowed" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat1 = "ghp_test_token_#{System.unique_integer([:positive])}"
       pat2 = "ghp_test_token_#{System.unique_integer([:positive])}"
@@ -114,12 +97,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   describe "get_workspace_github_connection/1" do
     test "workspace owner can read the connection" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -140,14 +119,13 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "workspace member can read the connection" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      member = generate(user())
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
-
+      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
       Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
@@ -168,13 +146,9 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "non-member cannot see the connection (filtered out)" do
-      owner = create_user()
-      non_member = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      non_member = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -194,12 +168,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "returns nil when no connection exists" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       result =
         Integrations.get_workspace_github_connection(workspace.id,
@@ -214,12 +184,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   describe "delete_github_connection/1" do
     test "workspace owner can delete the connection" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -242,14 +208,13 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
     end
 
     test "workspace member cannot delete the connection" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      member = generate(user())
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
-
+      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
       Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
@@ -268,18 +233,10 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   describe "multitenancy" do
     test "connections are isolated between workspaces" do
-      owner1 = create_user()
-      owner2 = create_user()
-
-      workspace1 =
-        Accounts.create_workspace!("Workspace 1 #{System.unique_integer([:positive])}",
-          actor: owner1
-        )
-
-      workspace2 =
-        Accounts.create_workspace!("Workspace 2 #{System.unique_integer([:positive])}",
-          actor: owner2
-        )
+      owner1 = generate(user())
+      owner2 = generate(user())
+      workspace1 = generate(workspace([], actor: owner1))
+      workspace2 = generate(workspace([], actor: owner2))
 
       pat1 = "ghp_workspace1_token_#{System.unique_integer([:positive])}"
       pat2 = "ghp_workspace2_token_#{System.unique_integer([:positive])}"
@@ -317,12 +274,8 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   describe "direct Ash operations" do
     test "can read all connections for a workspace without authorization" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 

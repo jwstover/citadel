@@ -1,24 +1,33 @@
 defmodule Citadel.Billing.Checks.HasSufficientCredits do
   @moduledoc """
-  Policy check that verifies the organization has sufficient credits for AI operations.
+  Policy check that verifies the organization exists for AI operations.
 
-  Used on Message.create action to enforce credit limits.
-  Messages inherit workspace context through their conversation relationship.
+  Used on Message.create action to validate that the workspace has an
+  organization before allowing message creation.
 
   Path: Message -> Conversation -> Workspace -> Organization
 
-  If no organization can be determined (e.g., workspaces without organizations),
-  the check passes to maintain backwards compatibility.
+  ## Credit Validation Strategy
+
+  This check does NOT validate the actual credit balance. Balance validation
+  happens atomically during `ConsumeCredits.reserve()` which uses PostgreSQL
+  advisory locks to prevent race conditions. Doing a non-atomic balance check
+  here would create a TOCTOU vulnerability.
+
+  Instead, this check simply ensures:
+  1. An organization exists for the workspace
+  2. The organization has a subscription
+
+  The atomic reservation during the AI call will reject the request if
+  insufficient credits are available.
   """
   use Ash.Policy.SimpleCheck
 
   require Ash.Query
 
-  alias Citadel.Billing.Credits
-
   @impl true
   def describe(_opts) do
-    "organization has sufficient credits"
+    "organization exists and has subscription"
   end
 
   @impl true
@@ -26,8 +35,8 @@ defmodule Citadel.Billing.Checks.HasSufficientCredits do
 
   def match?(_actor, context, _opts) do
     case get_organization_id(context) do
-      nil -> true
-      org_id -> has_credits?(org_id)
+      nil -> false
+      org_id -> has_subscription?(org_id)
     end
   end
 
@@ -57,7 +66,6 @@ defmodule Citadel.Billing.Checks.HasSufficientCredits do
   defp get_organization_id(_), do: nil
 
   defp get_org_from_conversation(conversation_id) do
-    # Use the global action that allows multitenancy-free access
     case Citadel.Chat.get_conversation_global(conversation_id, authorize?: false) do
       {:ok, %{workspace_id: workspace_id}} when not is_nil(workspace_id) ->
         get_org_from_workspace(workspace_id)
@@ -77,10 +85,10 @@ defmodule Citadel.Billing.Checks.HasSufficientCredits do
     end
   end
 
-  defp has_credits?(organization_id) do
-    case Credits.check_sufficient_credits(organization_id) do
-      {:ok, _balance} -> true
-      {:error, :insufficient_credits, _balance} -> false
+  defp has_subscription?(organization_id) do
+    case Citadel.Billing.get_subscription_by_organization(organization_id, authorize?: false) do
+      {:ok, subscription} -> subscription.status == :active
+      _ -> false
     end
   end
 end

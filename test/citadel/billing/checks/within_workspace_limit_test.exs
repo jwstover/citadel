@@ -55,14 +55,5 @@ defmodule Citadel.Billing.Checks.WithinWorkspaceLimitTest do
                  actor: owner
                )
     end
-
-    test "allows creating workspace without organization (legacy)" do
-      owner = generate(user())
-
-      # Workspace without organization should still work
-      workspace = generate(workspace([], actor: owner))
-
-      assert workspace.organization_id == nil
-    end
   end
 end

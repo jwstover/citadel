@@ -46,30 +46,6 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
       assert org_id == organization.id
     end
 
-    test "returns error when workspace has no organization", %{owner: owner} do
-      workspace_without_org = generate(workspace([organization_id: nil], actor: owner))
-
-      conversation =
-        generate(
-          conversation(
-            [workspace_id: workspace_without_org.id],
-            actor: owner,
-            tenant: workspace_without_org.id
-          )
-        )
-
-      message =
-        generate(
-          message(
-            [conversation_id: conversation.id],
-            actor: owner,
-            tenant: workspace_without_org.id,
-            authorize?: false
-          )
-        )
-
-      assert {:error, :no_organization} = ConsumeCredits.resolve_organization_id(message, %{})
-    end
   end
 
   describe "reserve/2" do
@@ -117,31 +93,6 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
         )
 
       assert {:error, :insufficient_credits} = ConsumeCredits.reserve(message, %{})
-    end
-
-    test "returns error when workspace has no organization", %{owner: owner} do
-      workspace_without_org = generate(workspace([organization_id: nil], actor: owner))
-
-      conversation =
-        generate(
-          conversation(
-            [workspace_id: workspace_without_org.id],
-            actor: owner,
-            tenant: workspace_without_org.id
-          )
-        )
-
-      message =
-        generate(
-          message(
-            [conversation_id: conversation.id],
-            actor: owner,
-            tenant: workspace_without_org.id,
-            authorize?: false
-          )
-        )
-
-      assert {:error, :no_organization} = ConsumeCredits.reserve(message, %{})
     end
   end
 

@@ -107,6 +107,9 @@ defmodule Citadel.Generator do
   @doc """
   Generates a workspace using changeset_generator.
 
+  If `organization_id` is not provided in overrides, an organization will be
+  automatically created for the actor.
+
   ## Parameters
 
     * `overrides` - Field values to override (e.g., [name: "Custom Name", organization_id: org_id])
@@ -115,18 +118,35 @@ defmodule Citadel.Generator do
   ## Examples
 
       owner = generate(user())
+      # Auto-creates organization for owner:
+      workspace = generate(workspace([], actor: owner))
+
+      # Or specify organization explicitly:
       org = generate(organization([], actor: owner))
       workspace = generate(workspace([organization_id: org.id], actor: owner))
   """
   def workspace(overrides \\ [], generator_opts \\ []) do
+    overrides =
+      if Keyword.has_key?(overrides, :organization_id) do
+        overrides
+      else
+        actor = Keyword.get(generator_opts, :actor)
+
+        if actor do
+          org = Ash.Generator.generate(organization([], actor: actor))
+          Keyword.put(overrides, :organization_id, org.id)
+        else
+          overrides
+        end
+      end
+
     changeset_generator(
       Citadel.Accounts.Workspace,
       :create,
       Keyword.merge(
         [
           defaults: [
-            name: sequence(:workspace_name, &"Workspace #{&1}"),
-            organization_id: nil
+            name: sequence(:workspace_name, &"Workspace #{&1}")
           ],
           overrides: overrides
         ],

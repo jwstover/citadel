@@ -106,7 +106,7 @@ defmodule Citadel.Accounts.Workspace do
 
   relationships do
     belongs_to :organization, Citadel.Accounts.Organization do
-      allow_nil? true
+      allow_nil? false
       attribute_writable? true
       public? true
     end

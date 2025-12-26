@@ -23,7 +23,8 @@ config :citadel, Oban,
   plugins: [
     {Oban.Plugins.Cron,
      crontab: [
-       {"0 0 1 * *", Citadel.Workers.MonthlyCreditResetWorker}
+       {"0 0 1 * *", Citadel.Workers.MonthlyCreditResetWorker},
+       {"0 3 * * *", Citadel.Workers.WebhookEventCleanupWorker}
      ]}
   ]
 

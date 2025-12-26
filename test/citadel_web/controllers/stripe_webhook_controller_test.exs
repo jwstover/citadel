@@ -1,7 +1,10 @@
 defmodule CitadelWeb.StripeWebhookControllerTest do
   use CitadelWeb.ConnCase, async: true
 
+  import Ecto.Query
+
   alias Citadel.Billing
+  alias Citadel.Billing.ProcessedWebhookEvent
 
   setup do
     owner = generate(user())
@@ -136,6 +139,88 @@ defmodule CitadelWeb.StripeWebhookControllerTest do
 
       assert found.id == subscription.id
       assert found.organization_id == organization.id
+    end
+  end
+
+  describe "webhook replay attack protection" do
+    test "recording a new event marks it as processed" do
+      event_id = "evt_test_#{System.unique_integer([:positive])}"
+      event_type = "checkout.session.completed"
+
+      assert {:ok, false} = Billing.event_processed?(event_id, authorize?: false)
+
+      Billing.record_webhook_event!(event_id, event_type, authorize?: false)
+
+      assert {:ok, true} = Billing.event_processed?(event_id, authorize?: false)
+    end
+
+    test "duplicate event IDs are detected" do
+      event_id = "evt_test_#{System.unique_integer([:positive])}"
+      event_type = "invoice.paid"
+
+      Billing.record_webhook_event!(event_id, event_type, authorize?: false)
+
+      assert {:ok, true} = Billing.event_processed?(event_id, authorize?: false)
+    end
+
+    test "different event IDs are not marked as duplicates" do
+      event_id_1 = "evt_test_#{System.unique_integer([:positive])}"
+      event_id_2 = "evt_test_#{System.unique_integer([:positive])}"
+
+      Billing.record_webhook_event!(event_id_1, "test.event", authorize?: false)
+
+      assert {:ok, true} = Billing.event_processed?(event_id_1, authorize?: false)
+      assert {:ok, false} = Billing.event_processed?(event_id_2, authorize?: false)
+    end
+
+    test "cleanup removes old events" do
+      require Ash.Query
+
+      old_event_id = "evt_old_#{System.unique_integer([:positive])}"
+
+      # Create an old event
+      {:ok, old_event} =
+        ProcessedWebhookEvent
+        |> Ash.Changeset.for_create(:record, %{
+          stripe_event_id: old_event_id,
+          event_type: "test.event"
+        })
+        |> Ash.create(authorize?: false)
+
+      # Manually set processed_at to 31 days ago
+      old_timestamp = DateTime.utc_now() |> DateTime.add(-31, :day)
+
+      # Convert UUID string to binary for Postgres
+      {:ok, uuid_binary} = Ecto.UUID.dump(old_event.id)
+
+      Citadel.Repo.update_all(
+        from(e in "processed_webhook_events", where: e.id == ^uuid_binary),
+        set: [processed_at: old_timestamp]
+      )
+
+      # Create a recent event
+      recent_event_id = "evt_recent_#{System.unique_integer([:positive])}"
+      Billing.record_webhook_event!(recent_event_id, "test.event", authorize?: false)
+
+      # Run cleanup
+      {:ok, count} = Billing.cleanup_old_webhook_events(%{older_than_days: 30}, authorize?: false)
+      assert count == 1
+
+      # Old event should be gone
+      assert {:ok, false} = Billing.event_processed?(old_event_id, authorize?: false)
+
+      # Recent event should still exist
+      assert {:ok, true} = Billing.event_processed?(recent_event_id, authorize?: false)
+    end
+
+    test "recording same event ID twice raises error" do
+      event_id = "evt_test_#{System.unique_integer([:positive])}"
+
+      Billing.record_webhook_event!(event_id, "test.event", authorize?: false)
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Billing.record_webhook_event!(event_id, "test.event", authorize?: false)
+      end
     end
   end
 end

@@ -37,5 +37,11 @@ defmodule Citadel.Billing do
         action: :adjust_reservation,
         args: [:organization_id, :reserved_amount, :actual_cost, :description]
     end
+
+    resource Citadel.Billing.ProcessedWebhookEvent do
+      define :record_webhook_event, action: :record, args: [:stripe_event_id, :event_type]
+      define :event_processed?, action: :event_processed?, args: [:stripe_event_id]
+      define :cleanup_old_webhook_events, action: :cleanup_old_events
+    end
   end
 end
