@@ -37,6 +37,8 @@ defmodule Citadel.Billing.CreditLedger do
         :reference_id
       ]
 
+      transaction? true
+
       change Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance
     end
 
@@ -74,6 +76,8 @@ defmodule Citadel.Billing.CreditLedger do
 
       argument :reference_type, :string
       argument :reference_id, :uuid
+
+      transaction? true
 
       change fn changeset, _context ->
         changeset
@@ -114,6 +118,8 @@ defmodule Citadel.Billing.CreditLedger do
       argument :description, :string, allow_nil?: false
       argument :reference_type, :string
       argument :reference_id, :uuid
+
+      transaction? true
 
       change fn changeset, _context ->
         amount = Ash.Changeset.get_argument(changeset, :amount)
