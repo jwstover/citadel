@@ -2,6 +2,7 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
   use Citadel.DataCase, async: true
 
   alias Citadel.Billing
+  alias Citadel.Billing.Credits
   alias Citadel.Chat.Message.Changes.ConsumeCredits
 
   setup do
@@ -46,7 +47,6 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
     end
 
     test "returns error when workspace has no organization", %{owner: owner} do
-      # Create a workspace without an organization (legacy)
       workspace_without_org = generate(workspace([organization_id: nil], actor: owner))
 
       conversation =
@@ -72,15 +72,15 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
     end
   end
 
-  describe "pre_check/2" do
-    test "returns ok with org_id when credits are sufficient", %{
+  describe "reserve/2" do
+    test "returns reservation when credits are sufficient", %{
       owner: owner,
       organization: organization,
       workspace: workspace,
       conversation: conversation
     } do
-      # Add credits
-      Billing.add_credits!(organization.id, 500, "Initial credits", authorize?: false)
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
 
       message =
         generate(
@@ -92,8 +92,12 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           )
         )
 
-      assert {:ok, org_id} = ConsumeCredits.pre_check(message, %{})
-      assert org_id == organization.id
+      assert {:ok, reservation} = ConsumeCredits.reserve(message, %{})
+      assert reservation.organization_id == organization.id
+      assert reservation.reserved_amount == max_reservation
+
+      {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
+      assert balance == 0
     end
 
     test "returns error when credits are insufficient", %{
@@ -102,8 +106,6 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
       workspace: workspace,
       conversation: conversation
     } do
-      # No credits added
-
       message =
         generate(
           message(
@@ -114,7 +116,7 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           )
         )
 
-      assert {:error, :insufficient_credits} = ConsumeCredits.pre_check(message, %{})
+      assert {:error, :insufficient_credits} = ConsumeCredits.reserve(message, %{})
     end
 
     test "returns error when workspace has no organization", %{owner: owner} do
@@ -139,60 +141,164 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           )
         )
 
-      assert {:error, :no_organization} = ConsumeCredits.pre_check(message, %{})
+      assert {:error, :no_organization} = ConsumeCredits.reserve(message, %{})
     end
   end
 
-  describe "post_charge/4" do
-    test "deducts credits based on token usage", %{organization: organization} do
-      # Add credits
-      Billing.add_credits!(organization.id, 500, "Initial credits", authorize?: false)
+  describe "adjust/4" do
+    test "refunds unused credits when actual cost is less than reserved", %{
+      organization: organization
+    } do
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
 
       message_id = Ash.UUID.generate()
-      token_usage = %LangChain.TokenUsage{input: 1000, output: 500}
+      token_usage = %LangChain.TokenUsage{input: 100, output: 50}
+      actual_cost = Credits.calculate_cost(token_usage)
 
-      assert :ok = ConsumeCredits.post_charge(organization.id, token_usage, message_id)
+      Billing.reserve_credits!(
+        organization.id,
+        max_reservation,
+        "Test reservation",
+        %{reference_type: "message", reference_id: message_id},
+        authorize?: false
+      )
 
-      # Check balance decreased (11 credits used based on default rates)
+      reservation = %{
+        organization_id: organization.id,
+        reserved_amount: max_reservation
+      }
+
+      assert :ok = ConsumeCredits.adjust(reservation, token_usage, message_id)
+
       {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
-      assert balance == 489
+      assert balance == max_reservation - actual_cost
     end
 
     test "creates ledger entry with message reference", %{organization: organization} do
-      Billing.add_credits!(organization.id, 500, "Initial credits", authorize?: false)
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
 
       message_id = Ash.UUID.generate()
       token_usage = %LangChain.TokenUsage{input: 100, output: 50}
 
-      assert :ok = ConsumeCredits.post_charge(organization.id, token_usage, message_id)
+      Billing.reserve_credits!(
+        organization.id,
+        max_reservation,
+        "Test reservation",
+        %{reference_type: "message", reference_id: message_id},
+        authorize?: false
+      )
 
-      # Check ledger entry was created with reference
+      reservation = %{
+        organization_id: organization.id,
+        reserved_amount: max_reservation
+      }
+
+      assert :ok = ConsumeCredits.adjust(reservation, token_usage, message_id)
+
       entries = Billing.list_credit_entries!(authorize?: false)
-      usage_entry = Enum.find(entries, &(&1.transaction_type == :usage))
+      adjustment_entry = Enum.find(entries, &(&1.transaction_type == :reservation_adjustment))
 
-      assert usage_entry.reference_type == "message"
-      assert usage_entry.reference_id == message_id
+      assert adjustment_entry.reference_type == "message"
+      assert adjustment_entry.reference_id == message_id
     end
 
-    test "handles nil token usage gracefully", %{organization: organization} do
-      Billing.add_credits!(organization.id, 500, "Initial credits", authorize?: false)
+    test "handles nil token usage by refunding all but minimum", %{organization: organization} do
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
 
       message_id = Ash.UUID.generate()
+      actual_cost = Credits.calculate_cost(nil)
 
-      assert :ok = ConsumeCredits.post_charge(organization.id, nil, message_id)
+      Billing.reserve_credits!(
+        organization.id,
+        max_reservation,
+        "Test reservation",
+        %{reference_type: "message", reference_id: message_id},
+        authorize?: false
+      )
 
-      # Should deduct minimum (1 credit)
+      reservation = %{
+        organization_id: organization.id,
+        reserved_amount: max_reservation
+      }
+
+      assert :ok = ConsumeCredits.adjust(reservation, nil, message_id)
+
       {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
-      assert balance == 499
+      assert balance == max_reservation - actual_cost
     end
 
-    test "handles insufficient credits error gracefully", %{organization: organization} do
-      # No credits added
-      message_id = Ash.UUID.generate()
-      token_usage = %LangChain.TokenUsage{input: 1000, output: 500}
+    test "does not create adjustment when actual exceeds reserved (overage absorbed)", %{
+      organization: organization
+    } do
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
 
-      # Should not raise, just return :ok (error is logged)
-      assert :ok = ConsumeCredits.post_charge(organization.id, token_usage, message_id)
+      message_id = Ash.UUID.generate()
+
+      Billing.reserve_credits!(
+        organization.id,
+        max_reservation,
+        "Test reservation",
+        %{reference_type: "message", reference_id: message_id},
+        authorize?: false
+      )
+
+      reservation = %{
+        organization_id: organization.id,
+        reserved_amount: max_reservation
+      }
+
+      # This produces 150 credits (10000*0.003 + 10000*0.015 = 180), which exceeds max_reservation
+      token_usage = %LangChain.TokenUsage{input: 10000, output: 10000}
+      actual_cost = Credits.calculate_cost(token_usage)
+      assert actual_cost > max_reservation
+
+      assert :ok = ConsumeCredits.adjust(reservation, token_usage, message_id)
+
+      entries = Billing.list_credit_entries!(authorize?: false)
+      adjustment_entries = Enum.filter(entries, &(&1.transaction_type == :reservation_adjustment))
+
+      # No adjustment because actual cost exceeded reservation (overage absorbed)
+      assert Enum.empty?(adjustment_entries)
+
+      # Balance should still be 0 (no refund when actual >= reserved)
+      {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
+      assert balance == 0
+    end
+  end
+
+  describe "refund/2" do
+    test "refunds entire reservation", %{organization: organization} do
+      max_reservation = Credits.max_reservation_credits()
+      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
+
+      message_id = Ash.UUID.generate()
+
+      Billing.reserve_credits!(
+        organization.id,
+        max_reservation,
+        "Test reservation",
+        %{reference_type: "message", reference_id: message_id},
+        authorize?: false
+      )
+
+      reservation = %{
+        organization_id: organization.id,
+        reserved_amount: max_reservation
+      }
+
+      {:ok, balance_after_reserve} =
+        Billing.get_organization_balance(organization.id, authorize?: false)
+
+      assert balance_after_reserve == 0
+
+      assert :ok = ConsumeCredits.refund(reservation, message_id)
+
+      {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
+      assert balance == max_reservation
     end
   end
 end

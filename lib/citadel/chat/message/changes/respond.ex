@@ -43,9 +43,9 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   defp run_response_generation(message, context) do
-    case ConsumeCredits.pre_check(message, context) do
-      {:ok, organization_id} ->
-        run_with_credit_tracking(message, context, organization_id)
+    case ConsumeCredits.reserve(message, context) do
+      {:ok, reservation} ->
+        run_with_credit_tracking(message, context, reservation)
 
       {:error, :insufficient_credits} ->
         broadcast_error(message.conversation_id, "insufficient_credits")
@@ -56,7 +56,7 @@ defmodule Citadel.Chat.Message.Changes.Respond do
     end
   end
 
-  defp run_with_credit_tracking(message, context, organization_id) do
+  defp run_with_credit_tracking(message, context, reservation) do
     messages = fetch_conversation_messages(message, context)
     new_message_id = Ash.UUIDv7.generate()
     workspace_id = get_workspace_id(message, context)
@@ -67,15 +67,17 @@ defmodule Citadel.Chat.Message.Changes.Respond do
         case LLMChain.run(chain, mode: :while_needs_response) do
           {:ok, updated_chain} ->
             token_usage = TokenUsage.get(updated_chain.last_message)
-            ConsumeCredits.post_charge(organization_id, token_usage, message.id)
+            ConsumeCredits.adjust(reservation, token_usage, message.id)
             :ok
 
           {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
             Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
+            ConsumeCredits.refund(reservation, message.id)
             :error
 
           {:error, %LLMChain{} = _chain} ->
             Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
+            ConsumeCredits.refund(reservation, message.id)
             :error
 
           other ->
@@ -83,11 +85,13 @@ defmodule Citadel.Chat.Message.Changes.Respond do
               "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
             )
 
+            ConsumeCredits.refund(reservation, message.id)
             :error
         end
 
       {:error, reason} ->
         Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
+        ConsumeCredits.refund(reservation, message.id)
         :skipped
     end
   end
