@@ -78,7 +78,10 @@ defmodule Citadel.Chat.Message.Changes.CreateConversationIfNotProvidedTest do
       workspace = generate(workspace([], actor: user))
       fake_uuid = Ash.UUID.generate()
 
-      assert {:error, %Ash.Error.Invalid{}} =
+      # When conversation doesn't exist, HasSufficientCredits check can't find
+      # the organization chain (Message -> Conversation -> Workspace -> Org),
+      # so it returns Forbidden before validation runs
+      assert {:error, %Ash.Error.Forbidden{}} =
                Citadel.Chat.create_message(
                  %{text: "Hello!", conversation_id: fake_uuid},
                  actor: user,
