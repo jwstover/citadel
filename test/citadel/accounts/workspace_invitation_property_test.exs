@@ -239,6 +239,10 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
         invitee = generate(user())
         workspace = generate(workspace([], actor: owner))
 
+        # Upgrade to pro to allow multiple members (accepting adds member)
+        org = Citadel.Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+        upgrade_to_pro(org)
+
         invitation =
           generate(
             workspace_invitation(
@@ -272,6 +276,10 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
         owner = generate(user())
         invitee = generate(user())
         workspace = generate(workspace([], actor: owner))
+
+        # Upgrade to pro to allow multiple members (accepting adds member)
+        org = Citadel.Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+        upgrade_to_pro(org)
 
         invitation =
           generate(

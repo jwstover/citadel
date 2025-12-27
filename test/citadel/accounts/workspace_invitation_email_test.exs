@@ -6,12 +6,8 @@ defmodule Citadel.Accounts.WorkspaceInvitationEmailTest do
 
   describe "invitation creation enqueues email job" do
     test "enqueues SendInvitationEmailWorker when invitation is created" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
         Accounts.create_invitation!(
@@ -27,12 +23,8 @@ defmodule Citadel.Accounts.WorkspaceInvitationEmailTest do
     end
 
     test "enqueues job with correct queue" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
         Accounts.create_invitation!(

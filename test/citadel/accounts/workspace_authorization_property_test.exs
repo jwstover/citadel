@@ -75,9 +75,8 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         workspace = generate(workspace([], actor: owner))
         member = generate(user())
 
-        # Add member
-        membership =
-          Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        membership = add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         # Owner should always be able to remove non-owner members
         assert :ok = Accounts.remove_workspace_member(membership, actor: owner)
@@ -162,7 +161,8 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         # Member should always be able to read workspace
         assert {:ok, found_workspace} =
@@ -178,7 +178,8 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         email = "new_member#{email_suffix}@example.com"
 
@@ -196,7 +197,8 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         new_name = "Member Updated #{new_name_suffix}"
 
@@ -216,7 +218,8 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         # Member should be forbidden from destroying
         assert {:error, %Ash.Error.Forbidden{}} =

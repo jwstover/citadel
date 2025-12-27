@@ -20,7 +20,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
     test "form starts empty", %{conn: conn, user: _user} do
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/new")
 
-      # Verify form field is empty
       assert view
              |> element("form")
              |> render() =~ ~s(name="form[name]")
@@ -40,14 +39,11 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
     end
 
     test "redirects non-owner trying to edit", %{conn: conn, user: user} do
-      # Create workspace owned by someone else
       other_user = generate(user())
       other_workspace = generate(workspace([name: "Others Workspace"], actor: other_user))
 
-      # Add current user as member
-      Accounts.add_workspace_member!(user.id, other_workspace.id, actor: other_user)
+      add_user_to_workspace(user.id, other_workspace.id, actor: other_user)
 
-      # Try to access edit page
       assert {:error, {:redirect, %{to: "/preferences", flash: flash}}} =
                live(conn, ~p"/preferences/workspaces/#{other_workspace.id}/edit")
 
@@ -64,7 +60,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
     end
 
     test "redirects when user is not member of workspace", %{conn: conn, user: _user} do
-      # Create workspace owned by someone else without adding current user as member
       other_user = generate(user())
       other_workspace = generate(workspace([name: "Others Workspace"], actor: other_user))
 
@@ -78,17 +73,19 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
   describe "save event - create" do
     setup :register_and_log_in_user
 
-    test "creates new workspace with valid data", %{conn: conn, user: user} do
+    test "creates new workspace with valid data", %{conn: conn, user: user, workspace: workspace} do
+      # Upgrade to pro to allow multiple workspaces
+      org = Citadel.Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/new")
 
       workspace_name = "My Team Workspace #{System.unique_integer([:positive])}"
 
-      # Submit the form
       view
       |> form("form", form: %{name: workspace_name})
       |> render_submit()
 
-      # Verify workspace was actually created
       workspaces =
         Accounts.list_workspaces!(
           actor: user,
@@ -99,20 +96,17 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
       created_workspace = hd(workspaces)
       assert created_workspace.name == workspace_name
 
-      # Verify redirect occurred to the created workspace
       assert_redirected(view, "/preferences/workspace/#{created_workspace.id}")
     end
 
     test "shows error with empty name", %{conn: conn, user: _user} do
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/new")
 
-      # Submit with empty name
       html =
         view
         |> form("form", form: %{name: ""})
         |> render_submit()
 
-      # Should stay on same page with error
       assert html =~ "New Workspace"
       refute has_element?(view, ".alert-success")
     end
@@ -120,7 +114,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
     test "shows error with name too long", %{conn: conn, user: _user} do
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/new")
 
-      # Submit with name over 100 characters
       long_name = String.duplicate("a", 101)
 
       html =
@@ -128,21 +121,22 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
         |> form("form", form: %{name: long_name})
         |> render_submit()
 
-      # Should stay on same page
       assert html =~ "New Workspace"
     end
 
-    test "redirects to workspace details after creation", %{conn: conn, user: user} do
+    test "redirects to workspace details after creation", %{conn: conn, user: user, workspace: workspace} do
+      # Upgrade to pro to allow multiple workspaces
+      org = Citadel.Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/new")
 
       workspace_name = "New Team #{System.unique_integer([:positive])}"
 
-      # Submit the form
       view
       |> form("form", form: %{name: workspace_name})
       |> render_submit()
 
-      # Get the created workspace
       workspaces =
         Accounts.list_workspaces!(
           actor: user,
@@ -151,7 +145,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
 
       created_workspace = hd(workspaces)
 
-      # Should redirect to workspace details page
       flash = assert_redirected(view, "/preferences/workspace/#{created_workspace.id}")
       assert flash["info"] == "Workspace created successfully"
     end
@@ -169,29 +162,24 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
 
       new_name = "Updated Name #{System.unique_integer([:positive])}"
 
-      # Submit the form with new name
       view
       |> form("form", form: %{name: new_name})
       |> render_submit()
 
-      # Verify workspace was actually updated
       updated_workspace = Accounts.get_workspace_by_id!(workspace.id, actor: user)
       assert updated_workspace.name == new_name
 
-      # Verify redirect occurred
       assert_redirected(view, "/preferences/workspace/#{workspace.id}")
     end
 
     test "shows error with invalid data", %{conn: conn, user: _user, workspace: workspace} do
       {:ok, view, _html} = live(conn, ~p"/preferences/workspaces/#{workspace.id}/edit")
 
-      # Submit with empty name
       html =
         view
         |> form("form", form: %{name: ""})
         |> render_submit()
 
-      # Should stay on same page
       assert html =~ "Edit Workspace"
     end
 
@@ -208,7 +196,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
       |> form("form", form: %{name: new_name})
       |> render_submit()
 
-      # Reload workspace to get updated version
       updated_workspace = Accounts.get_workspace_by_id!(workspace.id, actor: user)
 
       flash = assert_redirected(view, "/preferences/workspace/#{updated_workspace.id}")
@@ -292,11 +279,9 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
       user: _user,
       workspace: workspace
     } do
-      # New workspace
       {:ok, _view, html} = live(conn, ~p"/preferences/workspaces/new")
       assert html =~ "Create Workspace"
 
-      # Edit workspace
       {:ok, _view, html} = live(conn, ~p"/preferences/workspaces/#{workspace.id}/edit")
       assert html =~ "Update Workspace"
     end

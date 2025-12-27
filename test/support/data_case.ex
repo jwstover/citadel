@@ -158,4 +158,51 @@ defmodule Citadel.DataCase do
 
     organization
   end
+
+  @doc """
+  Adds a user to a workspace, automatically ensuring org membership first.
+
+  Since workspaces require users to be organization members, this helper
+  adds the user to the workspace's organization (if not already a member)
+  before adding them to the workspace.
+
+  ## Options
+
+    * `:actor` - The user performing the action (required)
+    * Other options are passed through to `add_workspace_member!`
+
+  ## Examples
+
+      add_user_to_workspace(other_user.id, workspace.id, actor: owner)
+  """
+  def add_user_to_workspace(user_id, workspace_id, opts \\ []) do
+    require Ash.Query
+
+    workspace =
+      Citadel.Accounts.Workspace
+      |> Ash.Query.filter(id == ^workspace_id)
+      |> Ash.Query.select([:organization_id])
+      |> Ash.read_one!(authorize?: false)
+
+    if workspace.organization_id do
+      unless user_is_org_member?(user_id, workspace.organization_id) do
+        Citadel.Accounts.add_organization_member(
+          workspace.organization_id,
+          user_id,
+          :member,
+          authorize?: false
+        )
+      end
+    end
+
+    Citadel.Accounts.add_workspace_member!(user_id, workspace_id, opts)
+  end
+
+  defp user_is_org_member?(user_id, organization_id) do
+    require Ash.Query
+
+    Citadel.Accounts.OrganizationMembership
+    |> Ash.Query.filter(user_id == ^user_id and organization_id == ^organization_id)
+    |> Ash.exists?(authorize?: false)
+  end
 end

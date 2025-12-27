@@ -13,6 +13,15 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
   alias Citadel.Accounts
 
+  # Helper to create workspace with org
+  defp create_workspace_for_test(name, owner) do
+    org = generate(organization([], actor: owner))
+
+    Citadel.Accounts.Workspace
+    |> Ash.Changeset.for_create(:create, %{name: name, organization_id: org.id}, actor: owner)
+    |> Ash.create()
+  end
+
   describe "workspace name length validation properties" do
     property "workspace names with 1-100 non-whitespace chars always succeed" do
       check all(
@@ -21,7 +30,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
             ) do
         owner = generate(user())
 
-        assert {:ok, workspace} = Accounts.create_workspace(name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name, owner)
         # Name should be trimmed
         assert workspace.name == String.trim(name)
         # Trimmed name should be within bounds
@@ -34,8 +43,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
       check all(name <- string(:alphanumeric, min_length: 101, max_length: 200)) do
         owner = generate(user())
 
-        assert {:error, %Ash.Error.Invalid{}} =
-                 Accounts.create_workspace(name, actor: owner)
+        assert {:error, %Ash.Error.Invalid{}} = create_workspace_for_test(name, owner)
       end
     end
 
@@ -46,8 +54,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         core_name = String.duplicate("A", 100)
         name_with_padding = padding <> core_name
 
-        assert {:ok, workspace} =
-                 Accounts.create_workspace(name_with_padding, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name_with_padding, owner)
 
         assert String.length(workspace.name) == 100
       end
@@ -66,8 +73,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
         padded_name = prefix <> name <> suffix
 
-        assert {:ok, workspace} =
-                 Accounts.create_workspace(padded_name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(padded_name, owner)
 
         # Whitespace should be trimmed
         assert workspace.name == String.trim(padded_name)
@@ -82,8 +88,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         owner = generate(user())
 
         # Whitespace-only should fail (becomes empty after trim)
-        assert {:error, %Ash.Error.Invalid{}} =
-                 Accounts.create_workspace(whitespace, actor: owner)
+        assert {:error, %Ash.Error.Invalid{}} = create_workspace_for_test(whitespace, owner)
       end
     end
 
@@ -98,7 +103,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         internal_spaces = String.duplicate(" ", spaces)
         name = part1 <> internal_spaces <> part2
 
-        assert {:ok, workspace} = Accounts.create_workspace(name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name, owner)
 
         # Internal whitespace should be preserved
         assert workspace.name == name
@@ -112,8 +117,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
       check all(_ <- integer(1..25)) do
         owner = generate(user())
 
-        assert {:error, %Ash.Error.Invalid{}} =
-                 Accounts.create_workspace("", actor: owner)
+        assert {:error, %Ash.Error.Invalid{}} = create_workspace_for_test("", owner)
       end
     end
 
@@ -122,8 +126,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         owner = generate(user())
 
         # Even with whitespace, empty after trim should fail
-        assert {:error, %Ash.Error.Invalid{}} =
-                 Accounts.create_workspace(whitespace, actor: owner)
+        assert {:error, %Ash.Error.Invalid{}} = create_workspace_for_test(whitespace, owner)
       end
     end
   end
@@ -139,7 +142,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         name = base <> " " <> emoji
 
         # Unicode should be accepted if within length limits
-        case Accounts.create_workspace(name, actor: owner) do
+        case create_workspace_for_test(name, owner) do
           {:ok, workspace} ->
             assert workspace.name == name
 
@@ -159,7 +162,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
         name = base <> symbol <> "test"
 
-        assert {:ok, workspace} = Accounts.create_workspace(name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name, owner)
         assert workspace.name == name
       end
     end
@@ -176,7 +179,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         owner = generate(user())
 
         # Create workspace
-        {:ok, workspace} = Accounts.create_workspace(initial_name, actor: owner)
+        {:ok, workspace} = create_workspace_for_test(initial_name, owner)
 
         # Update should succeed with valid name
         assert {:ok, updated} =
@@ -200,7 +203,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
         owner = generate(user())
 
         # Create workspace
-        {:ok, workspace} = Accounts.create_workspace(initial_name, actor: owner)
+        {:ok, workspace} = create_workspace_for_test(initial_name, owner)
 
         # Update should fail with invalid name
         assert {:error, %Ash.Error.Invalid{}} =
@@ -227,7 +230,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
         name = padding <> char
 
-        assert {:ok, workspace} = Accounts.create_workspace(name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name, owner)
         assert String.length(workspace.name) == 1
       end
     end
@@ -238,7 +241,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
         name = String.duplicate("A", 100)
 
-        assert {:ok, workspace} = Accounts.create_workspace(name, actor: owner)
+        assert {:ok, workspace} = create_workspace_for_test(name, owner)
         assert String.length(workspace.name) == 100
       end
     end
@@ -249,8 +252,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
 
         name = String.duplicate("A", 101)
 
-        assert {:error, %Ash.Error.Invalid{}} =
-                 Accounts.create_workspace(name, actor: owner)
+        assert {:error, %Ash.Error.Invalid{}} = create_workspace_for_test(name, owner)
       end
     end
   end

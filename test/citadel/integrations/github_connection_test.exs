@@ -3,7 +3,6 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
 
   require Ash.Query
 
-  alias Citadel.Accounts
   alias Citadel.Integrations
   alias Citadel.Integrations.GitHubConnection
 
@@ -61,8 +60,7 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
       member = generate(user())
       workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
-      Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+      add_user_to_workspace(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -125,8 +123,7 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
       member = generate(user())
       workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
-      Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+      add_user_to_workspace(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 
@@ -214,8 +211,7 @@ defmodule Citadel.Integrations.GitHubConnectionTest do
       member = generate(user())
       workspace = generate(workspace([organization_id: org.id], actor: owner))
 
-      Accounts.add_organization_member!(org.id, member.id, :member, actor: owner)
-      Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+      add_user_to_workspace(member.id, workspace.id, actor: owner)
 
       pat = "ghp_test_token_#{System.unique_integer([:positive])}"
 

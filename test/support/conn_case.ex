@@ -34,6 +34,9 @@ defmodule CitadelWeb.ConnCase do
 
       # Import generators for test data
       import Citadel.Generator
+
+      # Import helper functions from DataCase
+      import Citadel.DataCase, only: [add_user_to_workspace: 3, upgrade_to_pro: 1]
     end
   end
 
