@@ -65,6 +65,75 @@ else
     default_provider: default_provider
 end
 
+# Cloak encryption configuration for sensitive data (GitHub PATs, etc.)
+# In dev/test, use a default key. In prod, require CLOAK_KEY env var.
+cloak_key =
+  if config_env() == :prod do
+    System.get_env("CLOAK_KEY") ||
+      raise """
+      environment variable CLOAK_KEY is missing.
+      Generate one with: :crypto.strong_rand_bytes(32) |> Base.encode64()
+      """
+  else
+    # Default key for dev/test - DO NOT use in production
+    System.get_env("CLOAK_KEY") || "rkYjLw7vTj7mQxYVw8vK+KRj6bEADT5PBvxNOPkT0Oc="
+  end
+
+config :citadel, Citadel.Vault,
+  ciphers: [
+    default: {
+      Cloak.Ciphers.AES.GCM,
+      tag: "AES.GCM.V1", key: Base.decode64!(cloak_key), iv_length: 12
+    }
+  ]
+
+# Billing configuration - Stripe price IDs for subscription plans
+# In test mode, preserve config from test.exs
+if config_env() == :test do
+  existing_billing = Application.get_env(:citadel, Citadel.Billing) || []
+
+  config :citadel,
+         Citadel.Billing,
+         Keyword.merge(existing_billing,
+           pro_monthly_price_id:
+             existing_billing[:pro_monthly_price_id] ||
+               System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
+           pro_annual_price_id:
+             existing_billing[:pro_annual_price_id] ||
+               System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
+           pro_seat_monthly_price_id:
+             existing_billing[:pro_seat_monthly_price_id] ||
+               System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
+           pro_seat_annual_price_id:
+             existing_billing[:pro_seat_annual_price_id] ||
+               System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+         )
+
+  existing_stripe = Application.get_env(:stripity_stripe, :api_key)
+  existing_signing = Application.get_env(:stripity_stripe, :signing_secret)
+  existing_pub = Application.get_env(:citadel, :stripe)[:publishable_key]
+
+  config :stripity_stripe,
+    api_key: existing_stripe || System.get_env("STRIPE_SECRET_KEY"),
+    signing_secret: existing_signing || System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  config :citadel, :stripe,
+    publishable_key: existing_pub || System.get_env("STRIPE_PUBLISHABLE_KEY")
+else
+  config :citadel, Citadel.Billing,
+    pro_monthly_price_id: System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
+    pro_annual_price_id: System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
+    pro_seat_monthly_price_id: System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
+    pro_seat_annual_price_id: System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+
+  # Stripe API configuration
+  config :stripity_stripe,
+    api_key: System.get_env("STRIPE_SECRET_KEY"),
+    signing_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  config :citadel, :stripe, publishable_key: System.get_env("STRIPE_PUBLISHABLE_KEY")
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

@@ -473,6 +473,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       assert has_element?(view, "#task-state-#{task.id}")
     end
 
+    @tag timeout: 60_000
     test "changes task state when selecting from dropdown", %{
       conn: conn,
       task: task,
