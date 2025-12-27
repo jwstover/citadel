@@ -13,9 +13,7 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
       upgrade_to_pro(org)
 
       workspace =
-        generate(
-          workspace([organization_id: org.id, name: "Test Workspace"], actor: owner)
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitee_email = unique_user_email()
       invitation = Accounts.create_invitation!(invitee_email, workspace.id, actor: owner)
@@ -34,9 +32,7 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
       upgrade_to_pro(org)
 
       workspace =
-        generate(
-          workspace([organization_id: org.id, name: "Test Workspace"], actor: owner)
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitation = Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
 
@@ -60,9 +56,7 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
       invitee = generate(user())
 
       workspace =
-        generate(
-          workspace([organization_id: org.id, name: "Test Workspace"], actor: owner)
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitation = Accounts.create_invitation!(invitee.email, workspace.id, actor: owner)
 

@@ -11,5 +11,13 @@ defmodule Citadel.Billing.CreditLedger.Types.TransactionType do
   - :reservation_adjustment - Adjustment to a previous reservation (refund or additional charge)
   """
   use Ash.Type.Enum,
-    values: [:purchase, :usage, :refund, :adjustment, :bonus, :reservation, :reservation_adjustment]
+    values: [
+      :purchase,
+      :usage,
+      :refund,
+      :adjustment,
+      :bonus,
+      :reservation,
+      :reservation_adjustment
+    ]
 end

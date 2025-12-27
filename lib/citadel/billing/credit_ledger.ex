@@ -145,7 +145,8 @@ defmodule Citadel.Billing.CreditLedger do
         )
       end
 
-      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance, validate_balance?: true}
+      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
+              validate_balance?: true}
     end
 
     create :reserve_credits do
@@ -190,7 +191,8 @@ defmodule Citadel.Billing.CreditLedger do
         )
       end
 
-      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance, validate_balance?: true}
+      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
+              validate_balance?: true}
     end
 
     create :adjust_reservation do
@@ -245,13 +247,18 @@ defmodule Citadel.Billing.CreditLedger do
         end
       end
 
-      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance, validate_balance?: true}
+      change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
+              validate_balance?: true}
     end
   end
 
   policies do
     bypass action_type(:create) do
       authorize_if always()
+    end
+
+    policy action(:current_balance) do
+      authorize_if Citadel.Billing.CreditLedger.Checks.ActorInOrganization
     end
 
     policy action_type(:read) do
