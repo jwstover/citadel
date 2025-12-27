@@ -36,10 +36,17 @@ defmodule Citadel.Workers.MonthlyCreditResetWorker do
   def perform(%Oban.Job{}) do
     now = DateTime.utc_now()
 
-    subscriptions_needing_reset(now)
-    |> Enum.each(&reset_credits_for_subscription(&1, now))
+    results =
+      subscriptions_needing_reset(now)
+      |> Enum.map(&reset_credits_for_subscription(&1, now))
 
-    :ok
+    failures = Enum.filter(results, &match?({:error, _}, &1))
+
+    if Enum.empty?(failures) do
+      :ok
+    else
+      {:error, "#{length(failures)} subscription(s) failed to reset credits"}
+    end
   end
 
   defp subscriptions_needing_reset(now) do
@@ -78,11 +85,15 @@ defmodule Citadel.Workers.MonthlyCreditResetWorker do
             "(#{subscription.tier} tier). Next reset: #{next_period_end}"
         )
 
+        {:ok, subscription.organization_id}
+
       {:error, reason} ->
         Logger.error(
           "Failed to reset credits for organization #{subscription.organization_id}: " <>
             "#{inspect(reason)}"
         )
+
+        {:error, {subscription.organization_id, reason}}
     end
   end
 

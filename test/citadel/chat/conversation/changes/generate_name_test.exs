@@ -53,7 +53,7 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateNameTest do
       assert updated_conversation.title == "Code Assistance Chat"
     end
 
-    test "keeps title nil when AI returns error" do
+    test "returns error when AI fails so Oban can retry" do
       user = generate(user())
       workspace = generate(workspace([], actor: user))
 
@@ -79,12 +79,10 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateNameTest do
         {:error, :api_error, "AI service unavailable"}
       end)
 
-      updated_conversation =
-        conversation
-        |> Ash.Changeset.for_update(:generate_name, %{})
-        |> Ash.update!(actor: user, tenant: workspace.id)
-
-      assert updated_conversation.title == nil
+      assert {:error, %Ash.Error.Invalid{}} =
+               conversation
+               |> Ash.Changeset.for_update(:generate_name, %{})
+               |> Ash.update(actor: user, tenant: workspace.id)
     end
 
     test "fetches last 10 messages sorted by inserted_at" do

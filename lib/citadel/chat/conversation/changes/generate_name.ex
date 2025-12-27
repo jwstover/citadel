@@ -31,8 +31,8 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
         {:ok, title} ->
           Ash.Changeset.force_change_attribute(changeset, :title, String.trim(title))
 
-        {:error, _type, _message} ->
-          changeset
+        {:error, type, message} ->
+          Ash.Changeset.add_error(changeset, "Failed to generate conversation name: #{type} - #{message}")
       end
     end)
   end

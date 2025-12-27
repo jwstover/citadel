@@ -42,7 +42,7 @@ defmodule CitadelWeb.LiveUserAuth do
   def on_mount(:load_workspace, _params, session, socket) do
     if socket.assigns[:current_user] do
       user = socket.assigns.current_user
-      workspaces = Citadel.Accounts.list_workspaces!(actor: user)
+      workspaces = Citadel.Accounts.list_workspaces!(actor: user, load: [:organization])
 
       workspace_id = session["current_workspace_id"] || get_default_workspace_id(workspaces)
 

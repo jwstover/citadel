@@ -158,6 +158,9 @@ defmodule Citadel.Generator do
   @doc """
   Generates a workspace membership.
 
+  Automatically ensures the user is a member of the workspace's organization
+  before creating the workspace membership (required by UserIsOrgMember validation).
+
   ## Parameters
 
     * `overrides` - Field values to override (e.g., [user_id: user_id, workspace_id: workspace_id])
@@ -171,11 +174,43 @@ defmodule Citadel.Generator do
       ))
   """
   def workspace_membership(overrides \\ [], generator_opts \\ []) do
+    user_id = Keyword.get(overrides, :user_id)
+    workspace_id = Keyword.get(overrides, :workspace_id)
+
+    if user_id && workspace_id do
+      ensure_org_membership(user_id, workspace_id)
+    end
+
     changeset_generator(
       Citadel.Accounts.WorkspaceMembership,
       :join,
       Keyword.merge([overrides: overrides], generator_opts)
     )
+  end
+
+  defp ensure_org_membership(user_id, workspace_id) do
+    require Ash.Query
+
+    case Citadel.Accounts.Workspace
+         |> Ash.Query.filter(id == ^workspace_id)
+         |> Ash.Query.select([:organization_id])
+         |> Ash.read_one(authorize?: false) do
+      {:ok, %{organization_id: org_id}} when not is_nil(org_id) ->
+        unless user_is_org_member?(user_id, org_id) do
+          Citadel.Accounts.add_organization_member(org_id, user_id, :member, authorize?: false)
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp user_is_org_member?(user_id, organization_id) do
+    require Ash.Query
+
+    Citadel.Accounts.OrganizationMembership
+    |> Ash.Query.filter(user_id == ^user_id and organization_id == ^organization_id)
+    |> Ash.exists?(authorize?: false)
   end
 
   @doc """

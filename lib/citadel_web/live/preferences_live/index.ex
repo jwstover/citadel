@@ -16,6 +16,13 @@ defmodule CitadelWeb.PreferencesLive.Index do
       <h1 class="text-2xl mb-4">Preferences</h1>
 
       <div class="space-y-6">
+        <.live_component
+          module={CitadelWeb.Components.OrganizationSection}
+          id="organization-section"
+          current_user={@current_user}
+          current_workspace={@current_workspace}
+        />
+
         <.card class="bg-base-200 border-base-300">
           <:title>
             <div class="flex justify-between items-center w-full">
