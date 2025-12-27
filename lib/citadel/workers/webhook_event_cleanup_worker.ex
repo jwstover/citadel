@@ -20,15 +20,19 @@ defmodule Citadel.Workers.WebhookEventCleanupWorker do
   def perform(%Oban.Job{}) do
     case Billing.cleanup_old_webhook_events(@retention_days, authorize?: false) do
       {:ok, count} when count > 0 ->
-        Logger.info("Cleaned up #{count} processed webhook events older than #{@retention_days} days")
+        Logger.info(
+          "Cleaned up #{count} processed webhook events older than #{@retention_days} days"
+        )
+
+        :ok
 
       {:ok, 0} ->
         Logger.debug("No old webhook events to clean up")
+        :ok
 
       {:error, reason} ->
         Logger.error("Failed to cleanup old webhook events: #{inspect(reason)}")
+        {:error, reason}
     end
-
-    :ok
   end
 end

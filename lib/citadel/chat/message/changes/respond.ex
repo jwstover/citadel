@@ -23,22 +23,29 @@ defmodule Citadel.Chat.Message.Changes.Respond do
       message = changeset.data
 
       try do
-        run_response_generation(message, context)
+        case run_response_generation(message, context) do
+          :ok -> changeset
+          :blocked -> changeset
+          :skipped -> changeset
+          :error -> Ash.Changeset.add_error(changeset, "AI response generation failed")
+        end
       rescue
         e ->
           Logger.error("""
           AI response generation failed for message #{message.id}:
           #{Exception.format(:error, e, __STACKTRACE__)}
           """)
+
+          reraise e, __STACKTRACE__
       catch
         kind, reason ->
           Logger.error("""
           AI response generation failed for message #{message.id}:
           #{inspect(kind)}: #{inspect(reason)}
           """)
-      end
 
-      changeset
+          :erlang.raise(kind, reason, __STACKTRACE__)
+      end
     end)
   end
 

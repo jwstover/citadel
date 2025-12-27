@@ -45,7 +45,6 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
       assert {:ok, org_id} = ConsumeCredits.resolve_organization_id(message, %{})
       assert org_id == organization.id
     end
-
   end
 
   describe "reserve/2" do

@@ -81,9 +81,7 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCredits do
             end
 
           {:error, error} ->
-            Logger.error(
-              "Failed to reserve credits for message #{message.id}: #{inspect(error)}"
-            )
+            Logger.error("Failed to reserve credits for message #{message.id}: #{inspect(error)}")
 
             {:error, :insufficient_credits}
         end

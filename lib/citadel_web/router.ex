@@ -106,6 +106,10 @@ defmodule CitadelWeb.Router do
     # Workspace session management
     get "/workspaces/switch/:workspace_id", WorkspaceController, :switch
 
+    # Billing routes (Stripe checkout and portal)
+    post "/billing/checkout", BillingController, :create_checkout
+    get "/billing/portal", BillingController, :billing_portal
+
     auth_routes AuthController, Citadel.Accounts.User, path: "/auth"
     sign_out_route AuthController
 
