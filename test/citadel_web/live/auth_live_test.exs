@@ -42,7 +42,7 @@ defmodule CitadelWeb.AuthLiveTest do
       result = live(conn, ~p"/sign-in")
 
       assert {:error, {:redirect, %{to: redirect_path}}} = result
-      assert redirect_path == "/"
+      assert redirect_path == "/dashboard"
     end
   end
 
@@ -68,7 +68,7 @@ defmodule CitadelWeb.AuthLiveTest do
       result = live(conn, ~p"/register")
 
       assert {:error, {:redirect, %{to: redirect_path}}} = result
-      assert redirect_path == "/"
+      assert redirect_path == "/dashboard"
     end
   end
 

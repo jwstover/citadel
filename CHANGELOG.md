@@ -1,3 +1,12 @@
+# [0.14.0](https://github.com/jwstover/citadel/compare/v0.13.0...v0.14.0) (2025-12-28)
+
+
+### Features
+
+* add landing page ([5a35576](https://github.com/jwstover/citadel/commit/5a355768b57da63eb4c31cac197b689501bc038b))
+
+
+
 # [0.13.0](https://github.com/jwstover/citadel/compare/v0.12.0...v0.13.0) (2025-12-15)
 
 
@@ -36,15 +45,6 @@
 ### Bug Fixes
 
 * resolve issue loading fontawesome classes from db ([c37cd25](https://github.com/jwstover/citadel/commit/c37cd25bb3f057100fedcf944fb579f38fd2a602))
-
-
-
-# [0.10.0](https://github.com/jwstover/citadel/compare/v0.9.0...v0.10.0) (2025-12-11)
-
-
-### Features
-
-* add inline markdown editing with milkdown ([a2b1296](https://github.com/jwstover/citadel/commit/a2b12966f04f167028081641bcfddc2097a0d483))
 
 
 
