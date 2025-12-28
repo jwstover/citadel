@@ -39,7 +39,6 @@ defmodule CitadelWeb.LandingLive do
         <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-base-300 to-transparent" />
       </div>
 
-
       <div class="container mx-auto px-6 lg:px-8 relative z-10">
         <div class="max-w-4xl mx-auto text-center">
           <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-base-200/80 border border-base-300/50 text-sm text-base-content/70 mb-8 backdrop-blur-sm">
@@ -146,7 +145,9 @@ defmodule CitadelWeb.LandingLive do
                   <div>
                     <h3 class="font-semibold text-lg mb-2 flex items-center gap-2">
                       Too Much Process
-                      <span class="text-xs px-2 py-0.5 rounded-full bg-error/10 text-error">Jira</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-error/10 text-error">
+                        Jira
+                      </span>
                     </h3>
                     <p class="text-base-content/60 text-sm leading-relaxed">
                       Drowning in tickets, sprint ceremonies, and story points. More time managing work than doing it.
@@ -166,7 +167,9 @@ defmodule CitadelWeb.LandingLive do
                   <div>
                     <h3 class="font-semibold text-lg mb-2 flex items-center gap-2">
                       Too Little Structure
-                      <span class="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning">Docs</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning">
+                        Docs
+                      </span>
                     </h3>
                     <p class="text-base-content/60 text-sm leading-relaxed">
                       Messy docs and spreadsheets that are already out of date. Things fall through the cracks.
