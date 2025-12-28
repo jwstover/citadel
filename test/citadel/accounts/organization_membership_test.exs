@@ -330,6 +330,5 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
                      Accounts.add_workspace_member!(non_member.id, workspace.id, actor: owner)
                    end
     end
-
   end
 end

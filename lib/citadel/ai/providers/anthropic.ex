@@ -42,7 +42,11 @@ defmodule Citadel.AI.Providers.Anthropic do
       {:ok, chain} ->
         extract_response(chain.last_message)
 
-      {:error, %LLMChain{}} ->
+      {:error, %LLMChain{} = _chain} ->
+        {:error, :api_error,
+         "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
+
+      {:error, %LangChain.Chains.LLMChain{} = _chain} ->
         {:error, :api_error,
          "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
 
@@ -90,7 +94,11 @@ defmodule Citadel.AI.Providers.Anthropic do
       {:ok, chain} ->
         extract_response(chain.last_message)
 
-      {:error, %LLMChain{}} ->
+      {:error, %LLMChain{} = _chain} ->
+        {:error, :api_error,
+         "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
+
+      {:error, %LangChain.Chains.LLMChain{} = _chain} ->
         {:error, :api_error,
          "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
 

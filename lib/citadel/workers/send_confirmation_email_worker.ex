@@ -7,8 +7,7 @@ defmodule Citadel.Workers.SendConfirmationEmailWorker do
   """
   use Oban.Worker,
     queue: :default,
-    max_attempts: 5,
-    unique: [period: 300, keys: [:user_id]]
+    max_attempts: 5
 
   require Logger
 

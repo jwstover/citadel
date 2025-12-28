@@ -88,6 +88,7 @@ defmodule CitadelWeb.StripeWebhookController do
          {:ok, subscription} <- get_subscription_by_org(org_id),
          {:ok, stripe_sub} <- get_stripe_subscription(session.subscription) do
       billing_period = get_billing_period(session)
+      {period_start, period_end} = get_period_from_subscription(stripe_sub)
 
       Billing.update_subscription!(
         subscription,
@@ -97,8 +98,8 @@ defmodule CitadelWeb.StripeWebhookController do
           billing_period: billing_period,
           stripe_subscription_id: stripe_sub.id,
           stripe_customer_id: session.customer,
-          current_period_start: unix_to_datetime(stripe_sub.current_period_start),
-          current_period_end: unix_to_datetime(stripe_sub.current_period_end)
+          current_period_start: period_start,
+          current_period_end: period_end
         },
         authorize?: false
       )
@@ -113,15 +114,18 @@ defmodule CitadelWeb.StripeWebhookController do
   defp handle_event(%Stripe.Event{type: "invoice.paid", data: %{object: invoice}}) do
     Logger.info("Processing invoice.paid for invoice #{invoice.id}")
 
-    with {:ok, stripe_sub} <- get_stripe_subscription(invoice.subscription),
+    with {:ok, subscription_id} <- get_subscription_id_from_invoice(invoice),
+         {:ok, stripe_sub} <- get_stripe_subscription(subscription_id),
          {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id),
          :ok <- validate_customer_ownership(subscription, invoice.customer) do
+      {period_start, period_end} = get_period_from_subscription(stripe_sub)
+
       Billing.update_subscription!(
         subscription,
         %{
           status: :active,
-          current_period_start: unix_to_datetime(stripe_sub.current_period_start),
-          current_period_end: unix_to_datetime(stripe_sub.current_period_end)
+          current_period_start: period_start,
+          current_period_end: period_end
         },
         authorize?: false
       )
@@ -142,7 +146,8 @@ defmodule CitadelWeb.StripeWebhookController do
   defp handle_event(%Stripe.Event{type: "invoice.payment_failed", data: %{object: invoice}}) do
     Logger.info("Processing invoice.payment_failed for invoice #{invoice.id}")
 
-    with {:ok, subscription} <- get_subscription_by_stripe_sub_id(invoice.subscription),
+    with {:ok, subscription_id} <- get_subscription_id_from_invoice(invoice),
+         {:ok, subscription} <- get_subscription_by_stripe_sub_id(subscription_id),
          :ok <- validate_customer_ownership(subscription, invoice.customer) do
       Billing.update_subscription!(
         subscription,
@@ -196,13 +201,14 @@ defmodule CitadelWeb.StripeWebhookController do
     with {:ok, subscription} <- get_subscription_by_stripe_id(stripe_sub.id),
          :ok <- validate_customer_ownership(subscription, stripe_sub.customer) do
       status = map_stripe_status(stripe_sub.status)
+      {period_start, period_end} = get_period_from_subscription(stripe_sub)
 
       Billing.update_subscription!(
         subscription,
         %{
           status: status,
-          current_period_start: unix_to_datetime(stripe_sub.current_period_start),
-          current_period_end: unix_to_datetime(stripe_sub.current_period_end)
+          current_period_start: period_start,
+          current_period_end: period_end
         },
         authorize?: false
       )
@@ -283,6 +289,33 @@ defmodule CitadelWeb.StripeWebhookController do
   defp map_stripe_status("canceled"), do: :canceled
   defp map_stripe_status("trialing"), do: :trialing
   defp map_stripe_status(_), do: :active
+
+  defp get_period_from_subscription(stripe_sub) do
+    case stripe_sub.items do
+      %{data: [first_item | _]} ->
+        {
+          unix_to_datetime(first_item.current_period_start),
+          unix_to_datetime(first_item.current_period_end)
+        }
+
+      _ ->
+        {nil, nil}
+    end
+  end
+
+  defp get_subscription_id_from_invoice(invoice) do
+    cond do
+      is_binary(invoice.subscription) ->
+        {:ok, invoice.subscription}
+
+      match?(%{data: [%{subscription: sub_id} | _]} when is_binary(sub_id), invoice.lines) ->
+        %{data: [%{subscription: sub_id} | _]} = invoice.lines
+        {:ok, sub_id}
+
+      true ->
+        {:error, :no_subscription_id}
+    end
+  end
 
   defp validate_customer_ownership(subscription, webhook_customer_id) do
     cond do
