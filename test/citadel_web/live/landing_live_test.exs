@@ -9,14 +9,14 @@ defmodule CitadelWeb.LandingLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ "Citadel"
-      assert html =~ "AI-Powered"
+      assert html =~ "AI-native"
     end
 
     test "displays hero section with CTAs" do
       conn = Phoenix.ConnTest.build_conn()
       {:ok, view, _html} = live(conn, ~p"/")
 
-      assert has_element?(view, ~s|a[href="/register"]|, "Get Started")
+      assert has_element?(view, ~s|a[href="/register"]|, "Start Planning Free")
       assert has_element?(view, ~s|a[href="#features"]|)
     end
 
@@ -24,12 +24,10 @@ defmodule CitadelWeb.LandingLiveTest do
       conn = Phoenix.ConnTest.build_conn()
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "Features"
-      assert html =~ "AI-Powered Organization"
-      assert html =~ "Natural Language Input"
-      assert html =~ "Team Workspaces"
-      assert html =~ "Smart Subtasks"
-      assert html =~ "AI Chat Assistant"
+      assert html =~ "Why Citadel"
+      assert html =~ "AI-Native"
+      assert html =~ "Right-Sized"
+      assert html =~ "Flow-First"
     end
 
     test "displays pricing section" do
@@ -52,12 +50,11 @@ defmodule CitadelWeb.LandingLiveTest do
       assert html =~ "Contact"
     end
 
-    test "shows sign in and get started buttons in header" do
+    test "shows get started button in header" do
       conn = Phoenix.ConnTest.build_conn()
       {:ok, view, _html} = live(conn, ~p"/")
 
-      assert has_element?(view, ~s|header a[href="/sign-in"]|, "Sign In")
-      assert has_element?(view, ~s|header a[href="/register"]|, "Get Started")
+      assert has_element?(view, ~s|header a[href="/register"]|, "Start Planning")
     end
   end
 
@@ -68,21 +65,19 @@ defmodule CitadelWeb.LandingLiveTest do
       {:ok, _view, html} = live(conn, ~p"/")
 
       assert html =~ "Citadel"
-      assert html =~ "AI-Powered"
+      assert html =~ "AI-native"
     end
 
-    test "shows dashboard button instead of get started in header", %{conn: conn} do
+    test "shows go to dashboard button in header", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
 
-      assert has_element?(view, ~s|header a[href="/dashboard"]|, "Dashboard")
-      refute has_element?(view, ~s|header a[href="/register"]|, "Get Started")
-      refute has_element?(view, ~s|header a[href="/sign-in"]|, "Sign In")
+      assert has_element?(view, ~s|header a[href="/dashboard"]|, "Go to Dashboard")
     end
 
-    test "shows dashboard button in hero section", %{conn: conn} do
+    test "shows go to dashboard button in hero section", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/")
 
-      assert has_element?(view, ~s|section a[href="/dashboard"]|, "Dashboard")
+      assert has_element?(view, ~s|section a[href="/dashboard"]|, "Go to Dashboard")
     end
   end
 
@@ -109,7 +104,7 @@ defmodule CitadelWeb.LandingLiveTest do
       conn = Phoenix.ConnTest.build_conn()
       {:ok, _view, html} = live(conn, ~p"/")
 
-      assert html =~ "AI-Powered Task Management"
+      assert html =~ "Project Management for the AI Era"
     end
   end
 end

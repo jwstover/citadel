@@ -1,4 +1,4 @@
-defmodule CitadelWeb.HomeLive.IndexTest do
+defmodule CitadelWeb.DashboardLive.IndexTest do
   use CitadelWeb.ConnCase, async: true
 
   import Phoenix.LiveViewTest
@@ -9,20 +9,20 @@ defmodule CitadelWeb.HomeLive.IndexTest do
   describe "mount/3" do
     setup :register_and_log_in_user
 
-    test "renders the home page", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/")
+    test "renders the dashboard page", %{conn: conn} do
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "tasks-container"
     end
 
     test "does not show task form by default", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       refute html =~ "new-task-modal"
     end
 
     test "displays tasks list component", %{conn: conn} do
-      {:ok, _view, html} = live(conn, ~p"/")
+      {:ok, _view, html} = live(conn, ~p"/dashboard")
 
       assert html =~ "tasks-container"
     end
@@ -32,7 +32,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     setup :register_and_log_in_user
 
     test "clicking new task shows the task form", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       html = view |> element("button[phx-click='new-task']") |> render_click()
 
@@ -44,7 +44,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     setup :register_and_log_in_user
 
     test "shows task form when new-task event is triggered", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       refute render(view) =~ "new-task-modal"
 
@@ -58,7 +58,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     setup :register_and_log_in_user
 
     test "hides task form when close event is triggered", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       # Open the form first
       render_click(view, "new-task", %{})
@@ -90,7 +90,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     end
 
     test "closes task form after task is created", %{conn: conn, task: task} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       # Open the form first
       render_click(view, "new-task", %{})
@@ -123,7 +123,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     end
 
     test "handles task state change without error", %{conn: conn, task: task} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       # Simulate task_state_changed message - should not crash
       send(view.pid, {:task_state_changed, task})
@@ -152,7 +152,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
     end
 
     test "handles task priority change without error", %{conn: conn, task: task} do
-      {:ok, view, _html} = live(conn, ~p"/")
+      {:ok, view, _html} = live(conn, ~p"/dashboard")
 
       # Simulate task_priority_changed message - should not crash
       send(view.pid, {:task_priority_changed, task})
@@ -164,7 +164,7 @@ defmodule CitadelWeb.HomeLive.IndexTest do
 
   describe "authentication" do
     test "redirects to login when not authenticated", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/sign-in"}}} = live(conn, ~p"/")
+      assert {:error, {:redirect, %{to: "/sign-in"}}} = live(conn, ~p"/dashboard")
     end
   end
 
