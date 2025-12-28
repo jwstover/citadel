@@ -42,10 +42,15 @@ defmodule CitadelWeb.Router do
   scope "/", CitadelWeb do
     pipe_through :browser
 
+    ash_authentication_live_session :marketing_routes,
+      on_mount: [{CitadelWeb.LiveUserAuth, :live_user_optional}] do
+      live "/", LandingLive, :index
+    end
+
     ash_authentication_live_session :authenticated_routes do
       live "/chat", ChatLive
       live "/chat/:conversation_id", ChatLive
-      live "/", HomeLive.Index, :index
+      live "/dashboard", DashboardLive.Index, :index
       live "/tasks/:id", TaskLive.Show, :show
       live "/preferences", PreferencesLive.Index, :index
       live "/preferences/workspaces/new", PreferencesLive.WorkspaceForm, :new
