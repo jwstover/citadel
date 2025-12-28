@@ -24,8 +24,7 @@ defmodule Citadel.Workers.SyncSeatCountWorker do
     max_attempts: 3,
     unique: [
       period: 60,
-      keys: [:organization_id],
-      states: [:available, :scheduled, :executing]
+      states: :incomplete
     ]
 
   require Logger

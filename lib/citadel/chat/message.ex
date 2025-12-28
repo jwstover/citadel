@@ -29,7 +29,7 @@ defmodule Citadel.Chat.Message do
         worker_module_name Citadel.Chat.Message.Workers.Respond
         scheduler_module_name Citadel.Chat.Message.Schedulers.Respond
         where expr(needs_response)
-        worker_opts unique: [period: :infinity, keys: [:worker, :args]]
+        worker_opts unique: [period: :infinity, states: :all], max_attempts: 3
       end
     end
   end

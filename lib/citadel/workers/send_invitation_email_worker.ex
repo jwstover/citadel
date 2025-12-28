@@ -7,8 +7,7 @@ defmodule Citadel.Workers.SendInvitationEmailWorker do
   """
   use Oban.Worker,
     queue: :invitations,
-    max_attempts: 5,
-    unique: [period: 300, keys: [:invitation_id]]
+    max_attempts: 5
 
   require Logger
 

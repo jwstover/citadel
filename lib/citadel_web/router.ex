@@ -82,6 +82,8 @@ defmodule CitadelWeb.Router do
     # Public routes (no authentication required)
     ash_authentication_live_session :public_routes do
       live "/invitations/:token", InvitationLive.Accept, :show
+      live "/terms", LegalLive.Terms, :index
+      live "/privacy", LegalLive.Privacy, :index
     end
   end
 

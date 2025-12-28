@@ -124,7 +124,11 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceFormTest do
       assert html =~ "New Workspace"
     end
 
-    test "redirects to workspace details after creation", %{conn: conn, user: user, workspace: workspace} do
+    test "redirects to workspace details after creation", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
       # Upgrade to pro to allow multiple workspaces
       org = Citadel.Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
       upgrade_to_pro(org)

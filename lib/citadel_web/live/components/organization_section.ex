@@ -115,7 +115,9 @@ defmodule CitadelWeb.Components.OrganizationSection do
               </:col>
               <:action :let={membership}>
                 <button
-                  :if={@can_manage && membership.role != :owner && membership.user_id != @current_user.id}
+                  :if={
+                    @can_manage && membership.role != :owner && membership.user_id != @current_user.id
+                  }
                   class="btn btn-ghost btn-sm text-error"
                   phx-click="confirm-remove"
                   phx-value-id={membership.id}
