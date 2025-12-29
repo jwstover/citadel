@@ -175,30 +175,101 @@ defmodule CitadelWeb.Components.OrganizationSection do
                     <li>- Up to {Plan.max_members(:pro)} team members</li>
                     <li>- Up to {Plan.max_workspaces(:pro)} workspaces</li>
                   </ul>
-                  <div class="flex gap-2">
-                    <form method="post" action={~p"/billing/checkout"}>
-                      <input
-                        type="hidden"
-                        name="_csrf_token"
-                        value={Phoenix.Controller.get_csrf_token()}
-                      />
-                      <input type="hidden" name="billing_period" value="monthly" />
-                      <.button type="submit" variant="primary" class="btn-sm">
-                        ${Plan.base_price_cents(:pro, :monthly) |> div(100)}/mo
-                      </.button>
-                    </form>
-                    <form method="post" action={~p"/billing/checkout"}>
-                      <input
-                        type="hidden"
-                        name="_csrf_token"
-                        value={Phoenix.Controller.get_csrf_token()}
-                      />
-                      <input type="hidden" name="billing_period" value="annual" />
-                      <.button type="submit" variant="ghost" class="btn-sm">
-                        ${Plan.base_price_cents(:pro, :annual) |> div(100)}/yr (Save 17%)
-                      </.button>
-                    </form>
-                  </div>
+
+                  <%!-- Pricing Calculator --%>
+                  <%= cond do %>
+                    <% length(@memberships) == 1 -> %>
+                      <%!-- Single member (owner only) --%>
+                      <div class="flex gap-2 flex-col sm:flex-row">
+                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                          <input
+                            type="hidden"
+                            name="_csrf_token"
+                            value={Phoenix.Controller.get_csrf_token()}
+                          />
+                          <input type="hidden" name="billing_period" value="monthly" />
+                          <.button type="submit" variant="primary" class="btn-sm w-full">
+                            ${Plan.base_price_cents(:pro, :monthly) |> div(100)}/mo
+                          </.button>
+                        </form>
+                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                          <input
+                            type="hidden"
+                            name="_csrf_token"
+                            value={Phoenix.Controller.get_csrf_token()}
+                          />
+                          <input type="hidden" name="billing_period" value="annual" />
+                          <.button type="submit" variant="ghost" class="btn-sm w-full">
+                            ${Plan.base_price_cents(:pro, :annual) |> div(100)}/yr
+                            <span class="text-xs ml-1">(≈ $16/mo)</span>
+                          </.button>
+                        </form>
+                      </div>
+                    <% true -> %>
+                      <%!-- Multiple members --%>
+                      <% member_count = length(@memberships)
+                      additional_members = max(member_count - 1, 0)
+
+                      base_monthly = Plan.base_price_cents(:pro, :monthly) |> div(100)
+                      per_seat_monthly = Plan.per_member_price_cents(:pro, :monthly) |> div(100)
+                      total_monthly = base_monthly + additional_members * per_seat_monthly
+
+                      base_annual = Plan.base_price_cents(:pro, :annual) |> div(100)
+                      per_seat_annual = Plan.per_member_price_cents(:pro, :annual) |> div(100)
+                      total_annual = base_annual + additional_members * per_seat_annual
+                      monthly_equivalent = div(total_annual, 12) %>
+
+                      <div class="mb-3 text-sm text-base-content/80 space-y-1">
+                        <p class="font-medium">Monthly pricing:</p>
+                        <p class="pl-2">
+                          ${base_monthly} base + ${per_seat_monthly * additional_members} for {additional_members} additional {if additional_members ==
+                                                                                                                                    1,
+                                                                                                                                  do:
+                                                                                                                                    "member",
+                                                                                                                                  else:
+                                                                                                                                    "members"} =
+                          <span class="font-semibold">${total_monthly}/mo</span>
+                        </p>
+                        <p class="font-medium mt-2">Annual pricing:</p>
+                        <p class="pl-2">
+                          ${base_annual} base + ${per_seat_annual * additional_members} for {additional_members} additional {if additional_members ==
+                                                                                                                                  1,
+                                                                                                                                do:
+                                                                                                                                  "member",
+                                                                                                                                else:
+                                                                                                                                  "members"} =
+                          <span class="font-semibold">
+                            ${total_annual}/yr (≈ ${monthly_equivalent}/mo)
+                          </span>
+                        </p>
+                      </div>
+
+                      <div class="flex gap-2 flex-col sm:flex-row">
+                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                          <input
+                            type="hidden"
+                            name="_csrf_token"
+                            value={Phoenix.Controller.get_csrf_token()}
+                          />
+                          <input type="hidden" name="billing_period" value="monthly" />
+                          <.button type="submit" variant="primary" class="btn-sm w-full">
+                            ${total_monthly}/mo
+                          </.button>
+                        </form>
+                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                          <input
+                            type="hidden"
+                            name="_csrf_token"
+                            value={Phoenix.Controller.get_csrf_token()}
+                          />
+                          <input type="hidden" name="billing_period" value="annual" />
+                          <.button type="submit" variant="ghost" class="btn-sm w-full">
+                            ${total_annual}/yr
+                            <span class="text-xs ml-1">(≈ ${monthly_equivalent}/mo)</span>
+                          </.button>
+                        </form>
+                      </div>
+                  <% end %>
                 </div>
               <% else %>
                 <.link href={~p"/billing/portal"} class="btn btn-ghost btn-sm">

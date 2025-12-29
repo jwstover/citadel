@@ -283,3 +283,39 @@ Configure queues and plugins in `config/config.exs` under `:citadel, Oban`.
    Accounts.get_invitation_by_token(token, load: [:is_accepted, :is_expired])
    ```
    This applies to all calculated fields (defined with `calculate` in resources). Always include them in the `load:` option when querying.
+
+## Debugging Guidelines
+
+**NEVER make assumptions about what's happening in the code. Always verify first.**
+
+When debugging issues, use `IO.inspect/2` liberally to trace execution and verify your understanding before attempting fixes:
+
+```elixir
+# Add IO.inspect at key points to understand actual values
+def my_function(changeset, opts) do
+  IO.inspect(changeset.tenant, label: "DEBUG: tenant")
+  IO.inspect(Ash.Changeset.get_attribute(changeset, :some_field), label: "DEBUG: some_field")
+
+  result = do_something(changeset)
+  IO.inspect(result, label: "DEBUG: result")
+
+  result
+end
+```
+
+### Debugging Workflow
+
+1. **Add IO.inspect statements** at key points in the code path you're investigating
+2. **Run the failing test** to see actual values in the output
+3. **Verify your hypothesis** - don't assume you know what's wrong
+4. **Only then implement a fix** based on evidence, not assumptions
+5. **Remove debug statements** after the fix is verified
+
+### Common Debugging Scenarios
+
+- **Ash validations not running**: Check if the validation is actually being called, what values it receives
+- **Multitenancy issues**: Verify `changeset.tenant` is set correctly
+- **Query failures**: Inspect the query result to see the actual error
+- **Unexpected nil values**: Trace where the value comes from
+
+Remember: 10 minutes of debugging with IO.inspect can save hours of guessing and implementing wrong fixes.
