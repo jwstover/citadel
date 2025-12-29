@@ -1936,4 +1936,236 @@ defmodule Citadel.Tasks.TaskTest do
       assert hd(loaded.assignees).id == member.id
     end
   end
+
+  describe "update parent_task_id" do
+    test "can re-parent a task to a different parent", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent1 =
+        Tasks.create_task!(
+          %{
+            title: "Parent 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      parent2 =
+        Tasks.create_task!(
+          %{
+            title: "Parent 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent1.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert child.parent_task_id == parent1.id
+
+      updated =
+        Tasks.update_task!(child.id, %{parent_task_id: parent2.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.parent_task_id == parent2.id
+    end
+
+    test "can remove parent (make top-level)", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert child.parent_task_id == parent.id
+
+      updated =
+        Tasks.update_task!(child.id, %{parent_task_id: nil},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(updated.parent_task_id)
+    end
+
+    test "cannot set task as its own parent via update", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/cannot be its own parent/, fn ->
+        Tasks.update_task!(task.id, %{parent_task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "cannot create cycle via update (A parent of B, try to set A's parent to B)", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/circular reference/, fn ->
+        Tasks.update_task!(parent.id, %{parent_task_id: child.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "cannot create cycle via update in deeper hierarchy", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      grandparent =
+        Tasks.create_task!(
+          %{
+            title: "Grandparent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: grandparent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/circular reference/, fn ->
+        Tasks.update_task!(grandparent.id, %{parent_task_id: child.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "can add parent to previously top-level task", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      new_parent =
+        Tasks.create_task!(
+          %{
+            title: "New Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      top_level_task =
+        Tasks.create_task!(
+          %{
+            title: "Top Level #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(top_level_task.parent_task_id)
+
+      updated =
+        Tasks.update_task!(top_level_task.id, %{parent_task_id: new_parent.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.parent_task_id == new_parent.id
+    end
+  end
 end

@@ -10,6 +10,22 @@ defmodule CitadelWeb.PreferencesLive.Index do
     {:ok, socket}
   end
 
+  def handle_params(params, _uri, socket) do
+    socket =
+      case Map.get(params, "checkout") do
+        "success" ->
+          put_flash(socket, :info, "Successfully upgraded! Your subscription is now active.")
+
+        "cancelled" ->
+          put_flash(socket, :info, "Checkout cancelled.")
+
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>

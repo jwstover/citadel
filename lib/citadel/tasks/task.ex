@@ -63,13 +63,14 @@ defmodule Citadel.Tasks.Task do
     update :update do
       primary? true
       require_atomic? false
-      accept [:title, :description, :task_state_id, :due_date, :priority]
+      accept [:title, :description, :task_state_id, :due_date, :priority, :parent_task_id]
 
       argument :assignees, {:array, :uuid}
 
       change manage_relationship(:assignees, type: :append_and_remove, on_lookup: :relate)
 
       validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
+      validate Citadel.Tasks.Validations.NoCircularParent
     end
 
     action :parse_task_from_text, :map do

@@ -134,7 +134,8 @@ defmodule CitadelWeb.TaskLive.Show do
 
     case Tasks.destroy_task(task, actor: socket.assigns.current_user) do
       :ok ->
-        redirect_path = if parent_task, do: ~p"/tasks/#{parent_task.human_id}", else: ~p"/"
+        redirect_path =
+          if parent_task, do: ~p"/tasks/#{parent_task.human_id}", else: ~p"/dashboard"
 
         {:noreply,
          socket
@@ -490,7 +491,7 @@ defmodule CitadelWeb.TaskLive.Show do
         <div class="h-full overflow-auto ">
           <div class="breadcrumbs text-sm mb-4">
             <ul>
-              <li><.link navigate={~p"/"}>Tasks</.link></li>
+              <li><.link navigate={~p"/dashboard"}>Tasks</.link></li>
               <li :for={ancestor <- @task.ancestors}>
                 <.link navigate={~p"/tasks/#{ancestor.human_id}"}>{ancestor.human_id}</.link>
               </li>
