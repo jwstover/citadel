@@ -88,11 +88,51 @@ config :citadel, Citadel.Vault,
   ]
 
 # Billing configuration - Stripe price IDs for subscription plans
-config :citadel, Citadel.Billing,
-  pro_monthly_price_id: System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
-  pro_annual_price_id: System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
-  pro_seat_monthly_price_id: System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
-  pro_seat_annual_price_id: System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+# In test mode, preserve config from test.exs
+if config_env() == :test do
+  existing_billing = Application.get_env(:citadel, Citadel.Billing) || []
+
+  config :citadel,
+         Citadel.Billing,
+         Keyword.merge(existing_billing,
+           pro_monthly_price_id:
+             existing_billing[:pro_monthly_price_id] ||
+               System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
+           pro_annual_price_id:
+             existing_billing[:pro_annual_price_id] ||
+               System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
+           pro_seat_monthly_price_id:
+             existing_billing[:pro_seat_monthly_price_id] ||
+               System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
+           pro_seat_annual_price_id:
+             existing_billing[:pro_seat_annual_price_id] ||
+               System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+         )
+
+  existing_stripe = Application.get_env(:stripity_stripe, :api_key)
+  existing_signing = Application.get_env(:stripity_stripe, :signing_secret)
+  existing_pub = Application.get_env(:citadel, :stripe)[:publishable_key]
+
+  config :stripity_stripe,
+    api_key: existing_stripe || System.get_env("STRIPE_SECRET_KEY"),
+    signing_secret: existing_signing || System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  config :citadel, :stripe,
+    publishable_key: existing_pub || System.get_env("STRIPE_PUBLISHABLE_KEY")
+else
+  config :citadel, Citadel.Billing,
+    pro_monthly_price_id: System.get_env("STRIPE_PRO_MONTHLY_PRICE_ID"),
+    pro_annual_price_id: System.get_env("STRIPE_PRO_ANNUAL_PRICE_ID"),
+    pro_seat_monthly_price_id: System.get_env("STRIPE_SEAT_MONTHLY_PRICE_ID"),
+    pro_seat_annual_price_id: System.get_env("STRIPE_SEAT_ANNUAL_PRICE_ID")
+
+  # Stripe API configuration
+  config :stripity_stripe,
+    api_key: System.get_env("STRIPE_SECRET_KEY"),
+    signing_secret: System.get_env("STRIPE_WEBHOOK_SECRET")
+
+  config :citadel, :stripe, publishable_key: System.get_env("STRIPE_PUBLISHABLE_KEY")
+end
 
 if config_env() == :prod do
   database_url =

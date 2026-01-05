@@ -293,12 +293,16 @@ defmodule Citadel.Generator do
   end
 
   @doc """
-  Generates a subscription for an organization.
+  Generates or updates a subscription for an organization.
+
+  Since organizations auto-create subscriptions, this generator will update
+  the existing subscription if one exists for the given organization_id,
+  or create a new one if no organization_id is provided.
 
   ## Parameters
 
     * `overrides` - Field values to override (e.g., [organization_id: org_id, tier: :pro])
-    * `generator_opts` - Options passed to changeset_generator
+    * `generator_opts` - Options passed to the action (e.g., [authorize?: false])
 
   ## Examples
 
@@ -312,19 +316,51 @@ defmodule Citadel.Generator do
       ))
   """
   def subscription(overrides \\ [], generator_opts \\ []) do
+    org_id = Keyword.get(overrides, :organization_id)
+
+    if org_id do
+      subscription_for_organization(org_id, overrides, generator_opts)
+    else
+      create_subscription_generator(overrides, generator_opts)
+    end
+  end
+
+  defp subscription_for_organization(org_id, overrides, generator_opts) do
+    require Ash.Query
+
+    case Citadel.Billing.Subscription
+         |> Ash.Query.filter(organization_id == ^org_id)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, nil} ->
+        create_subscription_generator(overrides, generator_opts)
+
+      {:ok, existing} ->
+        update_existing_subscription(existing, overrides, generator_opts)
+    end
+  end
+
+  defp create_subscription_generator(overrides, generator_opts) do
     changeset_generator(
       Citadel.Billing.Subscription,
       :create,
       Keyword.merge(
         [
-          defaults: [
-            tier: :free
-          ],
+          defaults: [tier: :free],
           overrides: overrides
         ],
         generator_opts
       )
     )
+  end
+
+  defp update_existing_subscription(existing, overrides, generator_opts) do
+    update_attrs =
+      overrides
+      |> Keyword.delete(:organization_id)
+      |> Map.new()
+
+    updated = Citadel.Billing.update_subscription!(existing, update_attrs, generator_opts)
+    Stream.repeatedly(fn -> updated end)
   end
 
   @doc """

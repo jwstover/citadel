@@ -101,6 +101,7 @@ defmodule Citadel.MixProject do
       {:swoosh, "~> 1.16"},
       {:mjml_eex, "~> 0.13.0"},
       {:req, "~> 0.5"},
+      {:stripity_stripe, "~> 3.0"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 1.0"},
