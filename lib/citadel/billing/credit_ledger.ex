@@ -74,12 +74,15 @@ defmodule Citadel.Billing.CreditLedger do
       argument :transaction_type, Citadel.Billing.CreditLedger.Types.TransactionType,
         default: :purchase
 
-      argument :reference_type, :string
-      argument :reference_id, :uuid
+      argument :reference_type, :string, allow_nil?: true
+      argument :reference_id, :uuid, allow_nil?: true
 
       transaction? true
 
       change fn changeset, _context ->
+        reference_type = Ash.Changeset.get_argument(changeset, :reference_type)
+        reference_id = Ash.Changeset.get_argument(changeset, :reference_id)
+
         changeset
         |> Ash.Changeset.force_change_attribute(
           :organization_id,
@@ -97,14 +100,20 @@ defmodule Citadel.Billing.CreditLedger do
           :transaction_type,
           Ash.Changeset.get_argument(changeset, :transaction_type)
         )
-        |> Ash.Changeset.force_change_attribute(
-          :reference_type,
-          Ash.Changeset.get_argument(changeset, :reference_type)
-        )
-        |> Ash.Changeset.force_change_attribute(
-          :reference_id,
-          Ash.Changeset.get_argument(changeset, :reference_id)
-        )
+        |> then(fn cs ->
+          if reference_type do
+            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
+          else
+            cs
+          end
+        end)
+        |> then(fn cs ->
+          if reference_id do
+            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
+          else
+            cs
+          end
+        end)
       end
 
       change Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance
@@ -116,13 +125,15 @@ defmodule Citadel.Billing.CreditLedger do
       argument :organization_id, :uuid, allow_nil?: false
       argument :amount, :integer, allow_nil?: false, constraints: [min: 1]
       argument :description, :string, allow_nil?: false
-      argument :reference_type, :string
-      argument :reference_id, :uuid
+      argument :reference_type, :string, allow_nil?: true
+      argument :reference_id, :uuid, allow_nil?: true
 
       transaction? true
 
       change fn changeset, _context ->
         amount = Ash.Changeset.get_argument(changeset, :amount)
+        reference_type = Ash.Changeset.get_argument(changeset, :reference_type)
+        reference_id = Ash.Changeset.get_argument(changeset, :reference_id)
 
         changeset
         |> Ash.Changeset.force_change_attribute(
@@ -135,14 +146,20 @@ defmodule Citadel.Billing.CreditLedger do
           Ash.Changeset.get_argument(changeset, :description)
         )
         |> Ash.Changeset.force_change_attribute(:transaction_type, :usage)
-        |> Ash.Changeset.force_change_attribute(
-          :reference_type,
-          Ash.Changeset.get_argument(changeset, :reference_type)
-        )
-        |> Ash.Changeset.force_change_attribute(
-          :reference_id,
-          Ash.Changeset.get_argument(changeset, :reference_id)
-        )
+        |> then(fn cs ->
+          if reference_type do
+            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
+          else
+            cs
+          end
+        end)
+        |> then(fn cs ->
+          if reference_id do
+            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
+          else
+            cs
+          end
+        end)
       end
 
       change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
@@ -162,13 +179,15 @@ defmodule Citadel.Billing.CreditLedger do
       argument :organization_id, :uuid, allow_nil?: false
       argument :amount, :integer, allow_nil?: false, constraints: [min: 1]
       argument :description, :string, allow_nil?: false
-      argument :reference_type, :string
-      argument :reference_id, :uuid
+      argument :reference_type, :string, allow_nil?: true
+      argument :reference_id, :uuid, allow_nil?: true
 
       transaction? true
 
       change fn changeset, _context ->
         amount = Ash.Changeset.get_argument(changeset, :amount)
+        reference_type = Ash.Changeset.get_argument(changeset, :reference_type)
+        reference_id = Ash.Changeset.get_argument(changeset, :reference_id)
 
         changeset
         |> Ash.Changeset.force_change_attribute(
@@ -181,14 +200,20 @@ defmodule Citadel.Billing.CreditLedger do
           Ash.Changeset.get_argument(changeset, :description)
         )
         |> Ash.Changeset.force_change_attribute(:transaction_type, :reservation)
-        |> Ash.Changeset.force_change_attribute(
-          :reference_type,
-          Ash.Changeset.get_argument(changeset, :reference_type)
-        )
-        |> Ash.Changeset.force_change_attribute(
-          :reference_id,
-          Ash.Changeset.get_argument(changeset, :reference_id)
-        )
+        |> then(fn cs ->
+          if reference_type do
+            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
+          else
+            cs
+          end
+        end)
+        |> then(fn cs ->
+          if reference_id do
+            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
+          else
+            cs
+          end
+        end)
       end
 
       change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
@@ -209,8 +234,8 @@ defmodule Citadel.Billing.CreditLedger do
       argument :reserved_amount, :integer, allow_nil?: false, constraints: [min: 0]
       argument :actual_cost, :integer, allow_nil?: false, constraints: [min: 0]
       argument :description, :string, allow_nil?: false
-      argument :reference_type, :string
-      argument :reference_id, :uuid
+      argument :reference_type, :string, allow_nil?: true
+      argument :reference_id, :uuid, allow_nil?: true
 
       transaction? true
 
@@ -218,6 +243,8 @@ defmodule Citadel.Billing.CreditLedger do
         reserved = Ash.Changeset.get_argument(changeset, :reserved_amount)
         actual = Ash.Changeset.get_argument(changeset, :actual_cost)
         adjustment = reserved - actual
+        reference_type = Ash.Changeset.get_argument(changeset, :reference_type)
+        reference_id = Ash.Changeset.get_argument(changeset, :reference_id)
 
         if adjustment == 0 do
           Ash.Changeset.add_error(changeset,
@@ -236,14 +263,20 @@ defmodule Citadel.Billing.CreditLedger do
             Ash.Changeset.get_argument(changeset, :description)
           )
           |> Ash.Changeset.force_change_attribute(:transaction_type, :reservation_adjustment)
-          |> Ash.Changeset.force_change_attribute(
-            :reference_type,
-            Ash.Changeset.get_argument(changeset, :reference_type)
-          )
-          |> Ash.Changeset.force_change_attribute(
-            :reference_id,
-            Ash.Changeset.get_argument(changeset, :reference_id)
-          )
+          |> then(fn cs ->
+            if reference_type do
+              Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
+            else
+              cs
+            end
+          end)
+          |> then(fn cs ->
+            if reference_id do
+              Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
+            else
+              cs
+            end
+          end)
         end
       end
 

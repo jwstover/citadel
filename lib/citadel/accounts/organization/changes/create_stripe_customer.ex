@@ -42,10 +42,12 @@ defmodule Citadel.Accounts.Organization.Changes.CreateStripeCustomer do
       update_subscription_with_customer(subscription, customer_id)
     else
       {:error, :stripe_customer_creation_failed} ->
-        Logger.warning(
-          "Stripe customer creation failed for organization #{organization.id}, " <>
-            "subscription created without customer ID"
-        )
+        unless Application.get_env(:citadel, :skip_stripe_in_tests, false) do
+          Logger.warning(
+            "Stripe customer creation failed for organization #{organization.id}, " <>
+              "subscription created without customer ID"
+          )
+        end
 
         :ok
 

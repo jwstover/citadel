@@ -45,7 +45,7 @@ defmodule Citadel.Billing.Plan do
 
   | Tier | Base Price | Per Member | Credits/Month | Workspaces | Members |
   |------|------------|------------|---------------|------------|---------|
-  | Free | $0 | - | 500 | 1 | 1 (solo only) |
+  | Free | $0 | - | 1000 | 1 | 1 (solo only) |
   | Pro (Monthly) | $19/mo | +$5/member | 10,000 (shared) | 5 | 5 |
   | Pro (Annual) | $190/yr | +$50/member/yr | 10,000 (shared) | 5 | 5 |
   """
@@ -129,7 +129,7 @@ defmodule Citadel.Billing.Plan do
   ## Examples
 
       iex> Citadel.Billing.Plan.get(:free)
-      %{name: "Free", monthly_credits: 500, ...}
+      %{name: "Free", monthly_credits: 1000, ...}
   """
   @spec get(tier()) :: map()
   def get(tier) when tier in @valid_tiers do

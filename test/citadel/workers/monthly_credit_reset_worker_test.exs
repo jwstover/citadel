@@ -44,7 +44,7 @@ defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
       # Check credits were added
       {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
       assert balance == Plan.monthly_credits(:free)
-      assert balance == 500
+      assert balance == 1000
     end
 
     test "adds monthly credits for pro tier subscription", %{organization: organization} do
@@ -116,7 +116,7 @@ defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
       {:ok, balance_after_first} =
         Billing.get_organization_balance(organization.id, authorize?: false)
 
-      assert balance_after_first == 500
+      assert balance_after_first == 1000
 
       # Second run (should not add more credits)
       assert :ok = perform_job(MonthlyCreditResetWorker, %{})
@@ -124,7 +124,7 @@ defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
       {:ok, balance_after_second} =
         Billing.get_organization_balance(organization.id, authorize?: false)
 
-      assert balance_after_second == 500
+      assert balance_after_second == 1000
     end
 
     test "skips subscriptions not yet due for reset", %{organization: organization} do
@@ -166,7 +166,7 @@ defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
 
       # Should process subscriptions with nil period_end
       {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
-      assert balance == 500
+      assert balance == 1000
     end
 
     test "skips canceled subscriptions", %{organization: organization} do
@@ -224,7 +224,7 @@ defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
       {:ok, balance1} = Billing.get_organization_balance(org1.id, authorize?: false)
       {:ok, balance2} = Billing.get_organization_balance(org2.id, authorize?: false)
 
-      assert balance1 == 500
+      assert balance1 == 1000
       assert balance2 == 10_000
     end
   end

@@ -140,15 +140,20 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCredits do
             "for message #{message_id}. Charging overage of #{overage} credits."
         )
 
-        case Billing.deduct_credits(
-               organization_id,
-               overage,
-               "AI message overage (#{input_tokens} input tokens, #{output_tokens} output tokens, " <>
-                 "reserved: #{reserved_amount}, actual: #{actual_cost}, overage: #{overage})",
-               "message",
-               message_id,
-               authorize?: false
-             ) do
+        case Citadel.Billing.CreditLedger
+             |> Ash.Changeset.for_create(
+               :deduct_credits,
+               %{
+                 organization_id: organization_id,
+                 amount: overage,
+                 description:
+                   "AI message overage (#{input_tokens} input tokens, #{output_tokens} output tokens, " <>
+                     "reserved: #{reserved_amount}, actual: #{actual_cost}, overage: #{overage})",
+                 reference_type: "message",
+                 reference_id: message_id
+               }
+             )
+             |> Ash.create(authorize?: false) do
           {:ok, _entry} ->
             Logger.debug(
               "Charged overage of #{overage} credits for message #{message_id} " <>
