@@ -247,12 +247,28 @@ defmodule Citadel.Tasks.Task do
       destination_attribute_on_join_resource :assignee_id
       public? true
     end
+
+    many_to_many :dependencies, __MODULE__ do
+      through Citadel.Tasks.TaskDependency
+      source_attribute_on_join_resource :task_id
+      destination_attribute_on_join_resource :depends_on_task_id
+      public? true
+    end
+
+    many_to_many :dependents, __MODULE__ do
+      through Citadel.Tasks.TaskDependency
+      source_attribute_on_join_resource :depends_on_task_id
+      destination_attribute_on_join_resource :task_id
+      public? true
+    end
   end
 
   calculations do
     calculate :ancestors, {:array, :map}, Citadel.Tasks.Calculations.Ancestors
     calculate :overdue?, :boolean, expr(not is_nil(due_date) and due_date < today())
     calculate :days_until_due, :integer, Citadel.Tasks.Calculations.DaysUntilDue
+    calculate :blocked?, :boolean, Citadel.Tasks.Calculations.Blocked
+    calculate :blocking_count, :integer, Citadel.Tasks.Calculations.BlockingCount
   end
 
   identities do
