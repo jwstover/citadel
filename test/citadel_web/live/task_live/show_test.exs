@@ -647,6 +647,453 @@ defmodule CitadelWeb.TaskLive.ShowTest do
     end
   end
 
+  describe "task dependencies" do
+    setup :register_and_log_in_user
+
+    setup %{user: user, workspace: workspace} do
+      todo_state = create_task_state("Todo", 1)
+      done_state = create_task_state("Done", 2, is_complete: true)
+
+      task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Main Task"],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, todo_state: todo_state, done_state: done_state}
+    end
+
+    test "displays dependencies section when task loads", %{conn: conn, task: task} do
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Dependencies"
+    end
+
+    test "displays 'Depends on' section", %{conn: conn, task: task} do
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Depends on"
+    end
+
+    test "can add dependency by entering human_id", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Dependency Task"],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      html =
+        view
+        |> element("form[phx-submit=\"add-dependency\"]")
+        |> render_submit(%{human_id: dependency_task.human_id})
+
+      assert html =~ dependency_task.human_id
+      assert html =~ "Dependency added"
+    end
+
+    test "shows error for invalid human_id", %{conn: conn, task: task} do
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      html =
+        view
+        |> element("form[phx-submit=\"add-dependency\"]")
+        |> render_submit(%{human_id: "INVALID-123"})
+
+      assert html =~ "Task with ID INVALID-123 not found"
+    end
+
+    test "shows error for circular dependency", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      task_b =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      # Create A→B
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: task_b.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      # Try to create B→A (circular)
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task_b.human_id}")
+
+      html =
+        view
+        |> element("form[phx-submit=\"add-dependency\"]")
+        |> render_submit(%{human_id: task.human_id})
+
+      assert html =~ "circular dependency"
+    end
+
+    test "can remove dependency", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      task_dependency =
+        Tasks.create_task_dependency!(
+          %{task_id: task.id, depends_on_task_id: dependency_task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      html =
+        view
+        |> element(
+          ~s|button[phx-click="remove-dependency"][phx-value-id="#{task_dependency.id}"]|
+        )
+        |> render_click()
+
+      refute html =~ dependency_task.human_id
+      assert html =~ "Dependency removed"
+    end
+
+    test "displays blocked badge when task has incomplete dependencies", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency_task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Blocked"
+    end
+
+    test "does not display blocked badge when dependencies are complete", %{
+      conn: conn,
+      task: task,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      complete_dependency =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: done_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: complete_dependency.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      refute html =~ "Blocked"
+    end
+
+    test "shows completion warning when completing blocked task", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency_task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      html =
+        view
+        |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
+        |> render_click()
+
+      assert html =~ "Incomplete Dependencies"
+      assert html =~ "This task depends on 1 incomplete task(s)"
+      assert html =~ "Complete Anyway"
+    end
+
+    test "can complete task despite warning", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency_task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      # Trigger completion warning
+      view
+      |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
+      |> render_click()
+
+      # Confirm completion
+      html =
+        view
+        |> element(
+          "#task-state-#{task.id}-completion-warning button[phx-click=\"confirm-complete\"]"
+        )
+        |> render_click()
+
+      # Verify task state was updated
+      updated_task =
+        Tasks.get_task_by_human_id!(task.human_id,
+          actor: user,
+          tenant: workspace.id,
+          load: [:task_state]
+        )
+
+      assert updated_task.task_state.id == done_state.id
+      refute html =~ "Incomplete Dependencies"
+    end
+
+    test "can cancel completion warning", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      done_state: done_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency_task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      # Trigger completion warning
+      view
+      |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
+      |> render_click()
+
+      # Cancel completion - target the "Cancel" button specifically by text
+      html =
+        view
+        |> element("#task-state-#{task.id}-completion-warning button", "Cancel")
+        |> render_click()
+
+      # Verify task state was NOT updated
+      updated_task =
+        Tasks.get_task_by_human_id!(task.human_id,
+          actor: user,
+          tenant: workspace.id,
+          load: [:task_state]
+        )
+
+      assert updated_task.task_state.id == todo_state.id
+      refute html =~ "Incomplete Dependencies"
+    end
+
+    test "displays dependents (tasks that depend on this task)", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependent_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      Tasks.create_task_dependency!(
+        %{task_id: dependent_task.id, depends_on_task_id: task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Blocks"
+      assert html =~ dependent_task.human_id
+    end
+
+    test "updates UI when dependency added via PubSub", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      # Add dependency in another process (simulating another user)
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency_task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      # Give PubSub time to propagate
+      Process.sleep(100)
+
+      html = render(view)
+      assert html =~ dependency_task.human_id
+    end
+
+    test "updates UI when dependency removed via PubSub", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      user: user,
+      workspace: workspace
+    } do
+      dependency_task =
+        generate(
+          task(
+            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      task_dependency =
+        Tasks.create_task_dependency!(
+          %{task_id: task.id, depends_on_task_id: dependency_task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      {:ok, view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+      assert html =~ dependency_task.human_id
+
+      # Remove dependency in another process
+      Tasks.destroy_task_dependency!(task_dependency.id, actor: user, tenant: workspace.id)
+
+      # Give PubSub time to propagate
+      Process.sleep(100)
+
+      html = render(view)
+      refute html =~ dependency_task.human_id
+    end
+
+    test "does not submit add-dependency form with empty human_id", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      # Try to submit with empty human_id
+      view
+      |> element("form[phx-submit=\"add-dependency\"]")
+      |> render_submit(%{human_id: ""})
+
+      # Verify no dependency was created
+      task_with_deps =
+        Tasks.get_task_by_human_id!(task.human_id,
+          actor: user,
+          tenant: workspace.id,
+          load: [:dependencies]
+        )
+
+      assert Enum.empty?(task_with_deps.dependencies)
+    end
+  end
+
   defp create_task_state(name, order, opts \\ []) do
     is_complete = Keyword.get(opts, :is_complete, false)
 
