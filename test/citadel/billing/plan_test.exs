@@ -8,7 +8,7 @@ defmodule Citadel.Billing.PlanTest do
       plan = Plan.get(:free)
 
       assert plan.name == "Free"
-      assert plan.monthly_credits == 500
+      assert plan.monthly_credits == 1000
       assert plan.max_workspaces == 1
       assert plan.max_members == 1
       assert plan.allows_byok == false
@@ -32,8 +32,8 @@ defmodule Citadel.Billing.PlanTest do
   end
 
   describe "monthly_credits/1" do
-    test "returns 500 for free tier" do
-      assert Plan.monthly_credits(:free) == 500
+    test "returns 1000 for free tier" do
+      assert Plan.monthly_credits(:free) == 1000
     end
 
     test "returns 10_000 for pro tier" do

@@ -75,7 +75,9 @@ defmodule Citadel.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Sandbox.start_owner!(Citadel.Repo, shared: not tags[:async])
+    # Increase timeout to 60 seconds to prevent timeouts in slower tests
+    # especially property-based tests that generate many records
+    pid = Sandbox.start_owner!(Citadel.Repo, shared: not tags[:async], timeout: 60_000)
     on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 

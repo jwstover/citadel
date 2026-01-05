@@ -121,14 +121,18 @@ defmodule Citadel.Billing.CreditLedgerTest do
       message_id = Ash.UUID.generate()
 
       entry =
-        Billing.deduct_credits!(
-          organization.id,
-          50,
-          "Claude message",
-          "message",
-          message_id,
-          authorize?: false
+        Citadel.Billing.CreditLedger
+        |> Ash.Changeset.for_create(
+          :deduct_credits,
+          %{
+            organization_id: organization.id,
+            amount: 50,
+            description: "Claude message",
+            reference_type: "message",
+            reference_id: message_id
+          }
         )
+        |> Ash.create!(authorize?: false)
 
       assert entry.reference_type == "message"
       assert entry.reference_id == message_id
