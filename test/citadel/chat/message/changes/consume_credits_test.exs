@@ -36,7 +36,8 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           message(
             [conversation_id: conversation.id],
             actor: owner,
-            tenant: workspace.id
+            tenant: workspace.id,
+            authorize?: false
           )
         )
 
@@ -62,7 +63,8 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           message(
             [conversation_id: conversation.id],
             actor: owner,
-            tenant: workspace_without_org.id
+            tenant: workspace_without_org.id,
+            authorize?: false
           )
         )
 
@@ -85,7 +87,8 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           message(
             [conversation_id: conversation.id],
             actor: owner,
-            tenant: workspace.id
+            tenant: workspace.id,
+            authorize?: false
           )
         )
 
@@ -106,7 +109,8 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           message(
             [conversation_id: conversation.id],
             actor: owner,
-            tenant: workspace.id
+            tenant: workspace.id,
+            authorize?: false
           )
         )
 
@@ -130,7 +134,8 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
           message(
             [conversation_id: conversation.id],
             actor: owner,
-            tenant: workspace_without_org.id
+            tenant: workspace_without_org.id,
+            authorize?: false
           )
         )
 

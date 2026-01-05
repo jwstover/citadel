@@ -25,11 +25,15 @@ defmodule CitadelWeb.ConnCase do
       @endpoint CitadelWeb.Endpoint
 
       use CitadelWeb, :verified_routes
+      use Oban.Testing, repo: Citadel.Repo
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
       import CitadelWeb.ConnCase
+
+      # Import generators for test data
+      import Citadel.Generator
     end
   end
 

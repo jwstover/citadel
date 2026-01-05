@@ -60,6 +60,9 @@ defmodule Citadel.DataCase do
 
       # Import ExUnitProperties for property-based testing
       use ExUnitProperties
+
+      # Import Oban testing helpers for job assertions
+      use Oban.Testing, repo: Citadel.Repo
     end
   end
 
@@ -132,5 +135,27 @@ defmodule Citadel.DataCase do
     else
       Keyword.delete(opts, :workspace)
     end
+  end
+
+  @doc """
+  Upgrades an organization to pro tier for testing.
+
+  This is useful for tests that need to add multiple members to an organization,
+  as free tier only allows 1 member (the owner).
+
+  ## Examples
+
+      organization = create_organization(owner)
+      upgrade_to_pro(organization)
+      # Now can add up to 5 members
+  """
+  def upgrade_to_pro(organization) do
+    generate(
+      subscription([organization_id: organization.id, tier: :pro, billing_period: :monthly],
+        authorize?: false
+      )
+    )
+
+    organization
   end
 end

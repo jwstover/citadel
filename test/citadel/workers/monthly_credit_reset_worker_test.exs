@@ -1,6 +1,5 @@
 defmodule Citadel.Workers.MonthlyCreditResetWorkerTest do
   use Citadel.DataCase, async: true
-  use Oban.Testing, repo: Citadel.Repo
 
   alias Citadel.Billing
   alias Citadel.Billing.Plan

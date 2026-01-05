@@ -193,11 +193,12 @@ defmodule Citadel.Chat.Message do
                    )
     end
 
-    # Create: authenticated users can create messages
+    # Create: authenticated users with sufficient credits can create messages
     # The CreateConversationIfNotProvided change ensures messages are only created
     # in conversations the actor has access to (via conversation policies which check
     # workspace membership), or creates a new conversation for the actor
     policy action_type(:create) do
+      forbid_unless Citadel.Billing.Checks.HasSufficientCredits
       authorize_if actor_present()
     end
 

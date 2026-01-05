@@ -79,6 +79,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       member = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -122,6 +123,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       admin = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, admin.id, :admin, actor: owner)
 
@@ -135,6 +137,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       member = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -170,6 +173,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       admin = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, admin.id, :admin, actor: owner)
 
@@ -182,6 +186,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       member = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -199,6 +204,8 @@ defmodule Citadel.Accounts.OrganizationTest do
       org1 = Accounts.create_organization!("Org 1", actor: owner)
       org2 = Accounts.create_organization!("Org 2", actor: owner)
       _org3 = Accounts.create_organization!("Org 3 (not member)", actor: owner)
+      upgrade_to_pro(org1)
+      upgrade_to_pro(org2)
 
       Accounts.add_organization_member!(org1.id, member.id, :member, actor: owner)
       Accounts.add_organization_member!(org2.id, member.id, :member, actor: owner)
@@ -217,6 +224,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       member = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -234,6 +242,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       owner = create_user()
       member = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -248,6 +257,7 @@ defmodule Citadel.Accounts.OrganizationTest do
     test "can load workspaces from organization" do
       owner = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)
+      upgrade_to_pro(organization)
 
       workspace1 =
         Accounts.Workspace

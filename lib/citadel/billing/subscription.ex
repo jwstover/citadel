@@ -19,7 +19,7 @@ defmodule Citadel.Billing.Subscription do
   end
 
   actions do
-    defaults [:read]
+    defaults [:read, :destroy]
 
     create :create do
       accept [
@@ -27,6 +27,8 @@ defmodule Citadel.Billing.Subscription do
         :tier,
         :billing_period,
         :seat_count,
+        :stripe_customer_id,
+        :stripe_subscription_id,
         :current_period_start,
         :current_period_end
       ]
@@ -37,6 +39,8 @@ defmodule Citadel.Billing.Subscription do
 
     update :update do
       accept [
+        :tier,
+        :billing_period,
         :stripe_subscription_id,
         :stripe_customer_id,
         :status,
@@ -46,10 +50,29 @@ defmodule Citadel.Billing.Subscription do
       ]
     end
 
+    update :change_tier do
+      require_atomic? false
+
+      argument :new_tier, Citadel.Billing.Subscription.Types.Tier, allow_nil?: false
+
+      accept [:billing_period, :stripe_subscription_id, :stripe_customer_id]
+
+      change fn changeset, _context ->
+        new_tier = Ash.Changeset.get_argument(changeset, :new_tier)
+        Ash.Changeset.change_attribute(changeset, :tier, new_tier)
+      end
+
+      change Citadel.Billing.Subscription.Changes.SetDefaultsForTier
+      change set_attribute(:status, :active)
+    end
+
     update :upgrade_to_pro do
+      require_atomic? false
+
       accept [:billing_period, :stripe_subscription_id, :stripe_customer_id]
 
       change set_attribute(:tier, :pro)
+      change Citadel.Billing.Subscription.Changes.SetDefaultsForTier
       change set_attribute(:status, :active)
     end
 

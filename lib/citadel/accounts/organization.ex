@@ -31,6 +31,7 @@ defmodule Citadel.Accounts.Organization do
 
       change relate_actor(:owner)
       change Citadel.Accounts.Organization.Changes.GenerateSlug
+      change Citadel.Accounts.Organization.Changes.CreateStripeCustomer
 
       change fn changeset, context ->
         Ash.Changeset.after_action(changeset, fn _changeset, organization ->

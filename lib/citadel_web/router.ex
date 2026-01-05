@@ -39,6 +39,16 @@ defmodule CitadelWeb.Router do
     plug CitadelWeb.Plugs.SetTenantFromApiKey
   end
 
+  pipeline :stripe_webhook do
+    plug :accepts, ["json"]
+  end
+
+  scope "/webhooks", CitadelWeb do
+    pipe_through :stripe_webhook
+
+    post "/stripe", StripeWebhookController, :handle
+  end
+
   scope "/", CitadelWeb do
     pipe_through :browser
 

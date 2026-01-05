@@ -10,7 +10,8 @@ defmodule Citadel.Billing.PlanTest do
       assert plan.name == "Free"
       assert plan.monthly_credits == 500
       assert plan.max_workspaces == 1
-      assert plan.max_members_per_workspace == 1
+      assert plan.max_members == 1
+      assert plan.allows_byok == false
       assert plan.monthly_price_cents == 0
       assert plan.annual_price_cents == 0
     end
@@ -21,7 +22,8 @@ defmodule Citadel.Billing.PlanTest do
       assert plan.name == "Pro"
       assert plan.monthly_credits == 10_000
       assert plan.max_workspaces == 5
-      assert plan.max_members_per_workspace == :unlimited
+      assert plan.max_members == 5
+      assert plan.allows_byok == true
       assert plan.monthly_price_cents == 1900
       assert plan.annual_price_cents == 19_000
       assert plan.per_member_monthly_cents == 500
@@ -49,13 +51,13 @@ defmodule Citadel.Billing.PlanTest do
     end
   end
 
-  describe "max_members_per_workspace/1" do
+  describe "max_members/1" do
     test "returns 1 for free tier" do
-      assert Plan.max_members_per_workspace(:free) == 1
+      assert Plan.max_members(:free) == 1
     end
 
-    test "returns :unlimited for pro tier" do
-      assert Plan.max_members_per_workspace(:pro) == :unlimited
+    test "returns 5 for pro tier" do
+      assert Plan.max_members(:pro) == 5
     end
   end
 
@@ -111,10 +113,20 @@ defmodule Citadel.Billing.PlanTest do
       assert Plan.allows_member_count?(:free, 2) == false
     end
 
-    test "pro tier allows unlimited members" do
+    test "pro tier allows up to 5 members" do
       assert Plan.allows_member_count?(:pro, 1) == true
-      assert Plan.allows_member_count?(:pro, 100) == true
-      assert Plan.allows_member_count?(:pro, 1000) == true
+      assert Plan.allows_member_count?(:pro, 5) == true
+      assert Plan.allows_member_count?(:pro, 6) == false
+    end
+  end
+
+  describe "allows_byok?/1" do
+    test "returns false for free tier" do
+      assert Plan.allows_byok?(:free) == false
+    end
+
+    test "returns true for pro tier" do
+      assert Plan.allows_byok?(:pro) == true
     end
   end
 
@@ -125,20 +137,28 @@ defmodule Citadel.Billing.PlanTest do
   end
 
   describe "stripe_price_id/2" do
-    test "returns nil by default (not configured)" do
+    test "returns nil for free tier" do
       assert Plan.stripe_price_id(:free, :monthly) == nil
       assert Plan.stripe_price_id(:free, :annual) == nil
-      assert Plan.stripe_price_id(:pro, :monthly) == nil
-      assert Plan.stripe_price_id(:pro, :annual) == nil
+    end
+
+    test "returns configured values for pro tier" do
+      # Test config sets these values in config/test.exs
+      assert Plan.stripe_price_id(:pro, :monthly) == "price_test_pro_monthly"
+      assert Plan.stripe_price_id(:pro, :annual) == "price_test_pro_annual"
     end
   end
 
   describe "stripe_seat_price_id/2" do
-    test "returns nil by default (not configured)" do
+    test "returns nil for free tier" do
       assert Plan.stripe_seat_price_id(:free, :monthly) == nil
       assert Plan.stripe_seat_price_id(:free, :annual) == nil
-      assert Plan.stripe_seat_price_id(:pro, :monthly) == nil
-      assert Plan.stripe_seat_price_id(:pro, :annual) == nil
+    end
+
+    test "returns configured values for pro tier" do
+      # Test config sets these values in config/test.exs
+      assert Plan.stripe_seat_price_id(:pro, :monthly) == "price_test_seat_monthly"
+      assert Plan.stripe_seat_price_id(:pro, :annual) == "price_test_seat_annual"
     end
   end
 end

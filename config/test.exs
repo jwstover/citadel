@@ -12,6 +12,21 @@ config :citadel, Citadel.AI,
     openai: Citadel.AI.MockProvider
   }
 
+# Stripe test configuration
+config :stripity_stripe,
+  api_key: "sk_test_fake_key",
+  signing_secret: "whsec_test_secret"
+
+config :citadel, :stripe, publishable_key: "pk_test_fake_key"
+
+config :citadel, Citadel.Billing,
+  pro_monthly_price_id: "price_test_pro_monthly",
+  pro_annual_price_id: "price_test_pro_annual",
+  pro_seat_monthly_price_id: "price_test_seat_monthly",
+  pro_seat_annual_price_id: "price_test_seat_annual"
+
+config :citadel, skip_stripe_in_tests: true
+
 config :citadel,
   token_signing_secret: "Lu32ul4hfEE2x/l+8SkesaKOI8zopO/1",
   google_client_id: "test-client-id",
