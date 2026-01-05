@@ -35,7 +35,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
         tenant: workspace.id
       )
 
-      task_a = Tasks.get_task!(task_a.id, actor: user, load: [:dependencies])
+      task_a = Tasks.get_task!(task_a.id, actor: user, tenant: workspace.id, load: [:dependencies])
 
       assert length(task_a.dependencies) == 2
       assert Enum.any?(task_a.dependencies, &(&1.id == task_b.id))
@@ -61,7 +61,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
         tenant: workspace.id
       )
 
-      task_a = Tasks.get_task!(task_a.id, actor: user, load: [:dependents])
+      task_a = Tasks.get_task!(task_a.id, actor: user, tenant: workspace.id, load: [:dependents])
 
       assert length(task_a.dependents) == 2
       assert Enum.any?(task_a.dependents, &(&1.id == task_b.id))
@@ -73,7 +73,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
     test "returns false when task has no dependencies", %{user: user, workspace: workspace, todo_state: todo_state} do
       task = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
-      task = Tasks.get_task!(task.id, actor: user, load: [:blocked?])
+      task = Tasks.get_task!(task.id, actor: user, tenant: workspace.id, load: [:blocked?])
 
       refute task.blocked?
     end
@@ -97,7 +97,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
       )
 
       task_a =
-        Tasks.get_task!(task_a.id, actor: user, load: [blocked?: [dependencies: [:task_state]]])
+        Tasks.get_task!(task_a.id, actor: user, tenant: workspace.id, load: [:blocked?])
 
       refute task_a.blocked?
     end
@@ -121,7 +121,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
       )
 
       task_a =
-        Tasks.get_task!(task_a.id, actor: user, load: [blocked?: [dependencies: [:task_state]]])
+        Tasks.get_task!(task_a.id, actor: user, tenant: workspace.id, load: [:blocked?])
 
       assert task_a.blocked?
     end
@@ -131,7 +131,7 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
     test "returns 0 when task has no dependencies", %{user: user, workspace: workspace, todo_state: todo_state} do
       task = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
-      task = Tasks.get_task!(task.id, actor: user, load: [:blocking_count])
+      task = Tasks.get_task!(task.id, actor: user, tenant: workspace.id, load: [:blocking_count])
 
       assert task.blocking_count == 0
     end
@@ -183,7 +183,8 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
       task_a =
         Tasks.get_task!(task_a.id,
           actor: user,
-          load: [blocking_count: [dependencies: [:task_state]]]
+          tenant: workspace.id,
+          load: [:blocking_count]
         )
 
       assert task_a.blocking_count == 2

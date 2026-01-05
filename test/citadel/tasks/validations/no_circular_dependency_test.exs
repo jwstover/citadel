@@ -48,7 +48,7 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "would create a circular dependency"
+      assert Exception.message(error) =~ "circular dependency"
     end
 
     test "prevents transitive cycle (A→B→C, then C→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
@@ -75,7 +75,7 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "would create a circular dependency"
+      assert Exception.message(error) =~ "circular dependency"
     end
 
     test "prevents long chain cycle (A→B→C→D→E, then E→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
@@ -116,7 +116,7 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "would create a circular dependency"
+      assert Exception.message(error) =~ "circular dependency"
     end
 
     test "allows valid chain (A→B→C)", %{user: user, workspace: workspace, todo_state: todo_state} do

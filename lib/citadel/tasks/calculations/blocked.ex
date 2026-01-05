@@ -10,7 +10,7 @@ defmodule Citadel.Tasks.Calculations.Blocked do
 
   @impl true
   def load(_query, _opts, _context) do
-    [dependencies: [:task_state]]
+    [dependencies: [task_state: [:is_complete]]]
   end
 
   @impl true
@@ -23,8 +23,15 @@ defmodule Citadel.Tasks.Calculations.Blocked do
         dependencies ->
           Enum.any?(dependencies, fn dep ->
             case dep.task_state do
-              %Ash.NotLoaded{} -> false
-              task_state -> not task_state.is_complete
+              %Ash.NotLoaded{} ->
+                false
+
+              task_state ->
+                # Handle case where task_state is loaded but is_complete is not
+                case task_state.is_complete do
+                  %Ash.NotLoaded{} -> false
+                  is_complete -> not is_complete
+                end
             end
           end)
       end
