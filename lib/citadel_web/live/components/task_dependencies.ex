@@ -20,7 +20,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
 
       <%= if dependencies_loaded or dependents_loaded do %>
         <h2 class="text-sm font-semibold text-base-content/70 mb-3">
-          Dependencies
+          Blocked by
           <%= if @task.blocked? do %>
             <span class="badge badge-warning badge-sm ml-2">Blocked</span>
           <% end %>
@@ -28,21 +28,20 @@ defmodule CitadelWeb.Components.TaskDependencies do
 
         <div class="space-y-4">
           <%= if dependencies_loaded do %>
-            <div>
-              <h3 class="text-xs text-base-content/50 mb-2">Depends on</h3>
+            <div class="max-w-lg">
               <%= if @can_edit do %>
                 <form phx-submit="add-dependency" class="flex gap-2 mb-3">
                   <input
                     type="text"
                     name="human_id"
-                    placeholder="Task ID (e.g., PER-45)"
+                    placeholder="Add dependency (e.g., PER-45)"
                     class="input input-sm input-bordered flex-1"
                   />
                   <button type="submit" class="btn btn-sm btn-secondary">Add</button>
                 </form>
               <% end %>
               <%= if Enum.empty?(@task.dependencies) do %>
-                <p class="text-base-content/50 italic text-sm">No dependencies</p>
+                <p class="text-base-content/50 italic text-sm">None</p>
               <% else %>
                 <% # Create a map from depends_on_task_id to TaskDependency ID
                 dep_map =
@@ -77,7 +76,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
 
           <%= if dependents_loaded and not Enum.empty?(@task.dependents) do %>
             <div>
-              <h3 class="text-xs text-base-content/50 mb-2">Blocks</h3>
+              <h2 class="text-sm font-semibold text-base-content/70 mb-3">Blocks</h2>
               <div class="space-y-2">
                 <%= for dependent <- @task.dependents do %>
                   <div class="flex items-center gap-2 p-2 bg-base-100 rounded-lg border border-base-300">
