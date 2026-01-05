@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources1 do
+defmodule Citadel.Repo.Migrations.AddTaskDependencies do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -26,8 +26,7 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
 
       add :depends_on_task_id,
           references(:tasks,
@@ -36,8 +35,7 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ),
-          null: false
+          ), null: false
     end
 
     create index(:task_dependencies, [:task_id])
