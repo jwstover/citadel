@@ -1,0 +1,73 @@
+defmodule Citadel.Tasks.Changes.ValidateNoCircularDependency do
+  @moduledoc """
+  Change that validates no circular dependencies exist when creating or updating a TaskDependency.
+  """
+  use Ash.Resource.Change
+
+  def change(changeset, _opts, _context) do
+    task_id = Ash.Changeset.get_attribute(changeset, :task_id)
+    depends_on_task_id = Ash.Changeset.get_attribute(changeset, :depends_on_task_id)
+
+    validate_no_circular_dependency(changeset, task_id, depends_on_task_id)
+  end
+
+  defp validate_no_circular_dependency(changeset, task_id, depends_on_task_id) do
+    cond do
+      is_nil(task_id) or is_nil(depends_on_task_id) ->
+        changeset
+
+      task_id == depends_on_task_id ->
+        Ash.Changeset.add_error(changeset,
+          field: :depends_on_task_id,
+          message: "circular dependency detected"
+        )
+
+      check_dependency_chain(task_id, depends_on_task_id, MapSet.new()) ->
+        Ash.Changeset.add_error(changeset,
+          field: :depends_on_task_id,
+          message: "circular dependency detected"
+        )
+
+      true ->
+        changeset
+    end
+  end
+
+  defp check_dependency_chain(task_id, current_dependency_id, visited) do
+    cond do
+      is_nil(current_dependency_id) ->
+        false
+
+      current_dependency_id == task_id ->
+        true
+
+      MapSet.member?(visited, current_dependency_id) ->
+        false
+
+      true ->
+        get_dependency_ids(current_dependency_id)
+        |> Enum.any?(fn next_dependency_id ->
+          check_dependency_chain(
+            task_id,
+            next_dependency_id,
+            MapSet.put(visited, current_dependency_id)
+          )
+        end)
+    end
+  end
+
+  defp get_dependency_ids(task_id) do
+    require Ash.Query
+
+    case Citadel.Tasks.TaskDependency
+         |> Ash.Query.filter(task_id == ^task_id)
+         |> Ash.Query.select([:depends_on_task_id])
+         |> Ash.read(authorize?: false) do
+      {:ok, dependencies} ->
+        Enum.map(dependencies, & &1.depends_on_task_id)
+
+      {:error, _} ->
+        []
+    end
+  end
+end

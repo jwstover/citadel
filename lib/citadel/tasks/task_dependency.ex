@@ -73,10 +73,12 @@ defmodule Citadel.Tasks.TaskDependency do
   end
 
   actions do
-    defaults [:destroy, update: :*]
+    defaults [:read, :destroy, create: :*]
 
-    read :read do
+    update :update do
       primary? true
+      require_atomic? false
+      accept :*
     end
 
     read :list_dependencies do
@@ -87,11 +89,6 @@ defmodule Citadel.Tasks.TaskDependency do
     read :list_dependents do
       argument :task_id, :uuid, allow_nil?: false
       filter expr(depends_on_task_id == ^arg(:task_id))
-    end
-
-    create :create do
-      accept [:task_id, :depends_on_task_id]
-      validate Citadel.Tasks.Validations.NoCircularDependency
     end
 
     create :add_by_human_id do
@@ -133,6 +130,10 @@ defmodule Citadel.Tasks.TaskDependency do
     end
   end
 
+  changes do
+    change Citadel.Tasks.Changes.ValidateNoCircularDependency, on: [:create, :update]
+  end
+
   policies do
     policy action_type(:read) do
       authorize_if expr(
@@ -159,8 +160,8 @@ defmodule Citadel.Tasks.TaskDependency do
   end
 
   relationships do
-    belongs_to :task, Citadel.Tasks.Task, allow_nil?: false
-    belongs_to :depends_on_task, Citadel.Tasks.Task, allow_nil?: false
+    belongs_to :task, Citadel.Tasks.Task, allow_nil?: false, public?: true
+    belongs_to :depends_on_task, Citadel.Tasks.Task, allow_nil?: false, public?: true
   end
 
   identities do

@@ -17,7 +17,7 @@ defmodule Citadel.Tasks do
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
-      description "Updates an existing task's title, description, state, assignees, due_date, or priority"
+      description "Updates an existing task's title, description, state, assignees, due_date, or priority."
     end
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
