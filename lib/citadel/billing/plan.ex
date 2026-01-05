@@ -2,9 +2,9 @@ defmodule Citadel.Billing.Plan do
   @moduledoc """
   Plan configuration for subscription tiers.
 
-  This module provides a centralized location for all plan limits and Stripe price IDs.
-  It is NOT a database resource - these values are defined in code for type safety
-  and to avoid database lookups for frequently accessed configuration.
+  This module provides a centralized location for all plan limits, Stripe price IDs,
+  and feature availability. It is NOT a database resource - these values are defined
+  in code for type safety and to avoid database lookups for frequently accessed configuration.
 
   ## Adding New Tiers
 
@@ -12,11 +12,34 @@ defmodule Citadel.Billing.Plan do
   automatically be available throughout the system. You'll also need to:
   1. Add the tier atom to the `Tier` enum type
   2. Configure Stripe price IDs in runtime config (if paid tier)
+  3. Define which features are available for the tier
 
   ## Tier Categories
 
   - `:free` - No billing period required, no seat pricing
   - `:paid` - Requires billing period, supports seat-based pricing
+
+  ## Feature System
+
+  Features are defined per tier and can be queried in multiple ways:
+
+      # Check if a tier has a feature
+      Plan.tier_has_feature?(:pro, :data_export)
+
+      # Check if an organization has a feature
+      Plan.org_has_feature?(org_id, :api_access)
+
+      # Get all features for a tier
+      Plan.features_for_tier(:pro)
+
+  See `Citadel.Billing.Features` for the feature catalog with metadata.
+
+  ## Adding New Features
+
+  1. Define feature in `Citadel.Billing.Features`
+  2. Add feature atom to tier's `features` MapSet in `@plans`
+  3. Use `HasFeature` policy check to gate the feature
+  4. Use `FeatureHelpers` in LiveViews for UI checks
 
   ## Pricing
 
@@ -40,10 +63,14 @@ defmodule Citadel.Billing.Plan do
       annual_price_cents: 0,
       per_member_monthly_cents: 0,
       per_member_annual_cents: 0,
-      monthly_credits: 500,
+      monthly_credits: 1000,
       max_workspaces: 1,
       max_members: 1,
       allows_byok: false,
+      features:
+        MapSet.new([
+          :basic_ai
+        ]),
       stripe_monthly_price_id: nil,
       stripe_annual_price_id: nil,
       stripe_seat_monthly_price_id: nil,
@@ -62,6 +89,20 @@ defmodule Citadel.Billing.Plan do
       max_workspaces: 5,
       max_members: 5,
       allows_byok: true,
+      features:
+        MapSet.new([
+          :basic_ai,
+          :advanced_ai_models,
+          :byok,
+          :multiple_workspaces,
+          :team_collaboration,
+          :data_export,
+          :bulk_import,
+          :api_access,
+          :webhooks,
+          :custom_branding,
+          :priority_support
+        ]),
       stripe_monthly_price_id: nil,
       stripe_annual_price_id: nil,
       stripe_seat_monthly_price_id: nil,
@@ -222,13 +263,102 @@ defmodule Citadel.Billing.Plan do
 
   @doc """
   Checks if a tier allows BYOK (Bring Your Own Key).
+
+  This delegates to the feature system for consistency.
   """
   @spec allows_byok?(tier()) :: boolean()
-  def allows_byok?(tier), do: get(tier).allows_byok
+  def allows_byok?(tier), do: tier_has_feature?(tier, :byok)
 
   @doc """
   Checks if a tier is valid.
   """
   @spec valid_tier?(atom()) :: boolean()
   def valid_tier?(tier), do: tier in @valid_tiers
+
+  # Feature System Functions
+
+  @doc """
+  Gets the set of features available for a tier.
+
+  ## Examples
+
+      iex> Citadel.Billing.Plan.features(:pro)
+      #MapSet<[:basic_ai, :advanced_ai_models, :data_export, ...]>
+  """
+  @spec features(tier()) :: MapSet.t(atom())
+  def features(tier) do
+    get(tier).features
+  end
+
+  @doc """
+  Checks if a tier has access to a specific feature.
+
+  ## Examples
+
+      iex> Citadel.Billing.Plan.tier_has_feature?(:pro, :data_export)
+      true
+
+      iex> Citadel.Billing.Plan.tier_has_feature?(:free, :data_export)
+      false
+  """
+  @spec tier_has_feature?(tier(), atom()) :: boolean()
+  def tier_has_feature?(tier, feature) do
+    MapSet.member?(features(tier), feature)
+  end
+
+  @doc """
+  Checks if an organization has access to a specific feature.
+
+  Queries the organization's subscription tier and checks feature availability.
+
+  ## Examples
+
+      iex> Citadel.Billing.Plan.org_has_feature?(org_id, :api_access)
+      {:ok, true}
+
+      iex> Citadel.Billing.Plan.org_has_feature?(org_id, :advanced_ai_models)
+      {:ok, false}
+  """
+  @spec org_has_feature?(Ash.UUID.t(), atom()) :: {:ok, boolean()} | {:error, term()}
+  def org_has_feature?(organization_id, feature) do
+    case Citadel.Billing.get_subscription_by_organization(organization_id, authorize?: false) do
+      {:ok, subscription} ->
+        {:ok, tier_has_feature?(subscription.tier, feature)}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Returns a list of features available for a tier.
+
+  Useful for UI display on pricing/features pages.
+
+  ## Examples
+
+      iex> Citadel.Billing.Plan.features_for_tier(:pro)
+      [:basic_ai, :advanced_ai_models, :data_export, ...]
+  """
+  @spec features_for_tier(tier()) :: [atom()]
+  def features_for_tier(tier) do
+    features(tier) |> MapSet.to_list()
+  end
+
+  @doc """
+  Returns a map of tier => features for all tiers.
+
+  Useful for comparison tables on pricing pages.
+
+  ## Examples
+
+      iex> Citadel.Billing.Plan.all_tier_features()
+      %{free: [:basic_ai], pro: [:basic_ai, :advanced_ai_models, ...]}
+  """
+  @spec all_tier_features() :: %{tier() => [atom()]}
+  def all_tier_features do
+    Map.new(@valid_tiers, fn tier ->
+      {tier, features_for_tier(tier)}
+    end)
+  end
 end
