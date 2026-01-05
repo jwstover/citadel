@@ -133,12 +133,38 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCredits do
         :ok
 
       actual_cost > reserved_amount ->
+        overage = actual_cost - reserved_amount
+
         Logger.warning(
           "Actual cost #{actual_cost} exceeded reservation #{reserved_amount} " <>
-            "for message #{message_id}. Overage absorbed."
+            "for message #{message_id}. Charging overage of #{overage} credits."
         )
 
-        :ok
+        case Billing.deduct_credits(
+               organization_id,
+               overage,
+               "AI message overage (#{input_tokens} input tokens, #{output_tokens} output tokens, " <>
+                 "reserved: #{reserved_amount}, actual: #{actual_cost}, overage: #{overage})",
+               "message",
+               message_id,
+               authorize?: false
+             ) do
+          {:ok, _entry} ->
+            Logger.debug(
+              "Charged overage of #{overage} credits for message #{message_id} " <>
+                "(reserved: #{reserved_amount}, actual: #{actual_cost})"
+            )
+
+            :ok
+
+          {:error, error} ->
+            Logger.error(
+              "Failed to charge overage for message #{message_id}: #{inspect(error)}. " <>
+                "Overage of #{overage} credits absorbed."
+            )
+
+            :ok
+        end
 
       true ->
         case Billing.adjust_reservation(

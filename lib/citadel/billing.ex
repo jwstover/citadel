@@ -27,7 +27,13 @@ defmodule Citadel.Billing do
 
       define :deduct_credits,
         action: :deduct_credits,
-        args: [:organization_id, :amount, :description]
+        args: [
+          :organization_id,
+          :amount,
+          :description,
+          {:optional, :reference_type},
+          {:optional, :reference_id}
+        ]
 
       define :reserve_credits,
         action: :reserve_credits,

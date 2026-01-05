@@ -33,7 +33,7 @@ defmodule Citadel.Billing.Credits do
     default_cost_per_output_token: 0.015,
     models: %{},
     minimum_credits_required: 1,
-    max_reservation_credits: 100
+    max_reservation_credits: 500
   }
 
   @doc """

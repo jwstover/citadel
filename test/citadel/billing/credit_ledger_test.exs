@@ -125,7 +125,8 @@ defmodule Citadel.Billing.CreditLedgerTest do
           organization.id,
           50,
           "Claude message",
-          %{reference_type: "message", reference_id: message_id},
+          "message",
+          message_id,
           authorize?: false
         )
 
