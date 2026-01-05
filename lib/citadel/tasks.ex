@@ -49,7 +49,11 @@ defmodule Citadel.Tasks do
 
     resource Citadel.Tasks.TaskDependency do
       define :create_task_dependency, action: :create
-      define :add_task_dependency_by_human_id, action: :add_by_human_id, args: [:task_id, :depends_on_human_id]
+
+      define :add_task_dependency_by_human_id,
+        action: :add_by_human_id,
+        args: [:task_id, :depends_on_human_id]
+
       define :list_task_dependencies, action: :list_dependencies, args: [:task_id]
       define :list_task_dependents, action: :list_dependents, args: [:task_id]
       define :destroy_task_dependency, action: :destroy

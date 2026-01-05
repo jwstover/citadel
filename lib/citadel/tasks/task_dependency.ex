@@ -21,54 +21,9 @@ defmodule Citadel.Tasks.TaskDependency do
 
     check_constraints do
       check_constraint :task_id,
-                       name: "no_self_reference",
-                       check: "task_id != depends_on_task_id",
-                       message: "a task cannot depend on itself"
-    end
-  end
-
-  pub_sub do
-    module CitadelWeb.Endpoint
-    prefix "tasks"
-
-    publish_all :create, ["task_dependencies", :task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :create
-        }
-      end
-    end
-
-    publish_all :create, ["task_dependents", :depends_on_task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :create
-        }
-      end
-    end
-
-    publish_all :destroy, ["task_dependencies", :task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :destroy
-        }
-      end
-    end
-
-    publish_all :destroy, ["task_dependents", :depends_on_task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :destroy
-        }
-      end
+        name: "no_self_reference",
+        check: "task_id != depends_on_task_id",
+        message: "a task cannot depend on itself"
     end
   end
 
@@ -130,10 +85,6 @@ defmodule Citadel.Tasks.TaskDependency do
     end
   end
 
-  changes do
-    change Citadel.Tasks.Changes.ValidateNoCircularDependency, on: [:create, :update]
-  end
-
   policies do
     policy action_type(:read) do
       authorize_if expr(
@@ -152,6 +103,55 @@ defmodule Citadel.Tasks.TaskDependency do
                        exists(task.workspace.memberships, user_id == ^actor(:id))
                    )
     end
+  end
+
+  pub_sub do
+    module CitadelWeb.Endpoint
+    prefix "tasks"
+
+    publish_all :create, ["task_dependencies", :task_id] do
+      transform fn %{data: dep} ->
+        %{
+          task_id: dep.task_id,
+          depends_on_task_id: dep.depends_on_task_id,
+          action: :create
+        }
+      end
+    end
+
+    publish_all :create, ["task_dependents", :depends_on_task_id] do
+      transform fn %{data: dep} ->
+        %{
+          task_id: dep.task_id,
+          depends_on_task_id: dep.depends_on_task_id,
+          action: :create
+        }
+      end
+    end
+
+    publish_all :destroy, ["task_dependencies", :task_id] do
+      transform fn %{data: dep} ->
+        %{
+          task_id: dep.task_id,
+          depends_on_task_id: dep.depends_on_task_id,
+          action: :destroy
+        }
+      end
+    end
+
+    publish_all :destroy, ["task_dependents", :depends_on_task_id] do
+      transform fn %{data: dep} ->
+        %{
+          task_id: dep.task_id,
+          depends_on_task_id: dep.depends_on_task_id,
+          action: :destroy
+        }
+      end
+    end
+  end
+
+  changes do
+    change Citadel.Tasks.Changes.ValidateNoCircularDependency, on: [:create, :update]
   end
 
   attributes do

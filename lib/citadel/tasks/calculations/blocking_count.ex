@@ -17,24 +17,22 @@ defmodule Citadel.Tasks.Calculations.BlockingCount do
   def calculate(records, _opts, _context) do
     Enum.map(records, fn record ->
       case record.dependencies do
-        %Ash.NotLoaded{} ->
-          0
-
-        dependencies ->
-          Enum.count(dependencies, fn dep ->
-            case dep.task_state do
-              %Ash.NotLoaded{} ->
-                false
-
-              task_state ->
-                # Handle case where task_state is loaded but is_complete is not
-                case task_state.is_complete do
-                  %Ash.NotLoaded{} -> false
-                  is_complete -> not is_complete
-                end
-            end
-          end)
+        %Ash.NotLoaded{} -> 0
+        dependencies -> Enum.count(dependencies, &dependency_incomplete?/1)
       end
     end)
+  end
+
+  defp dependency_incomplete?(dep) do
+    case dep.task_state do
+      %Ash.NotLoaded{} ->
+        false
+
+      task_state ->
+        case task_state.is_complete do
+          %Ash.NotLoaded{} -> false
+          is_complete -> not is_complete
+        end
+    end
   end
 end

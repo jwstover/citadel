@@ -28,8 +28,12 @@ defmodule Citadel.Tasks.TaskDependencyTest do
     setup context do
       user = generate(user())
       workspace = generate(workspace([], actor: user))
-      task_a = generate(task([task_state_id: context.todo_state.id], actor: user, tenant: workspace.id))
-      task_b = generate(task([task_state_id: context.todo_state.id], actor: user, tenant: workspace.id))
+
+      task_a =
+        generate(task([task_state_id: context.todo_state.id], actor: user, tenant: workspace.id))
+
+      task_b =
+        generate(task([task_state_id: context.todo_state.id], actor: user, tenant: workspace.id))
 
       %{user: user, workspace: workspace, task_a: task_a, task_b: task_b}
     end
@@ -51,7 +55,11 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       assert dependency.depends_on_task_id == task_b.id
     end
 
-    test "prevents self-referential dependency", %{user: user, workspace: workspace, task_a: task_a} do
+    test "prevents self-referential dependency", %{
+      user: user,
+      workspace: workspace,
+      task_a: task_a
+    } do
       assert {:error, %Ash.Error.Invalid{} = error} =
                Tasks.create_task_dependency(
                  %{task_id: task_a.id, depends_on_task_id: task_a.id},
@@ -130,7 +138,11 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       %{user: user, workspace: workspace, todo_state: context.todo_state}
     end
 
-    test "creates dependency using human_id", %{user: user, workspace: workspace, todo_state: todo_state} do
+    test "creates dependency using human_id", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
       task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
       task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
@@ -146,7 +158,11 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       assert dependency.depends_on_task_id == task_b.id
     end
 
-    test "returns error for invalid human_id", %{user: user, workspace: workspace, todo_state: todo_state} do
+    test "returns error for invalid human_id", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
       task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       assert {:error, %Ash.Error.Invalid{} = error} =
@@ -168,7 +184,11 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       %{user: user, workspace: workspace, todo_state: context.todo_state}
     end
 
-    test "returns dependencies for a task", %{user: user, workspace: workspace, todo_state: todo_state} do
+    test "returns dependencies for a task", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
       task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
       task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
       task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
@@ -200,7 +220,11 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       %{user: user, workspace: workspace, todo_state: context.todo_state}
     end
 
-    test "returns tasks that depend on this task", %{user: user, workspace: workspace, todo_state: todo_state} do
+    test "returns tasks that depend on this task", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
       task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
       task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
       task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
