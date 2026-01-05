@@ -4,7 +4,7 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
   alias Citadel.Tasks
 
   setup do
-    Tasks.create_task_state!(%{name: "Todo", order: 1, is_complete: false}, authorize?: false)
+    todo_state = Tasks.create_task_state!(%{name: "Todo", order: 1, is_complete: false}, authorize?: false)
 
     Tasks.create_task_state!(%{name: "In Progress", order: 2, is_complete: false},
       authorize?: false
@@ -14,12 +14,12 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
 
     user = generate(user())
     workspace = generate(workspace([], actor: user))
-    %{user: user, workspace: workspace}
+    %{user: user, workspace: workspace, todo_state: todo_state}
   end
 
   describe "NoCircularDependency validation" do
-    test "prevents self-reference (A→A)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
+    test "prevents self-reference (A→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       assert {:error, %Ash.Error.Invalid{} = error} =
                Tasks.create_task_dependency(
@@ -28,12 +28,12 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "a task cannot depend on itself"
+      assert Exception.message(error) =~ "circular dependency"
     end
 
-    test "prevents direct cycle (A→B, then B→A)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
+    test "prevents direct cycle (A→B, then B→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       Tasks.create_task_dependency!(
         %{task_id: task_a.id, depends_on_task_id: task_b.id},
@@ -51,10 +51,10 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
       assert Exception.message(error) =~ "would create a circular dependency"
     end
 
-    test "prevents transitive cycle (A→B→C, then C→A)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
-      task_c = generate(task([], actor: user, tenant: workspace.id))
+    test "prevents transitive cycle (A→B→C, then C→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       Tasks.create_task_dependency!(
         %{task_id: task_a.id, depends_on_task_id: task_b.id},
@@ -78,12 +78,12 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
       assert Exception.message(error) =~ "would create a circular dependency"
     end
 
-    test "prevents long chain cycle (A→B→C→D→E, then E→A)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
-      task_c = generate(task([], actor: user, tenant: workspace.id))
-      task_d = generate(task([], actor: user, tenant: workspace.id))
-      task_e = generate(task([], actor: user, tenant: workspace.id))
+    test "prevents long chain cycle (A→B→C→D→E, then E→A)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_d = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_e = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       Tasks.create_task_dependency!(
         %{task_id: task_a.id, depends_on_task_id: task_b.id},
@@ -119,10 +119,10 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
       assert Exception.message(error) =~ "would create a circular dependency"
     end
 
-    test "allows valid chain (A→B→C)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
-      task_c = generate(task([], actor: user, tenant: workspace.id))
+    test "allows valid chain (A→B→C)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       assert {:ok, _} =
                Tasks.create_task_dependency(
@@ -139,11 +139,11 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                )
     end
 
-    test "allows diamond pattern (A→B, A→C, B→D, C→D)", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
-      task_c = generate(task([], actor: user, tenant: workspace.id))
-      task_d = generate(task([], actor: user, tenant: workspace.id))
+    test "allows diamond pattern (A→B, A→C, B→D, C→D)", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_d = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       assert {:ok, _} =
                Tasks.create_task_dependency(
@@ -174,12 +174,12 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                )
     end
 
-    test "allows complex graph without cycles", %{user: user, workspace: workspace} do
-      task_a = generate(task([], actor: user, tenant: workspace.id))
-      task_b = generate(task([], actor: user, tenant: workspace.id))
-      task_c = generate(task([], actor: user, tenant: workspace.id))
-      task_d = generate(task([], actor: user, tenant: workspace.id))
-      task_e = generate(task([], actor: user, tenant: workspace.id))
+    test "allows complex graph without cycles", %{user: user, workspace: workspace, todo_state: todo_state} do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_c = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_d = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_e = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
 
       assert {:ok, _} =
                Tasks.create_task_dependency(
