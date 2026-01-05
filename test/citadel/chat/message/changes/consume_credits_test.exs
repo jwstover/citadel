@@ -180,11 +180,12 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
       assert balance == max_reservation - actual_cost
     end
 
-    test "does not create adjustment when actual exceeds reserved (overage absorbed)", %{
+    test "charges overage when actual exceeds reserved", %{
       organization: organization
     } do
       max_reservation = Credits.max_reservation_credits()
-      Billing.add_credits!(organization.id, max_reservation, "Initial credits", authorize?: false)
+      initial_credits = max_reservation * 2
+      Billing.add_credits!(organization.id, initial_credits, "Initial credits", authorize?: false)
 
       message_id = Ash.UUID.generate()
 
@@ -201,22 +202,28 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCreditsTest do
         reserved_amount: max_reservation
       }
 
-      # This produces 150 credits (10000*0.003 + 10000*0.015 = 180), which exceeds max_reservation
-      token_usage = %LangChain.TokenUsage{input: 10000, output: 10000}
+      # This produces 180 credits (10000*0.003 + 10000*0.015 = 180)
+      # With max_reservation = 500, we need to use more tokens to exceed it
+      token_usage = %LangChain.TokenUsage{input: 100_000, output: 20_000}
       actual_cost = Credits.calculate_cost(token_usage)
       assert actual_cost > max_reservation
+
+      overage = actual_cost - max_reservation
 
       assert :ok = ConsumeCredits.adjust(reservation, token_usage, message_id)
 
       entries = Billing.list_credit_entries!(authorize?: false)
-      adjustment_entries = Enum.filter(entries, &(&1.transaction_type == :reservation_adjustment))
+      usage_entries = Enum.filter(entries, &(&1.transaction_type == :usage))
 
-      # No adjustment because actual cost exceeded reservation (overage absorbed)
-      assert Enum.empty?(adjustment_entries)
+      # Should have a usage entry for the overage
+      assert length(usage_entries) == 1
+      overage_entry = List.first(usage_entries)
+      assert overage_entry.amount == -overage
+      assert overage_entry.reference_id == message_id
 
-      # Balance should still be 0 (no refund when actual >= reserved)
+      # Balance should be initial_credits - reserved - overage = initial_credits - actual_cost
       {:ok, balance} = Billing.get_organization_balance(organization.id, authorize?: false)
-      assert balance == 0
+      assert balance == initial_credits - actual_cost
     end
   end
 

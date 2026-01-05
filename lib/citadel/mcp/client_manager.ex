@@ -153,6 +153,14 @@ defmodule Citadel.MCP.ClientManager do
   defp find_client_child(_), do: {:error, :supervisor_error}
 
   defp list_tools_safely(client_pid) do
+    list_tools_with_retry(client_pid, 3, 100)
+  catch
+    :exit, reason ->
+      Logger.warning("MCP client exited while listing tools: #{inspect(reason)}")
+      {:error, {:client_exit, reason}}
+  end
+
+  defp list_tools_with_retry(client_pid, retries_left, delay) when retries_left > 0 do
     case HermesBase.list_tools(client_pid, []) do
       {:ok, %{result: %{"tools" => tools}}} ->
         {:ok, tools}
@@ -161,12 +169,27 @@ defmodule Citadel.MCP.ClientManager do
         Logger.warning("Unexpected list_tools response: #{inspect(other)}")
         {:error, :unexpected_response}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, reason} = error ->
+        if initialization_error?(reason) do
+          Logger.debug(
+            "MCP client not yet initialized, retrying in #{delay}ms (#{retries_left} retries left)"
+          )
+
+          Process.sleep(delay)
+          list_tools_with_retry(client_pid, retries_left - 1, delay * 2)
+        else
+          error
+        end
     end
-  catch
-    :exit, reason ->
-      Logger.warning("MCP client exited while listing tools: #{inspect(reason)}")
-      {:error, {:client_exit, reason}}
+  end
+
+  defp list_tools_with_retry(_client_pid, 0, _delay) do
+    Logger.warning("Failed to list MCP tools after all retries - client not initialized in time")
+    {:error, :initialization_timeout}
+  end
+
+  defp initialization_error?(error) do
+    error_string = inspect(error)
+    String.contains?(error_string, "Server capabilities not set")
   end
 end
