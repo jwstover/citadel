@@ -52,4 +52,30 @@ defmodule Citadel.Billing.Errors do
       "BYOK (Bring Your Own Key) is only available on Pro plans. Please upgrade to use your own API key."
     end
   end
+
+  defmodule FeatureNotAvailable do
+    @moduledoc """
+    Raised when attempting to use a feature not available on the current tier.
+    """
+    use Splode.Error, fields: [:feature, :required_tier, :current_tier], class: :forbidden
+
+    alias Citadel.Billing.Features
+
+    def message(%{feature: feature, required_tier: required, current_tier: current}) do
+      feature_name = Features.name(feature)
+
+      "#{feature_name} is not available on your current #{format_tier(current)} plan. " <>
+        "Upgrade to #{format_tier(required)} to access this feature."
+    end
+
+    def message(%{feature: feature}) do
+      feature_name = Features.name(feature)
+
+      "#{feature_name} is not available on your current plan. Please upgrade to access this feature."
+    end
+
+    defp format_tier(:free), do: "Free"
+    defp format_tier(:pro), do: "Pro"
+    defp format_tier(tier), do: to_string(tier) |> String.capitalize()
+  end
 end
