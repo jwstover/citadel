@@ -22,7 +22,11 @@ defmodule CitadelWeb.TaskLive.Show do
           :parent_task,
           :ancestors,
           :assignees,
-          :overdue?
+          :overdue?,
+          :blocked?,
+          :blocking_count,
+          dependencies: [:task_state],
+          dependents: [:task_state]
         ]
       )
 
@@ -33,12 +37,20 @@ defmodule CitadelWeb.TaskLive.Show do
         load: [:task_state, :assignees, :overdue?]
       )
 
+    task_dependencies =
+      Tasks.list_task_dependencies!(task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
     can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
     if connected?(socket) do
       CitadelWeb.Endpoint.subscribe("tasks:task:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task.id}")
     end
 
     socket =
@@ -46,6 +58,7 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:task, task)
       |> assign(:sub_tasks, sub_tasks)
       |> assign(:sub_tasks_count, length(sub_tasks))
+      |> assign(:task_dependencies, task_dependencies)
       |> assign(:can_edit, can_edit)
       |> assign(:can_delete, can_delete)
       |> assign(:show_sub_task_form, false)
@@ -60,6 +73,51 @@ defmodule CitadelWeb.TaskLive.Show do
 
   def handle_event("close-sub-task-form", _params, socket) do
     {:noreply, assign(socket, :show_sub_task_form, false)}
+  end
+
+  def handle_event("add-dependency", %{"human_id" => human_id}, socket) do
+    human_id = String.trim(human_id)
+
+    if human_id == "" do
+      {:noreply, socket}
+    else
+      case Tasks.add_task_dependency_by_human_id(socket.assigns.task.id, human_id,
+             actor: socket.assigns.current_user,
+             tenant: socket.assigns.current_workspace.id
+           ) do
+        {:ok, _dependency} ->
+          {task, task_dependencies} = reload_task_with_dependencies(socket)
+
+          {:noreply,
+           socket
+           |> assign(:task, task)
+           |> assign(:task_dependencies, task_dependencies)
+           |> put_flash(:info, "Dependency added successfully")}
+
+        {:error, error} ->
+          error_message = format_dependency_error(error, human_id)
+          {:noreply, put_flash(socket, :error, error_message)}
+      end
+    end
+  end
+
+  def handle_event("remove-dependency", %{"id" => dependency_id}, socket) do
+    case Tasks.destroy_task_dependency(dependency_id,
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.current_workspace.id
+         ) do
+      :ok ->
+        {task, task_dependencies} = reload_task_with_dependencies(socket)
+
+        {:noreply,
+         socket
+         |> assign(:task, task)
+         |> assign(:task_dependencies, task_dependencies)
+         |> put_flash(:info, "Dependency removed successfully")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to remove dependency")}
+    end
   end
 
   def handle_event("confirm_delete", _params, socket) do
@@ -239,6 +297,22 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:task_dependencies:" <> _task_id},
+        socket
+      ) do
+    {task, task_dependencies} = reload_task_with_dependencies(socket)
+    {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:task_dependents:" <> _task_id},
+        socket
+      ) do
+    {task, task_dependencies} = reload_task_with_dependencies(socket)
+    {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
+  end
+
   def handle_info({:task_state_changed, _task}, socket) do
     task =
       Ash.load!(
@@ -323,6 +397,47 @@ defmodule CitadelWeb.TaskLive.Show do
       {:noreply, handle_sub_task_broadcast(payload, socket)}
     else
       {:noreply, socket}
+    end
+  end
+
+  defp reload_task_with_dependencies(socket) do
+    task =
+      Tasks.get_task!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [
+          :task_state,
+          :user,
+          :parent_task,
+          :ancestors,
+          :assignees,
+          :overdue?,
+          :blocked?,
+          :blocking_count,
+          dependencies: [:task_state],
+          dependents: [:task_state]
+        ]
+      )
+
+    task_dependencies =
+      Tasks.list_task_dependencies!(task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    {task, task_dependencies}
+  end
+
+  defp format_dependency_error(error, human_id) do
+    cond do
+      Exception.message(error) =~ "circular dependency" ->
+        "Cannot add dependency: would create a circular dependency"
+
+      Exception.message(error) =~ "task not found" ->
+        "Task with ID #{human_id} not found"
+
+      true ->
+        "Failed to add dependency"
     end
   end
 
@@ -520,6 +635,16 @@ defmodule CitadelWeb.TaskLive.Show do
               </div>
             </div>
           </div>
+
+          <.live_component
+            module={CitadelWeb.Components.TaskDependencies}
+            id={"task-dependencies-#{@task.id}"}
+            task={@task}
+            task_dependencies={@task_dependencies}
+            can_edit={@can_edit}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
 
           <div class="py-4 border-t border-base-300">
             <div class="flex items-center justify-between mb-3">

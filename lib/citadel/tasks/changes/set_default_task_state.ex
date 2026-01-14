@@ -21,7 +21,7 @@ defmodule Citadel.Tasks.Changes.SetDefaultTaskState do
     case Citadel.Tasks.TaskState
          |> Ash.Query.sort(order: :asc)
          |> Ash.Query.limit(1)
-         |> Ash.read() do
+         |> Ash.read(authorize?: false) do
       {:ok, [state | _]} ->
         Ash.Changeset.change_attribute(changeset, :task_state_id, state.id)
 
