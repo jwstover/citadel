@@ -19,6 +19,32 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
   end
 
   describe "NoCircularDependency validation" do
+    test "applies globally to default create action", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
+      task_a = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+      task_b = generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+
+      # Create dependency A→B using default create action
+      Tasks.create_task_dependency!(
+        %{task_id: task_a.id, depends_on_task_id: task_b.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      # Attempt to create circular dependency B→A should fail with validation error
+      assert {:error, %Ash.Error.Invalid{} = error} =
+               Tasks.create_task_dependency(
+                 %{task_id: task_b.id, depends_on_task_id: task_a.id},
+                 actor: user,
+                 tenant: workspace.id
+               )
+
+      assert Exception.message(error) =~ "circular dependency"
+    end
+
     test "prevents self-reference (A→A)", %{
       user: user,
       workspace: workspace,
@@ -33,7 +59,7 @@ defmodule Citadel.Tasks.Validations.NoCircularDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "circular dependency"
+      assert Exception.message(error) =~ "a task cannot depend on itself"
     end
 
     test "prevents direct cycle (A→B, then B→A)", %{

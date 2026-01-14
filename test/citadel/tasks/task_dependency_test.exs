@@ -67,7 +67,7 @@ defmodule Citadel.Tasks.TaskDependencyTest do
                  tenant: workspace.id
                )
 
-      assert Exception.message(error) =~ "circular dependency"
+      assert Exception.message(error) =~ "a task cannot depend on itself"
     end
 
     test "prevents duplicate dependencies", %{

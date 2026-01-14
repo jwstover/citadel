@@ -80,8 +80,6 @@ defmodule Citadel.Tasks.TaskDependency do
             Ash.Changeset.add_error(changeset, error)
         end
       end
-
-      validate Citadel.Tasks.Validations.NoCircularDependency
     end
   end
 
@@ -150,8 +148,8 @@ defmodule Citadel.Tasks.TaskDependency do
     end
   end
 
-  changes do
-    change Citadel.Tasks.Changes.ValidateNoCircularDependency, on: [:create, :update]
+  validations do
+    validate Citadel.Tasks.Validations.NoCircularDependency
   end
 
   attributes do
