@@ -1,14 +1,12 @@
 defmodule Citadel.Tasks.TaskTest do
   use Citadel.DataCase, async: true
 
-  alias Citadel.{Accounts, Tasks}
+  alias Citadel.Tasks
 
   setup do
-    # Create a user and workspace for testing
     user = generate(user())
     workspace = generate(workspace([], actor: user))
 
-    # Create a task state for testing
     task_state =
       Tasks.create_task_state!(%{
         name: "Task State #{System.unique_integer([:positive])}",
@@ -93,14 +91,12 @@ defmodule Citadel.Tasks.TaskTest do
       user: user,
       workspace: workspace
     } do
-      # Create a task state with the lowest order to ensure it gets selected
       lowest_order_state =
         Tasks.create_task_state!(%{
           name: "Lowest Order State #{System.unique_integer([:positive])}",
           order: 0
         })
 
-      # Create additional task states with higher order
       _higher_order_state =
         Tasks.create_task_state!(%{
           name: "Higher Order State #{System.unique_integer([:positive])}",
@@ -114,7 +110,6 @@ defmodule Citadel.Tasks.TaskTest do
 
       task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
 
-      # Should default to the task_state with order: 0
       assert task.task_state_id == lowest_order_state.id
     end
 
@@ -137,7 +132,6 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create tasks for this user
       task1 =
         Tasks.create_task!(
           %{
@@ -160,7 +154,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # List tasks as this user
       tasks = Tasks.list_tasks!(actor: user, tenant: workspace.id)
       task_ids = Enum.map(tasks, & &1.id)
 
@@ -173,11 +166,9 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another user and add them as a workspace member
-      other_user = create_user()
-      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+      other_user = generate(user())
+      add_user_to_workspace(other_user.id, workspace.id, actor: user)
 
-      # Create task by the other user
       other_task =
         Tasks.create_task!(
           %{
@@ -189,7 +180,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Create task by the first user
       user_task =
         Tasks.create_task!(
           %{
@@ -201,7 +191,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Both users can see all tasks in the workspace
       tasks = Tasks.list_tasks!(actor: user, tenant: workspace.id)
       task_ids = Enum.map(tasks, & &1.id)
 
@@ -219,14 +208,12 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another task state
       other_state =
         Tasks.create_task_state!(%{
           name: "Other State #{System.unique_integer([:positive])}",
           order: 2
         })
 
-      # Create tasks with different states
       task1 =
         Tasks.create_task!(
           %{
@@ -249,7 +236,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Filter by first task state
       tasks =
         Tasks.list_tasks!(
           actor: user,
@@ -323,7 +309,6 @@ defmodule Citadel.Tasks.TaskTest do
     end
 
     test "can change task_state", %{user: user, workspace: workspace, task_state: task_state} do
-      # Create another task state
       new_state =
         Tasks.create_task_state!(%{
           name: "New State #{System.unique_integer([:positive])}",
@@ -352,11 +337,9 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another user with their own workspace
       other_user = generate(user())
       other_workspace = generate(workspace([], actor: other_user))
 
-      # Create task owned by the first user
       task =
         Tasks.create_task!(
           %{
@@ -368,8 +351,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Try to update as the other user (with their own workspace tenant)
-      # Will get Forbidden because user doesn't have access to the task
       assert_raise Ash.Error.Forbidden, fn ->
         Ash.update!(task, %{title: "Unauthorized Update"},
           actor: other_user,
@@ -440,7 +421,6 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another task state
       new_state =
         Tasks.create_task_state!(%{
           name: "New State #{System.unique_integer([:positive])}",
@@ -528,7 +508,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # When using get_by, Ash returns Invalid (not found) to avoid leaking info about record existence
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.update_task!(task.id, %{title: "Unauthorized Update"},
           actor: other_user,
@@ -587,7 +566,6 @@ defmodule Citadel.Tasks.TaskTest do
     test "raises error when updating non-existent task", %{user: user, workspace: workspace} do
       fake_task_id = Ash.UUID.generate()
 
-      # get_by returns Invalid when record is not found
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.update_task!(fake_task_id, %{title: "Updated"}, actor: user, tenant: workspace.id)
       end
@@ -609,7 +587,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # With multitenancy, missing tenant is caught first, returning Invalid
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.update_task!(task.id, %{title: "Updated"})
       end
@@ -664,7 +641,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Create sub-task without explicitly setting workspace_id
       sub_task =
         Tasks.create_task!(
           %{
@@ -923,7 +899,6 @@ defmodule Citadel.Tasks.TaskTest do
 
       assert :ok = Ash.destroy!(task, actor: user, tenant: workspace.id)
 
-      # Verify it's gone
       tasks = Tasks.list_tasks!(actor: user, tenant: workspace.id, query: [filter: [id: task.id]])
       assert tasks == []
     end
@@ -933,11 +908,9 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another user with their own workspace
       other_user = generate(user())
       other_workspace = generate(workspace([], actor: other_user))
 
-      # Create task owned by the first user
       task =
         Tasks.create_task!(
           %{
@@ -949,8 +922,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Try to destroy as the other user (with their tenant)
-      # Gets Forbidden because other_user doesn't own the task (policy check on user_id)
       assert_raise Ash.Error.Forbidden, fn ->
         Ash.destroy!(task, actor: other_user, tenant: other_workspace.id)
       end
@@ -996,7 +967,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Create another top-level task (should not be included)
       _other_task =
         Tasks.create_task!(
           %{
@@ -1066,7 +1036,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Create a sub-task (should not be included)
       _sub_task =
         Tasks.create_task!(
           %{
@@ -1084,7 +1053,6 @@ defmodule Citadel.Tasks.TaskTest do
       assert top_level_task1.id in top_level_ids
       assert top_level_task2.id in top_level_ids
 
-      # Verify the sub-task is not in the list
       refute Enum.any?(top_level_tasks, fn t -> t.parent_task_id != nil end)
     end
 
@@ -1101,11 +1069,9 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another user and add them as a workspace member
-      other_user = create_user()
-      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+      other_user = generate(user())
+      add_user_to_workspace(other_user.id, workspace.id, actor: user)
 
-      # First user creates a parent task
       parent_task =
         Tasks.create_task!(
           %{
@@ -1117,7 +1083,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Second user (workspace member) can create a sub-task
       sub_task =
         Tasks.create_task!(
           %{
@@ -1139,11 +1104,9 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create another user with their own workspace (not a member of first workspace)
       other_user = generate(user())
       other_workspace = generate(workspace([], actor: other_user))
 
-      # First user creates a parent task in their workspace
       parent_task =
         Tasks.create_task!(
           %{
@@ -1155,8 +1118,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Second user (not a member) cannot create a sub-task
-      # They can't even see the parent task due to tenant isolation
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.create_task!(
           %{
@@ -1175,10 +1136,8 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Create a second workspace for the same user
       second_workspace = generate(workspace([], actor: user))
 
-      # Create parent task in first workspace
       parent_task =
         Tasks.create_task!(
           %{
@@ -1190,8 +1149,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Try to create sub-task in second workspace with parent from first workspace
-      # This should fail because parent doesn't exist in the tenant
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.create_task!(
           %{
@@ -1243,7 +1200,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Human ID should match PREFIX-NUMBER format (1-3 uppercase letters, hyphen, number)
       assert Regex.match?(~r/^[A-Z]{1,3}-\d+$/, task.human_id)
     end
 
@@ -1251,9 +1207,7 @@ defmodule Citadel.Tasks.TaskTest do
       user: user,
       task_state: task_state
     } do
-      # Create workspace with a known name to get predictable prefix
-      workspace =
-        Accounts.create_workspace!("Test Project", actor: user)
+      workspace = generate(workspace([name: "Test Project"], actor: user))
 
       task =
         Tasks.create_task!(
@@ -1266,7 +1220,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # "Test Project" has uppercase T and P, so prefix should be "TP"
       assert String.starts_with?(task.human_id, "TP-")
     end
 
@@ -1308,7 +1261,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Extract numbers from human_ids
       [_, num1] = String.split(task1.human_id, "-")
       [_, num2] = String.split(task2.human_id, "-")
       [_, num3] = String.split(task3.human_id, "-")
@@ -1325,8 +1277,8 @@ defmodule Citadel.Tasks.TaskTest do
       user: user,
       task_state: task_state
     } do
-      workspace1 = Accounts.create_workspace!("Workspace One", actor: user)
-      workspace2 = Accounts.create_workspace!("Workspace Two", actor: user)
+      workspace1 = generate(workspace([name: "Workspace One"], actor: user))
+      workspace2 = generate(workspace([name: "Workspace Two"], actor: user))
 
       task1 =
         Tasks.create_task!(
@@ -1350,11 +1302,9 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace2.id
         )
 
-      # Both should be the first task in their workspace
       assert String.ends_with?(task1.human_id, "-1")
       assert String.ends_with?(task2.human_id, "-1")
 
-      # But they should have different prefixes
       [prefix1, _] = String.split(task1.human_id, "-")
       [prefix2, _] = String.split(task2.human_id, "-")
       assert prefix1 == "WO"
@@ -1391,7 +1341,6 @@ defmodule Citadel.Tasks.TaskTest do
       assert sub_task.human_id != nil
       assert sub_task.human_id != parent_task.human_id
 
-      # Sub-task should have the next sequential number
       [_, parent_num] = String.split(parent_task.human_id, "-")
       [_, sub_num] = String.split(sub_task.human_id, "-")
       assert String.to_integer(sub_num) == String.to_integer(parent_num) + 1
@@ -1402,7 +1351,6 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      # Attempting to pass human_id should raise an error since it's not writable
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.create_task!(
           %{
@@ -1467,7 +1415,6 @@ defmodule Citadel.Tasks.TaskTest do
           tenant: workspace.id
         )
 
-      # Try to retrieve from different workspace's tenant
       assert_raise Ash.Error.Invalid, fn ->
         Tasks.get_task_by_human_id!(task.human_id, actor: other_user, tenant: other_workspace.id)
       end
@@ -1833,8 +1780,8 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      other_user = create_user()
-      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+      other_user = generate(user())
+      add_user_to_workspace(other_user.id, workspace.id, actor: user)
 
       task =
         Tasks.create_task!(
@@ -1861,8 +1808,8 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      other_user = create_user()
-      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+      other_user = generate(user())
+      add_user_to_workspace(other_user.id, workspace.id, actor: user)
 
       task =
         Tasks.create_task!(
@@ -1894,8 +1841,8 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      other_user = create_user()
-      Accounts.add_workspace_member!(other_user.id, workspace.id, actor: user)
+      other_user = generate(user())
+      add_user_to_workspace(other_user.id, workspace.id, actor: user)
 
       task =
         Tasks.create_task!(
@@ -1969,8 +1916,8 @@ defmodule Citadel.Tasks.TaskTest do
       workspace: workspace,
       task_state: task_state
     } do
-      member = create_user()
-      Accounts.add_workspace_member!(member.id, workspace.id, actor: user)
+      member = generate(user())
+      add_user_to_workspace(member.id, workspace.id, actor: user)
 
       task =
         Tasks.create_task!(
@@ -1987,6 +1934,238 @@ defmodule Citadel.Tasks.TaskTest do
       loaded = Ash.load!(task, :assignees, actor: user, tenant: workspace.id)
       assert length(loaded.assignees) == 1
       assert hd(loaded.assignees).id == member.id
+    end
+  end
+
+  describe "update parent_task_id" do
+    test "can re-parent a task to a different parent", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent1 =
+        Tasks.create_task!(
+          %{
+            title: "Parent 1 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      parent2 =
+        Tasks.create_task!(
+          %{
+            title: "Parent 2 #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent1.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert child.parent_task_id == parent1.id
+
+      updated =
+        Tasks.update_task!(child.id, %{parent_task_id: parent2.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.parent_task_id == parent2.id
+    end
+
+    test "can remove parent (make top-level)", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert child.parent_task_id == parent.id
+
+      updated =
+        Tasks.update_task!(child.id, %{parent_task_id: nil},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(updated.parent_task_id)
+    end
+
+    test "cannot set task as its own parent via update", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/cannot be its own parent/, fn ->
+        Tasks.update_task!(task.id, %{parent_task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "cannot create cycle via update (A parent of B, try to set A's parent to B)", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/circular reference/, fn ->
+        Tasks.update_task!(parent.id, %{parent_task_id: child.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "cannot create cycle via update in deeper hierarchy", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      grandparent =
+        Tasks.create_task!(
+          %{
+            title: "Grandparent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: grandparent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            parent_task_id: parent.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, ~r/circular reference/, fn ->
+        Tasks.update_task!(grandparent.id, %{parent_task_id: child.id},
+          actor: user,
+          tenant: workspace.id
+        )
+      end
+    end
+
+    test "can add parent to previously top-level task", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      new_parent =
+        Tasks.create_task!(
+          %{
+            title: "New Parent #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      top_level_task =
+        Tasks.create_task!(
+          %{
+            title: "Top Level #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert is_nil(top_level_task.parent_task_id)
+
+      updated =
+        Tasks.update_task!(top_level_task.id, %{parent_task_id: new_parent.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.parent_task_id == new_parent.id
     end
   end
 end

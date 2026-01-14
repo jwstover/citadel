@@ -7,12 +7,6 @@ defmodule CitadelWeb.Layouts do
 
   import CitadelWeb.Components.WorkspaceSwitcher
 
-  # Embed all files in layouts/* within this module.
-  # The default root.html.heex file contains the HTML
-  # skeleton of your application, namely HTML headers
-  # and other static content.
-  embed_templates "layouts/*"
-
   @doc """
   Renders your app layout.
 
@@ -170,6 +164,55 @@ defmodule CitadelWeb.Layouts do
   end
 
   @doc """
+  Renders a public layout for pages that don't require authentication.
+
+  Used for legal pages (Terms of Service, Privacy Policy) and other public content.
+
+  ## Examples
+
+      <Layouts.public>
+        <h1>Content</h1>
+      </Layouts.public>
+
+  """
+  attr :flash, :map, default: %{}, doc: "the map of flash messages"
+  slot :inner_block, required: true
+
+  def public(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-base-100 flex flex-col">
+      <header class="bg-base-200 border-b border-base-300">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" class="flex items-center gap-2">
+            <div class="btn btn-primary btn-square btn-sm pointer-events-none">
+              <.icon name="hero-building-library" class="size-4" />
+            </div>
+            <span class="text-xl font-bold">Pyllar</span>
+          </a>
+          <a href="/sign-in" class="btn btn-ghost btn-sm">Sign In</a>
+        </div>
+      </header>
+
+      <main class="container mx-auto px-4 py-8 max-w-4xl flex-1">
+        {render_slot(@inner_block)}
+      </main>
+
+      <footer class="footer footer-center p-4 bg-base-200 text-base-content border-t border-base-300">
+        <div class="flex flex-wrap justify-center gap-4 text-sm">
+          <a href="/terms" class="link link-hover">Terms of Service</a>
+          <a href="/privacy" class="link link-hover">Privacy Policy</a>
+        </div>
+        <p class="text-xs text-base-content/60">
+          &copy; {DateTime.utc_now().year} Pyllar. All rights reserved.
+        </p>
+      </footer>
+
+      <.flash_group flash={@flash} />
+    </div>
+    """
+  end
+
+  @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
   See <head> in root.html.heex which applies the theme before page load.
@@ -298,4 +341,10 @@ defmodule CitadelWeb.Layouts do
     </div>
     """
   end
+
+  # Embed all files in layouts/* within this module.
+  # The default root.html.heex file contains the HTML
+  # skeleton of your application, namely HTML headers
+  # and other static content.
+  embed_templates "layouts/*"
 end

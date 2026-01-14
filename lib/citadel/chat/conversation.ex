@@ -29,6 +29,7 @@ defmodule Citadel.Chat.Conversation do
         worker_module_name Citadel.Chat.Message.Workers.NameConversation
         scheduler_module_name Citadel.Chat.Message.Schedulers.NameConversation
         where expr(needs_title)
+        worker_opts unique: [period: :infinity, states: :all], max_attempts: 3
       end
     end
   end
@@ -45,6 +46,13 @@ defmodule Citadel.Chat.Conversation do
       multitenancy :allow_global
       pagination keyset?: true
       filter expr(needs_title)
+    end
+
+    read :by_id_global do
+      multitenancy :allow_global
+      get? true
+      argument :id, :uuid, allow_nil?: false
+      filter expr(id == ^arg(:id))
     end
 
     create :create do

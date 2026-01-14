@@ -4,6 +4,7 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
   use CitadelWeb, :live_view
 
   alias Citadel.Accounts
+  alias Citadel.Integrations
 
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
@@ -12,7 +13,9 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
     {:ok,
      socket
      |> assign(:show_invite_modal, false)
-     |> assign(:show_leave_confirmation, false)}
+     |> assign(:show_leave_confirmation, false)
+     |> assign(:show_github_modal, false)
+     |> assign(:show_disconnect_confirmation, false)}
   end
 
   def handle_params(%{"id" => workspace_id}, _uri, socket) do
@@ -22,19 +25,32 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
     case load_workspace_data(workspace_id, current_user) do
       {:ok, workspace, memberships, invitations} ->
         is_owner = workspace.owner_id == current_user.id
+        github_connection = load_github_connection(workspace_id, current_user)
 
         {:noreply,
          socket
          |> assign(:workspace, workspace)
          |> assign(:memberships, memberships)
          |> assign(:invitations, invitations)
-         |> assign(:is_owner, is_owner)}
+         |> assign(:is_owner, is_owner)
+         |> assign(:github_connection, github_connection)}
 
       {:error, _reason} ->
         {:noreply,
          socket
          |> put_flash(:error, "You do not have access to this workspace")
          |> redirect(to: ~p"/preferences")}
+    end
+  end
+
+  defp load_github_connection(workspace_id, actor) do
+    case Integrations.get_workspace_github_connection(workspace_id,
+           tenant: workspace_id,
+           actor: actor,
+           not_found_error?: false
+         ) do
+      {:ok, connection} -> connection
+      {:error, _} -> nil
     end
   end
 
@@ -186,6 +202,38 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
     end
   end
 
+  def handle_event("show-github-modal", _params, socket) do
+    {:noreply, assign(socket, :show_github_modal, true)}
+  end
+
+  def handle_event("show-disconnect-confirmation", _params, socket) do
+    {:noreply, assign(socket, :show_disconnect_confirmation, true)}
+  end
+
+  def handle_event("cancel-disconnect-github", _params, socket) do
+    {:noreply, assign(socket, :show_disconnect_confirmation, false)}
+  end
+
+  def handle_event("confirm-disconnect-github", _params, socket) do
+    connection = socket.assigns.github_connection
+    actor = socket.assigns.current_user
+
+    case Integrations.delete_github_connection(connection, actor: actor) do
+      :ok ->
+        {:noreply,
+         socket
+         |> assign(:github_connection, nil)
+         |> assign(:show_disconnect_confirmation, false)
+         |> put_flash(:info, "GitHub disconnected successfully")}
+
+      {:error, _error} ->
+        {:noreply,
+         socket
+         |> assign(:show_disconnect_confirmation, false)
+         |> put_flash(:error, "Failed to disconnect GitHub")}
+    end
+  end
+
   def handle_info({:invitation_sent, _invitation}, socket) do
     # Reload invitations
     invitations =
@@ -200,6 +248,18 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
      |> assign(:invitations, invitations)
      |> assign(:show_invite_modal, false)
      |> put_flash(:info, "Invitation sent successfully")}
+  end
+
+  def handle_info(:close_github_modal, socket) do
+    {:noreply, assign(socket, :show_github_modal, false)}
+  end
+
+  def handle_info({:github_connected, connection}, socket) do
+    {:noreply,
+     socket
+     |> assign(:github_connection, connection)
+     |> assign(:show_github_modal, false)
+     |> put_flash(:info, "GitHub connected successfully")}
   end
 
   def render(assigns) do
@@ -276,6 +336,43 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
             </:action>
           </.table>
         </.card>
+
+        <.card class="bg-base-200 border-base-300">
+          <:title>Integrations</:title>
+          <div class="flex items-center justify-between py-2">
+            <div class="flex items-center gap-3">
+              <div class="bg-base-300 rounded-lg p-2">
+                <.icon name="hero-code-bracket" class="h-6 w-6" />
+              </div>
+              <div>
+                <h4 class="font-medium">GitHub</h4>
+                <p class="text-sm text-base-content/70">
+                  <%= if @github_connection do %>
+                    Connected — allows chat agents to inspect your repositories
+                  <% else %>
+                    Not connected
+                  <% end %>
+                </p>
+              </div>
+            </div>
+
+            <%= if @github_connection do %>
+              <.button
+                :if={@is_owner}
+                variant="error"
+                phx-click="show-disconnect-confirmation"
+              >
+                Disconnect
+              </.button>
+              <span :if={!@is_owner} class="badge badge-success">Connected</span>
+            <% else %>
+              <.button :if={@is_owner} variant="primary" phx-click="show-github-modal">
+                Connect
+              </.button>
+              <span :if={!@is_owner} class="badge badge-ghost">Not connected</span>
+            <% end %>
+          </div>
+        </.card>
       </div>
 
       <.live_component
@@ -296,6 +393,26 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
         cancel_label="Cancel"
         on_confirm="confirm-leave-workspace"
         on_cancel="cancel-leave-workspace"
+      />
+
+      <.live_component
+        :if={@show_github_modal}
+        module={CitadelWeb.Components.GitHubConnectionModal}
+        id="github-connection-modal"
+        workspace={@workspace}
+        current_user={@current_user}
+      />
+
+      <.live_component
+        :if={@show_disconnect_confirmation}
+        module={CitadelWeb.Components.ConfirmationModal}
+        id="disconnect-github-modal"
+        title="Disconnect GitHub"
+        message="Are you sure you want to disconnect GitHub? Chat agents will no longer be able to access your repositories."
+        confirm_label="Disconnect"
+        cancel_label="Cancel"
+        on_confirm="confirm-disconnect-github"
+        on_cancel="cancel-disconnect-github"
       />
     </Layouts.app>
     """
