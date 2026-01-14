@@ -301,30 +301,7 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependencies:" <> _task_id},
         socket
       ) do
-    task =
-      Tasks.get_task!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [
-          :task_state,
-          :user,
-          :parent_task,
-          :ancestors,
-          :assignees,
-          :overdue?,
-          :blocked?,
-          :blocking_count,
-          dependencies: [:task_state],
-          dependents: [:task_state]
-        ]
-      )
-
-    task_dependencies =
-      Tasks.list_task_dependencies!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
+    {task, task_dependencies} = reload_task_with_dependencies(socket)
     {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
   end
 
@@ -332,30 +309,7 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependents:" <> _task_id},
         socket
       ) do
-    task =
-      Tasks.get_task!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [
-          :task_state,
-          :user,
-          :parent_task,
-          :ancestors,
-          :assignees,
-          :overdue?,
-          :blocked?,
-          :blocking_count,
-          dependencies: [:task_state],
-          dependents: [:task_state]
-        ]
-      )
-
-    task_dependencies =
-      Tasks.list_task_dependencies!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
+    {task, task_dependencies} = reload_task_with_dependencies(socket)
     {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
   end
 

@@ -6,19 +6,21 @@ defmodule CitadelWeb.Components.TaskDependencies do
   import CitadelWeb.Components.TaskComponents, only: [task_state_icon: 1]
 
   def update(assigns, socket) do
+    dependencies_loaded = not match?(%Ash.NotLoaded{}, assigns.task.dependencies)
+    dependents_loaded = not match?(%Ash.NotLoaded{}, assigns.task.dependents)
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:task_dependencies, fn -> [] end)}
+     |> assign_new(:task_dependencies, fn -> [] end)
+     |> assign(:dependencies_loaded, dependencies_loaded)
+     |> assign(:dependents_loaded, dependents_loaded)}
   end
 
   def render(assigns) do
     ~H"""
     <div class="py-4 border-t border-base-300">
-      <% dependencies_loaded = not match?(%Ash.NotLoaded{}, @task.dependencies)
-      dependents_loaded = not match?(%Ash.NotLoaded{}, @task.dependents) %>
-
-      <%= if dependencies_loaded or dependents_loaded do %>
+      <%= if @dependencies_loaded or @dependents_loaded do %>
         <h2 class="text-sm font-semibold text-base-content/70 mb-3">
           Blocked by
           <%= if @task.blocked? do %>
@@ -27,7 +29,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
         </h2>
 
         <div class="space-y-4">
-          <%= if dependencies_loaded do %>
+          <%= if @dependencies_loaded do %>
             <div class="max-w-lg">
               <%= if @can_edit do %>
                 <form phx-submit="add-dependency" class="flex gap-2 mb-3">
@@ -74,7 +76,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
             </div>
           <% end %>
 
-          <%= if dependents_loaded and not Enum.empty?(@task.dependents) do %>
+          <%= if @dependents_loaded and not Enum.empty?(@task.dependents) do %>
             <div>
               <h2 class="text-sm font-semibold text-base-content/70 mb-3">Blocks</h2>
               <div class="space-y-2">
