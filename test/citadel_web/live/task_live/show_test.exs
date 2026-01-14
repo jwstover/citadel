@@ -669,13 +669,13 @@ defmodule CitadelWeb.TaskLive.ShowTest do
     test "displays dependencies section when task loads", %{conn: conn, task: task} do
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Dependencies"
+      assert html =~ "Blocked by"
     end
 
-    test "displays 'Depends on' section", %{conn: conn, task: task} do
+    test "displays 'Blocks' section for dependents", %{conn: conn, task: task} do
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Depends on"
+      assert html =~ "Blocked by"
     end
 
     test "can add dependency by entering human_id", %{
@@ -810,7 +810,8 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Blocked"
+      assert html =~ "badge badge-warning"
+      assert html =~ ">Blocked</span>"
     end
 
     test "does not display blocked badge when dependencies are complete", %{
@@ -837,7 +838,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      refute html =~ "Blocked"
+      refute html =~ "badge badge-warning"
     end
 
     test "shows completion warning when completing blocked task", %{
