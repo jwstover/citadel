@@ -69,7 +69,9 @@ defmodule Citadel.Repo.Migrations.AddOrganizations do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), primary_key: true, null: false
+          ),
+          primary_key: true,
+          null: false
 
       add :organization_id,
           references(:organizations,
@@ -78,7 +80,9 @@ defmodule Citadel.Repo.Migrations.AddOrganizations do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), primary_key: true, null: false
+          ),
+          primary_key: true,
+          null: false
     end
 
     create unique_index(:organization_memberships, [:user_id, :organization_id],
