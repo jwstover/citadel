@@ -67,19 +67,7 @@ defmodule CitadelWeb.Live.FeatureHelpers do
 
     features =
       Map.new(feature_list, fn feature ->
-        has_feature? =
-          case org_id do
-            nil ->
-              false
-
-            id ->
-              case Plan.org_has_feature?(id, feature) do
-                {:ok, result} -> result
-                _ -> false
-              end
-          end
-
-        {feature, has_feature?}
+        {feature, check_feature_for_org(org_id, feature)}
       end)
 
     assign(socket, :features, features)
@@ -124,17 +112,7 @@ defmodule CitadelWeb.Live.FeatureHelpers do
   @spec has_feature?(Phoenix.LiveView.Socket.t(), atom()) :: boolean()
   def has_feature?(socket, feature) do
     org_id = get_organization_id(socket)
-
-    case org_id do
-      nil ->
-        false
-
-      id ->
-        case Plan.org_has_feature?(id, feature) do
-          {:ok, result} -> result
-          _ -> false
-        end
-    end
+    check_feature_for_org(org_id, feature)
   end
 
   @doc """
@@ -164,6 +142,15 @@ defmodule CitadelWeb.Live.FeatureHelpers do
   end
 
   # Private Functions
+
+  defp check_feature_for_org(nil, _feature), do: false
+
+  defp check_feature_for_org(org_id, feature) do
+    case Plan.org_has_feature?(org_id, feature) do
+      {:ok, result} -> result
+      _ -> false
+    end
+  end
 
   defp get_organization_id(socket) do
     # Try to get org_id from current_scope (workspace)

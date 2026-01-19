@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources2 do
+defmodule Citadel.Repo.Migrations.AddOrganizationsAndBilling do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -8,6 +8,10 @@ defmodule Citadel.Repo.Migrations.MigrateResources2 do
   use Ecto.Migration
 
   def up do
+    alter table(:workspaces) do
+      modify :organization_id, :uuid, null: false
+    end
+
     create table(:processed_webhook_events, primary_key: false) do
       add :id, :uuid, null: false, default: fragment("uuid_generate_v7()"), primary_key: true
       add :stripe_event_id, :text, null: false
@@ -33,5 +37,9 @@ defmodule Citadel.Repo.Migrations.MigrateResources2 do
                    )
 
     drop table(:processed_webhook_events)
+
+    alter table(:workspaces) do
+      modify :organization_id, :uuid, null: true
+    end
   end
 end

@@ -44,50 +44,55 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCredits do
   def reserve(message, context) do
     case resolve_organization_id(message, context) do
       {:ok, organization_id} ->
-        reserved_amount = Credits.max_reservation_credits()
-
-        case Billing.reserve_credits(
-               organization_id,
-               reserved_amount,
-               "AI message reservation",
-               %{reference_type: "message", reference_id: message.id},
-               authorize?: false
-             ) do
-          {:ok, _entry} ->
-            Logger.debug(
-              "Reserved #{reserved_amount} credits for message #{message.id} " <>
-                "from organization #{organization_id}"
-            )
-
-            {:ok, %{organization_id: organization_id, reserved_amount: reserved_amount}}
-
-          {:error, %Ash.Error.Invalid{} = error} ->
-            if has_insufficient_credits_error?(error) do
-              balance = Billing.get_organization_balance!(organization_id, authorize?: false)
-
-              Logger.warning(
-                "Insufficient credits to reserve for message #{message.id}. " <>
-                  "Organization #{organization_id} has #{balance} credits, " <>
-                  "needed #{reserved_amount}."
-              )
-
-              {:error, :insufficient_credits}
-            else
-              Logger.error(
-                "Failed to reserve credits for message #{message.id}: #{inspect(error)}"
-              )
-
-              {:error, :insufficient_credits}
-            end
-
-          {:error, error} ->
-            Logger.error("Failed to reserve credits for message #{message.id}: #{inspect(error)}")
-
-            {:error, :insufficient_credits}
-        end
+        reserve_credits_for_message(message, organization_id)
 
       {:error, :no_organization} = error ->
         error
+    end
+  end
+
+  defp reserve_credits_for_message(message, organization_id) do
+    reserved_amount = Credits.max_reservation_credits()
+
+    case Billing.reserve_credits(
+           organization_id,
+           reserved_amount,
+           "AI message reservation",
+           %{reference_type: "message", reference_id: message.id},
+           authorize?: false
+         ) do
+      {:ok, _entry} ->
+        Logger.debug(
+          "Reserved #{reserved_amount} credits for message #{message.id} " <>
+            "from organization #{organization_id}"
+        )
+
+        {:ok, %{organization_id: organization_id, reserved_amount: reserved_amount}}
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        handle_reservation_error(error, message, organization_id, reserved_amount)
+
+      {:error, error} ->
+        Logger.error("Failed to reserve credits for message #{message.id}: #{inspect(error)}")
+        {:error, :insufficient_credits}
+    end
+  end
+
+  defp handle_reservation_error(error, message, organization_id, reserved_amount) do
+    if has_insufficient_credits_error?(error) do
+      balance = Billing.get_organization_balance!(organization_id, authorize?: false)
+
+      Logger.warning(
+        "Insufficient credits to reserve for message #{message.id}. " <>
+          "Organization #{organization_id} has #{balance} credits, " <>
+          "needed #{reserved_amount}."
+      )
+
+      {:error, :insufficient_credits}
+    else
+      Logger.error("Failed to reserve credits for message #{message.id}: #{inspect(error)}")
+
+      {:error, :insufficient_credits}
     end
   end
 
@@ -116,87 +121,107 @@ defmodule Citadel.Chat.Message.Changes.ConsumeCredits do
     model = Keyword.get(opts, :model)
     actual_cost = Credits.calculate_cost(token_usage, model: model)
 
-    input_tokens = if token_usage, do: token_usage.input || 0, else: 0
-    output_tokens = if token_usage, do: token_usage.output || 0, else: 0
-
-    description =
-      "AI message adjustment (#{input_tokens} input tokens, #{output_tokens} output tokens, " <>
-        "reserved: #{reserved_amount}, actual: #{actual_cost})"
+    token_info = extract_token_info(token_usage)
 
     cond do
       actual_cost == reserved_amount ->
+        log_no_adjustment_needed(message_id, actual_cost, reserved_amount)
+
+      actual_cost > reserved_amount ->
+        handle_overage(organization_id, reserved_amount, actual_cost, message_id, token_info)
+
+      true ->
+        handle_refund(organization_id, reserved_amount, actual_cost, message_id, token_info)
+    end
+  end
+
+  defp extract_token_info(nil), do: %{input: 0, output: 0}
+
+  defp extract_token_info(token_usage) do
+    %{
+      input: token_usage.input || 0,
+      output: token_usage.output || 0
+    }
+  end
+
+  defp log_no_adjustment_needed(message_id, actual_cost, reserved_amount) do
+    Logger.debug(
+      "No adjustment needed for message #{message_id}: " <>
+        "actual cost #{actual_cost} equals reserved #{reserved_amount}"
+    )
+
+    :ok
+  end
+
+  defp handle_overage(organization_id, reserved_amount, actual_cost, message_id, token_info) do
+    overage = actual_cost - reserved_amount
+
+    Logger.warning(
+      "Actual cost #{actual_cost} exceeded reservation #{reserved_amount} " <>
+        "for message #{message_id}. Charging overage of #{overage} credits."
+    )
+
+    description =
+      "AI message overage (#{token_info.input} input tokens, #{token_info.output} output tokens, " <>
+        "reserved: #{reserved_amount}, actual: #{actual_cost}, overage: #{overage})"
+
+    case Citadel.Billing.CreditLedger
+         |> Ash.Changeset.for_create(
+           :deduct_credits,
+           %{
+             organization_id: organization_id,
+             amount: overage,
+             description: description,
+             reference_type: "message",
+             reference_id: message_id
+           }
+         )
+         |> Ash.create(authorize?: false) do
+      {:ok, _entry} ->
         Logger.debug(
-          "No adjustment needed for message #{message_id}: " <>
-            "actual cost #{actual_cost} equals reserved #{reserved_amount}"
+          "Charged overage of #{overage} credits for message #{message_id} " <>
+            "(reserved: #{reserved_amount}, actual: #{actual_cost})"
         )
 
         :ok
 
-      actual_cost > reserved_amount ->
-        overage = actual_cost - reserved_amount
-
-        Logger.warning(
-          "Actual cost #{actual_cost} exceeded reservation #{reserved_amount} " <>
-            "for message #{message_id}. Charging overage of #{overage} credits."
+      {:error, error} ->
+        Logger.error(
+          "Failed to charge overage for message #{message_id}: #{inspect(error)}. " <>
+            "Overage of #{overage} credits absorbed."
         )
 
-        case Citadel.Billing.CreditLedger
-             |> Ash.Changeset.for_create(
-               :deduct_credits,
-               %{
-                 organization_id: organization_id,
-                 amount: overage,
-                 description:
-                   "AI message overage (#{input_tokens} input tokens, #{output_tokens} output tokens, " <>
-                     "reserved: #{reserved_amount}, actual: #{actual_cost}, overage: #{overage})",
-                 reference_type: "message",
-                 reference_id: message_id
-               }
-             )
-             |> Ash.create(authorize?: false) do
-          {:ok, _entry} ->
-            Logger.debug(
-              "Charged overage of #{overage} credits for message #{message_id} " <>
-                "(reserved: #{reserved_amount}, actual: #{actual_cost})"
-            )
+        :ok
+    end
+  end
 
-            :ok
+  defp handle_refund(organization_id, reserved_amount, actual_cost, message_id, token_info) do
+    description =
+      "AI message adjustment (#{token_info.input} input tokens, #{token_info.output} output tokens, " <>
+        "reserved: #{reserved_amount}, actual: #{actual_cost})"
 
-          {:error, error} ->
-            Logger.error(
-              "Failed to charge overage for message #{message_id}: #{inspect(error)}. " <>
-                "Overage of #{overage} credits absorbed."
-            )
+    case Billing.adjust_reservation(
+           organization_id,
+           reserved_amount,
+           actual_cost,
+           description,
+           %{reference_type: "message", reference_id: message_id},
+           authorize?: false
+         ) do
+      {:ok, _entry} ->
+        refunded = reserved_amount - actual_cost
 
-            :ok
-        end
+        Logger.debug(
+          "Adjusted reservation for message #{message_id}: " <>
+            "refunded #{refunded} credits (reserved: #{reserved_amount}, actual: #{actual_cost})"
+        )
 
-      true ->
-        case Billing.adjust_reservation(
-               organization_id,
-               reserved_amount,
-               actual_cost,
-               description,
-               %{reference_type: "message", reference_id: message_id},
-               authorize?: false
-             ) do
-          {:ok, _entry} ->
-            refunded = reserved_amount - actual_cost
+        :ok
 
-            Logger.debug(
-              "Adjusted reservation for message #{message_id}: " <>
-                "refunded #{refunded} credits (reserved: #{reserved_amount}, actual: #{actual_cost})"
-            )
+      {:error, error} ->
+        Logger.error("Failed to adjust reservation for message #{message_id}: #{inspect(error)}")
 
-            :ok
-
-          {:error, error} ->
-            Logger.error(
-              "Failed to adjust reservation for message #{message_id}: #{inspect(error)}"
-            )
-
-            :ok
-        end
+        :ok
     end
   end
 
