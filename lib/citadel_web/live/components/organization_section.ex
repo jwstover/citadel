@@ -168,41 +168,95 @@ defmodule CitadelWeb.Components.OrganizationSection do
 
             <div class="mt-4">
               <%= if @subscription.tier == :free do %>
-                <div class="bg-base-300 rounded-lg p-4">
-                  <h4 class="font-medium mb-2">Upgrade to Pro</h4>
-                  <ul class="text-sm text-base-content/70 mb-4 space-y-1">
-                    <li>- {Plan.monthly_credits(:pro) |> format_number()} credits/month</li>
-                    <li>- Up to {Plan.max_members(:pro)} team members</li>
-                    <li>- Up to {Plan.max_workspaces(:pro)} workspaces</li>
-                  </ul>
+                <div class="bg-base-300 rounded-lg p-6 border border-base-content/10">
+                  <div class="text-center mb-6">
+                    <h4 class="text-xl font-bold mb-2">Upgrade to Pro</h4>
+                    <p class="text-sm text-base-content/70">
+                      Get more credits, team members, and workspaces
+                    </p>
+                  </div>
 
-                  <%!-- Pricing Calculator --%>
+                  <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="text-center p-3 bg-base-200 rounded-lg">
+                      <div class="text-2xl font-bold text-accent">
+                        {Plan.monthly_credits(:pro) |> div(1000)}k
+                      </div>
+                      <div class="text-xs text-base-content/60 uppercase tracking-wide mt-1">
+                        Credits
+                      </div>
+                    </div>
+                    <div class="text-center p-3 bg-base-200 rounded-lg">
+                      <div class="text-2xl font-bold text-accent">{Plan.max_members(:pro)}</div>
+                      <div class="text-xs text-base-content/60 uppercase tracking-wide mt-1">
+                        Members
+                      </div>
+                    </div>
+                    <div class="text-center p-3 bg-base-200 rounded-lg">
+                      <div class="text-2xl font-bold text-accent">
+                        {Plan.max_workspaces(:pro)}
+                      </div>
+                      <div class="text-xs text-base-content/60 uppercase tracking-wide mt-1">
+                        Workspaces
+                      </div>
+                    </div>
+                  </div>
+
+                  <%!-- Pricing Options --%>
                   <%= cond do %>
                     <% length(@memberships) == 1 -> %>
                       <%!-- Single member (owner only) --%>
-                      <div class="flex gap-2 flex-col sm:flex-row">
-                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                      <div class="grid sm:grid-cols-2 gap-3">
+                        <form method="post" action={~p"/billing/checkout"} class="contents">
                           <input
                             type="hidden"
                             name="_csrf_token"
                             value={Phoenix.Controller.get_csrf_token()}
                           />
                           <input type="hidden" name="billing_period" value="monthly" />
-                          <.button type="submit" variant="primary" class="btn-sm w-full">
-                            ${Plan.base_price_cents(:pro, :monthly) |> div(100)}/mo
-                          </.button>
+                          <button
+                            type="submit"
+                            class="border border-base-content/20 rounded-lg p-4 hover:border-base-content/40 transition-colors cursor-pointer text-left w-full"
+                          >
+                            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                              Monthly
+                            </div>
+                            <div class="text-3xl font-bold mb-1">
+                              ${Plan.base_price_cents(:pro, :monthly) |> div(100)}
+                            </div>
+                            <div class="text-xs text-base-content/60 mb-4">per month</div>
+                            <div class="btn btn-ghost btn-sm w-full pointer-events-none">
+                              Choose Monthly
+                            </div>
+                          </button>
                         </form>
-                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+
+                        <form method="post" action={~p"/billing/checkout"} class="contents">
                           <input
                             type="hidden"
                             name="_csrf_token"
                             value={Phoenix.Controller.get_csrf_token()}
                           />
                           <input type="hidden" name="billing_period" value="annual" />
-                          <.button type="submit" variant="ghost" class="btn-sm w-full">
-                            ${Plan.base_price_cents(:pro, :annual) |> div(100)}/yr
-                            <span class="text-xs ml-1">(≈ $16/mo)</span>
-                          </.button>
+                          <button
+                            type="submit"
+                            class="border-2 border-primary rounded-lg p-4 relative bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer text-left w-full"
+                          >
+                            <div class="absolute -top-2 right-4 bg-primary text-primary-content text-xs font-bold px-2 py-0.5 rounded">
+                              SAVE 16%
+                            </div>
+                            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                              Annual
+                            </div>
+                            <div class="text-3xl font-bold mb-1">
+                              ${Plan.base_price_cents(:pro, :annual) |> div(100)}
+                            </div>
+                            <div class="text-xs text-base-content/60 mb-4">
+                              per year (≈ $16/mo)
+                            </div>
+                            <div class="btn btn-primary btn-sm w-full pointer-events-none">
+                              Choose Annual
+                            </div>
+                          </button>
                         </form>
                       </div>
                     <% true -> %>
@@ -219,54 +273,76 @@ defmodule CitadelWeb.Components.OrganizationSection do
                       total_annual = base_annual + additional_members * per_seat_annual
                       monthly_equivalent = div(total_annual, 12) %>
 
-                      <div class="mb-3 text-sm text-base-content/80 space-y-1">
-                        <p class="font-medium">Monthly pricing:</p>
-                        <p class="pl-2">
-                          ${base_monthly} base + ${per_seat_monthly * additional_members} for {additional_members} additional {if additional_members ==
-                                                                                                                                    1,
-                                                                                                                                  do:
-                                                                                                                                    "member",
-                                                                                                                                  else:
-                                                                                                                                    "members"} =
-                          <span class="font-semibold">${total_monthly}/mo</span>
-                        </p>
-                        <p class="font-medium mt-2">Annual pricing:</p>
-                        <p class="pl-2">
-                          ${base_annual} base + ${per_seat_annual * additional_members} for {additional_members} additional {if additional_members ==
-                                                                                                                                  1,
-                                                                                                                                do:
-                                                                                                                                  "member",
-                                                                                                                                else:
-                                                                                                                                  "members"} =
-                          <span class="font-semibold">
-                            ${total_annual}/yr (≈ ${monthly_equivalent}/mo)
-                          </span>
-                        </p>
-                      </div>
-
-                      <div class="flex gap-2 flex-col sm:flex-row">
-                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+                      <div class="grid sm:grid-cols-2 gap-3">
+                        <form method="post" action={~p"/billing/checkout"} class="contents">
                           <input
                             type="hidden"
                             name="_csrf_token"
                             value={Phoenix.Controller.get_csrf_token()}
                           />
                           <input type="hidden" name="billing_period" value="monthly" />
-                          <.button type="submit" variant="primary" class="btn-sm w-full">
-                            ${total_monthly}/mo
-                          </.button>
+                          <button
+                            type="submit"
+                            class="border border-base-content/20 rounded-lg p-4 hover:border-base-content/40 transition-colors cursor-pointer text-left w-full"
+                          >
+                            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                              Monthly
+                            </div>
+                            <div class="text-3xl font-bold mb-1">${total_monthly}</div>
+                            <div class="text-xs text-base-content/60 mb-3">per month</div>
+                            <div class="text-xs text-base-content/60 mb-4 p-2 bg-base-100 rounded">
+                              ${base_monthly} base
+                              <%= if additional_members > 0 do %>
+                                + ${per_seat_monthly * additional_members} for {additional_members} {if additional_members ==
+                                                                                                          1,
+                                                                                                        do:
+                                                                                                          "member",
+                                                                                                        else:
+                                                                                                          "members"}
+                              <% end %>
+                            </div>
+                            <div class="btn btn-ghost btn-sm w-full pointer-events-none">
+                              Choose Monthly
+                            </div>
+                          </button>
                         </form>
-                        <form method="post" action={~p"/billing/checkout"} class="flex-1">
+
+                        <form method="post" action={~p"/billing/checkout"} class="contents">
                           <input
                             type="hidden"
                             name="_csrf_token"
                             value={Phoenix.Controller.get_csrf_token()}
                           />
                           <input type="hidden" name="billing_period" value="annual" />
-                          <.button type="submit" variant="ghost" class="btn-sm w-full">
-                            ${total_annual}/yr
-                            <span class="text-xs ml-1">(≈ ${monthly_equivalent}/mo)</span>
-                          </.button>
+                          <button
+                            type="submit"
+                            class="border-2 border-primary rounded-lg p-4 relative bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer text-left w-full"
+                          >
+                            <div class="absolute -top-2 right-4 bg-primary text-primary-content text-xs font-bold px-2 py-0.5 rounded">
+                              BEST VALUE
+                            </div>
+                            <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">
+                              Annual
+                            </div>
+                            <div class="text-3xl font-bold mb-1">${total_annual}</div>
+                            <div class="text-xs text-base-content/60 mb-3">
+                              per year (≈ ${monthly_equivalent}/mo)
+                            </div>
+                            <div class="text-xs text-base-content/60 mb-4 p-2 bg-base-100 rounded">
+                              ${base_annual} base
+                              <%= if additional_members > 0 do %>
+                                + ${per_seat_annual * additional_members} for {additional_members} {if additional_members ==
+                                                                                                         1,
+                                                                                                       do:
+                                                                                                         "member",
+                                                                                                       else:
+                                                                                                         "members"}
+                              <% end %>
+                            </div>
+                            <div class="btn btn-primary btn-sm w-full pointer-events-none">
+                              Choose Annual
+                            </div>
+                          </button>
                         </form>
                       </div>
                   <% end %>

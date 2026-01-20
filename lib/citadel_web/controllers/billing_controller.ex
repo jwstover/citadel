@@ -86,8 +86,11 @@ defmodule CitadelWeb.BillingController do
 
     if workspace_id do
       case Accounts.get_workspace_by_id(workspace_id, actor: user, load: [:organization]) do
-        {:ok, workspace} -> {:ok, workspace}
-        {:error, _} -> {:error, :workspace_not_found}
+        {:ok, workspace} ->
+          {:ok, workspace}
+
+        {:error, _error} ->
+          {:error, :workspace_not_found}
       end
     else
       {:error, :no_workspace_selected}
@@ -96,8 +99,11 @@ defmodule CitadelWeb.BillingController do
 
   defp get_subscription(organization_id, user) do
     case Billing.get_subscription_by_organization(organization_id, actor: user) do
-      {:ok, subscription} -> {:ok, subscription}
-      {:error, _} -> {:error, :subscription_not_found}
+      {:ok, subscription} ->
+        {:ok, subscription}
+
+      {:error, _error} ->
+        {:error, :subscription_not_found}
     end
   end
 
@@ -106,8 +112,11 @@ defmodule CitadelWeb.BillingController do
            query: [filter: [organization_id: organization_id]],
            actor: user
          ) do
-      {:ok, memberships} -> {:ok, length(memberships)}
-      {:error, _} -> {:error, :failed_to_count_members}
+      {:ok, memberships} ->
+        {:ok, length(memberships)}
+
+      {:error, _error} ->
+        {:error, :failed_to_count_members}
     end
   end
 end

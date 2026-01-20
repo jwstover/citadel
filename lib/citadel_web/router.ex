@@ -19,6 +19,7 @@ defmodule CitadelWeb.Router do
     }
 
     plug :load_from_session
+    plug CitadelWeb.Plugs.EnsureWorkspaceInSession
   end
 
   pipeline :api do
