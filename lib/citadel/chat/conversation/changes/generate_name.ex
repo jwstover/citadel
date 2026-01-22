@@ -19,7 +19,7 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
         Citadel.Chat.Message
         |> Ash.Query.filter(conversation_id == ^conversation.id)
         |> Ash.Query.limit(10)
-        |> Ash.Query.select([:text, :source])
+        |> Ash.Query.select([:id, :text, :source])
         |> Ash.Query.sort(inserted_at: :desc)
         |> Ash.read!(Keyword.put(opts, :authorize?, false))
         |> Enum.reverse()
@@ -27,12 +27,21 @@ defmodule Citadel.Chat.Conversation.Changes.GenerateName do
       prompt = build_prompt(messages)
       actor = context.actor
 
-      case Citadel.AI.send_message(prompt, actor, provider: :openai) do
+      case Citadel.AI.send_message(prompt, actor, tools: false) do
         {:ok, title} ->
           Ash.Changeset.force_change_attribute(changeset, :title, String.trim(title))
 
-        {:error, _type, _message} ->
-          changeset
+        {:error, type, message} ->
+          Ash.Changeset.add_error(
+            changeset,
+            "Failed to generate conversation name: #{type} - #{message}"
+          )
+
+        {:error, reason} ->
+          Ash.Changeset.add_error(
+            changeset,
+            "Failed to generate conversation name: #{inspect(reason)}"
+          )
       end
     end)
   end

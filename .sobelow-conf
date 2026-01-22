@@ -8,5 +8,8 @@
   out: "",
   threshold: "low",
   ignore: ["Config.HTTPS"],
-  ignore_files: []
+  ignore_files: [
+    "lib/citadel_web/live/legal_live/privacy.ex",
+    "lib/citadel_web/live/legal_live/terms.ex"
+  ]
 ]

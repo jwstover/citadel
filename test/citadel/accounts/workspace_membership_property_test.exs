@@ -80,9 +80,8 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        # Add member
-        membership =
-          Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member using helper that handles org membership
+        membership = add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         # Member leaving should always succeed (by owner's action)
         assert :ok = Accounts.remove_workspace_member(membership, actor: owner)
@@ -103,14 +102,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        # Add multiple members
+        # Upgrade to pro tier to allow multiple members
+        org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+        upgrade_to_pro(org)
+
+        # Add multiple members using helper that handles org membership
         members_and_memberships =
           for _ <- 1..member_count do
             member = generate(user())
-
-            membership =
-              Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
-
+            membership = add_user_to_workspace(member.id, workspace.id, actor: owner)
             {member, membership}
           end
 
@@ -137,9 +137,9 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        # First membership should succeed
-        assert {:ok, _membership1} =
-                 Accounts.add_workspace_member(member.id, workspace.id, actor: owner)
+        # First membership should succeed using helper
+        membership = add_user_to_workspace(member.id, workspace.id, actor: owner)
+        assert membership != nil
 
         # Second membership attempt should fail
         assert {:error, %Ash.Error.Invalid{}} =
@@ -162,11 +162,16 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        # Try to add member multiple times
-        results =
-          for _ <- 1..attempt_count do
+        # First attempt using helper (succeeds)
+        first_result = {:ok, add_user_to_workspace(member.id, workspace.id, actor: owner)}
+
+        # Additional attempts directly (should all fail since user is already a member)
+        additional_results =
+          for _ <- 2..attempt_count do
             Accounts.add_workspace_member(member.id, workspace.id, actor: owner)
           end
+
+        results = [first_result | additional_results]
 
         # First should succeed, rest should fail
         assert Enum.count(results, &match?({:ok, _}, &1)) == 1
@@ -191,8 +196,8 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         member = generate(user())
         workspace = generate(workspace([], actor: owner))
 
-        # Add member once
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+        # Add member once using helper
+        add_user_to_workspace(member.id, workspace.id, actor: owner)
 
         # Attempting to add again should fail due to identity constraint
         assert {:error, %Ash.Error.Invalid{}} =
@@ -210,8 +215,8 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
             owner = generate(user())
             workspace = generate(workspace([], actor: owner))
 
-            membership =
-              Accounts.add_workspace_member!(user.id, workspace.id, actor: owner)
+            # Use helper to add user to workspace (handles org membership)
+            membership = add_user_to_workspace(user.id, workspace.id, actor: owner)
 
             {workspace, membership}
           end
@@ -247,10 +252,14 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
         workspace = generate(workspace([], actor: owner))
 
         # Perform multiple add/remove cycles
-        for _ <- 1..cycle_count do
-          # Add member
+        for i <- 1..cycle_count do
+          # Add member - first time use helper, subsequent times org membership already exists
           membership =
-            Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+            if i == 1 do
+              add_user_to_workspace(member.id, workspace.id, actor: owner)
+            else
+              Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+            end
 
           # Verify member is added
           memberships =

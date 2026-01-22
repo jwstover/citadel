@@ -22,6 +22,13 @@ Citadel uses workspace-based multitenancy to enable team collaboration:
 - Automatic conversation naming based on content
 - Streaming responses for immediate feedback
 
+### Subscription & Billing
+- **Freemium Model**: Free tier with 1,000 AI credits/month, Pro tier with 10,000 credits
+- **Stripe Integration**: Seamless payment processing with monthly/annual billing
+- **Feature Gating**: Control access to premium features by subscription tier
+- **Credit System**: Token-based metering that scales with AI model costs
+- **Organization-Based**: Billing and features are scoped to organizations, shared across workspaces
+
 ## Getting Started
 
 ### Prerequisites
@@ -60,6 +67,11 @@ GOOGLE_REDIRECT_URI=http://localhost:4000/auth/google/callback
 # AI Providers (optional - at least one required for AI features)
 ANTHROPIC_API_KEY=your_anthropic_key
 OPENAI_API_KEY=your_openai_key
+
+# Stripe (for subscription billing)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_webhook_secret
 ```
 
 ## Workspace Invitation Flow
@@ -120,9 +132,143 @@ Citadel is built with:
 
 ### Domain Structure
 
-- **Citadel.Accounts** - Users, workspaces, memberships, and invitations
+- **Citadel.Accounts** - Users, organizations, workspaces, memberships, and invitations
 - **Citadel.Tasks** - Task management with workspace scoping
 - **Citadel.Chat** - AI-powered conversations and messages
+- **Citadel.Billing** - Subscriptions, credits, and feature gating
+
+### Billing & Feature Gating
+
+Citadel implements a comprehensive subscription billing system with feature gating:
+
+#### Subscription Tiers
+
+| Tier | Price | Credits/Month | Workspaces | Members | Features |
+|------|-------|---------------|------------|---------|----------|
+| **Free** | $0 | 1,000 | 1 | 1 | Basic AI |
+| **Pro (Monthly)** | $19/mo + $5/member | 10,000 | 5 | 5 | All features |
+| **Pro (Annual)** | $190/yr + $50/member/yr | 10,000 | 5 | 5 | All features |
+
+#### Feature Catalog
+
+Features are organized into categories:
+
+**AI Features:**
+- `:basic_ai` - Standard AI models (Free + Pro)
+- `:advanced_ai_models` - Claude Opus, premium models (Pro only)
+- `:byok` - Bring Your Own Key for unlimited AI (Pro only)
+
+**Collaboration:**
+- `:multiple_workspaces` - Up to 5 workspaces (Pro only)
+- `:team_collaboration` - Invite team members (Pro only)
+
+**Data:**
+- `:data_export` - Export tasks/conversations (Pro only)
+- `:bulk_import` - Import from external tools (Pro only)
+
+**API & Integrations:**
+- `:api_access` - REST API access (Pro only)
+- `:webhooks` - Event webhooks (Pro only)
+
+**Customization & Support:**
+- `:custom_branding` - Custom themes (Pro only)
+- `:priority_support` - Priority support channel (Pro only)
+
+#### Using Feature Gates
+
+**In Ash Policies:**
+```elixir
+# Gate features in resource policies
+policies do
+  policy action(:export) do
+    authorize_if HasFeature, feature: :data_export
+  end
+end
+```
+
+**In LiveViews:**
+```elixir
+# Check features in LiveView mount
+def mount(_params, _session, socket) do
+  socket = assign_feature_checks(socket, [:data_export, :api_access])
+  {:ok, socket}
+end
+
+# Use in templates
+<.button :if={@features.data_export} phx-click="export">
+  Export Data
+</.button>
+```
+
+**Direct Queries:**
+```elixir
+# Check if a tier has a feature
+Plan.tier_has_feature?(:pro, :data_export) #=> true
+
+# Check if an organization has a feature
+Plan.org_has_feature?(org_id, :api_access) #=> {:ok, true}
+
+# Get all features for a tier
+Plan.features_for_tier(:pro)
+#=> [:basic_ai, :advanced_ai_models, :data_export, ...]
+```
+
+#### Adding New Features
+
+To add a new feature to the system:
+
+1. **Define the feature** in `lib/citadel/billing/features.ex`:
+```elixir
+new_feature: %{
+  name: "Feature Name",
+  description: "What this feature does",
+  category: :data,  # or :ai, :collaboration, :api, etc.
+  type: :binary
+}
+```
+
+2. **Add to tier(s)** in `lib/citadel/billing/plan.ex`:
+```elixir
+pro: %{
+  # ... other config ...
+  features: MapSet.new([
+    # ... existing features ...
+    :new_feature
+  ])
+}
+```
+
+3. **Gate the feature** using the `HasFeature` policy check:
+```elixir
+policy action(:use_new_feature) do
+  authorize_if HasFeature, feature: :new_feature
+end
+```
+
+4. **Use in UI** with feature helpers in LiveViews
+
+#### Credit System
+
+Credits scale with AI model costs:
+
+| Model | Input Credits/1K tokens | Output Credits/1K tokens |
+|-------|------------------------|--------------------------|
+| Haiku 4.5 | 1 | 5 |
+| Sonnet 4.5 | 3 | 15 |
+| Opus 4.5 | 5 | 25 |
+
+**Formula:** `credits = ceil((input_tokens / 1000 * input_rate) + (output_tokens / 1000 * output_rate))`
+
+**Example:** A typical message with 2,500 input and 400 output tokens costs ~14 credits with Sonnet 4.5
+
+#### Key Modules
+
+- **`Citadel.Billing.Features`** - Feature catalog with metadata
+- **`Citadel.Billing.Plan`** - Tier configuration and feature queries
+- **`Citadel.Billing.Checks.HasFeature`** - Generic policy check for feature gating
+- **`CitadelWeb.Live.FeatureHelpers`** - LiveView helpers for feature checks
+- **`Citadel.Billing.Subscription`** - Subscription management per organization
+- **`Citadel.Billing.CreditLedger`** - Credit transaction tracking
 
 ## License
 

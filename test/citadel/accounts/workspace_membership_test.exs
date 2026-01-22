@@ -5,14 +5,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
 
   describe "add_workspace_member/3" do
     test "creates a membership when workspace owner invites a user" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first (required)
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       assert membership =
                Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
@@ -22,14 +23,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "raises error when duplicate membership is created" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       # Create first membership
       Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
@@ -40,33 +42,37 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
       end
     end
 
-    test "raises error when non-owner tries to add a member" do
-      owner = create_user()
-      non_owner = create_user()
-      new_member = create_user()
+    test "raises error when user is not an org member" do
+      owner = generate(user())
+      non_member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
 
-      # Non-owner should not be able to add members
-      assert_raise Ash.Error.Forbidden, fn ->
-        Accounts.add_workspace_member!(new_member.id, workspace.id, actor: non_owner)
+      # User who is not an org member should not be able to be added
+      assert_raise Ash.Error.Invalid, fn ->
+        Accounts.add_workspace_member!(non_member.id, workspace.id, actor: owner)
       end
     end
 
     test "workspace member can invite other users" do
-      owner = create_user()
-      member = create_user()
-      new_member = create_user()
+      owner = generate(user())
+      member = generate(user())
+      new_member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+      org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+
+      # Upgrade to pro to allow multiple members
+      upgrade_to_pro(org)
+
+      # Add members to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace.organization_id, new_member.id, :member,
+        authorize?: false
+      )
 
       # Owner adds first member
       Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
@@ -80,14 +86,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "raises error when actor is missing" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       # Should raise error without actor
       assert_raise Ash.Error.Forbidden, fn ->
@@ -98,20 +105,21 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
 
   describe "list_workspace_members/1" do
     test "user can list their own memberships" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace1 =
-        Accounts.create_workspace!(
-          "Workspace 1 #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      # Create workspaces in separate orgs for owner
+      workspace1 = generate(workspace([], actor: owner))
+      workspace2 = generate(workspace([], actor: owner))
 
-      workspace2 =
-        Accounts.create_workspace!(
-          "Workspace 2 #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      # Add member to both organizations
+      Accounts.add_organization_member(workspace1.organization_id, member.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace2.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       membership1 = Accounts.add_workspace_member!(member.id, workspace1.id, actor: owner)
       membership2 = Accounts.add_workspace_member!(member.id, workspace2.id, actor: owner)
@@ -124,15 +132,24 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "workspace members can see all memberships in their workspace" do
-      owner = create_user()
-      member1 = create_user()
-      member2 = create_user()
+      owner = generate(user())
+      member1 = generate(user())
+      member2 = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Upgrade to pro to allow multiple members
+      org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
+      # Add members to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member1.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace.organization_id, member2.id, :member,
+        authorize?: false
+      )
 
       membership1 = Accounts.add_workspace_member!(member1.id, workspace.id, actor: owner)
       membership2 = Accounts.add_workspace_member!(member2.id, workspace.id, actor: owner)
@@ -147,21 +164,22 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "returns empty list when user has no memberships" do
-      user = create_user()
+      user = generate(user())
 
       memberships = Accounts.list_workspace_members!(actor: user)
       assert memberships == []
     end
 
     test "can load workspace and user relationships" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       _membership = Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
@@ -180,14 +198,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
 
   describe "remove_workspace_member/2" do
     test "workspace owner can remove a member" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       membership = Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
@@ -201,15 +220,24 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "raises error when non-owner tries to remove a member" do
-      owner = create_user()
-      member1 = create_user()
-      member2 = create_user()
+      owner = generate(user())
+      member1 = generate(user())
+      member2 = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Upgrade to pro to allow multiple members
+      org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
+      # Add members to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member1.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace.organization_id, member2.id, :member,
+        authorize?: false
+      )
 
       membership1 = Accounts.add_workspace_member!(member1.id, workspace.id, actor: owner)
       _membership2 = Accounts.add_workspace_member!(member2.id, workspace.id, actor: owner)
@@ -221,14 +249,15 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "member can leave workspace by removing their own membership" do
-      owner = create_user()
-      member = create_user()
+      owner = generate(user())
+      member = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Add member to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member.id, :member,
+        authorize?: false
+      )
 
       membership = Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
 
@@ -241,13 +270,9 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "raises error when workspace owner tries to leave their own workspace" do
-      owner = create_user()
+      owner = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
 
       # Get the owner's automatically created membership
       [owner_membership] =
@@ -265,15 +290,24 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
 
   describe "workspace relationships" do
     test "can load memberships from workspace" do
-      owner = create_user()
-      member1 = create_user()
-      member2 = create_user()
+      owner = generate(user())
+      member1 = generate(user())
+      member2 = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Upgrade to pro to allow multiple members
+      org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
+      # Add members to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member1.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace.organization_id, member2.id, :member,
+        authorize?: false
+      )
 
       membership1 = Accounts.add_workspace_member!(member1.id, workspace.id, actor: owner)
       membership2 = Accounts.add_workspace_member!(member2.id, workspace.id, actor: owner)
@@ -287,15 +321,24 @@ defmodule Citadel.Accounts.WorkspaceMembershipTest do
     end
 
     test "can load members from workspace through many_to_many" do
-      owner = create_user()
-      member1 = create_user()
-      member2 = create_user()
+      owner = generate(user())
+      member1 = generate(user())
+      member2 = generate(user())
 
-      workspace =
-        Accounts.create_workspace!(
-          "Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      workspace = generate(workspace([], actor: owner))
+
+      # Upgrade to pro to allow multiple members
+      org = Accounts.get_organization_by_id!(workspace.organization_id, authorize?: false)
+      upgrade_to_pro(org)
+
+      # Add members to the organization first
+      Accounts.add_organization_member(workspace.organization_id, member1.id, :member,
+        authorize?: false
+      )
+
+      Accounts.add_organization_member(workspace.organization_id, member2.id, :member,
+        authorize?: false
+      )
 
       _membership1 = Accounts.add_workspace_member!(member1.id, workspace.id, actor: owner)
       _membership2 = Accounts.add_workspace_member!(member2.id, workspace.id, actor: owner)

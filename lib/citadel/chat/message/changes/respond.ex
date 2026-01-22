@@ -3,28 +3,174 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   Generates AI responses to user messages using the configured AI provider.
 
   This change handles streaming responses, tool calling, and conversation
-  history management for chat interactions.
+  history management for chat interactions. When a workspace has a GitHub
+  connection configured, GitHub MCP tools are automatically included.
   """
   use Ash.Resource.Change
   require Ash.Query
+  require Logger
 
+  alias Citadel.Chat.Message.Changes.ConsumeCredits
+  alias Citadel.MCP.ClientManager
   alias LangChain.Chains.LLMChain
   alias LangChain.Message.ToolCall
   alias LangChain.Message.ToolResult
+  alias LangChain.TokenUsage
 
   @impl true
   def change(changeset, _opts, context) do
     Ash.Changeset.before_transaction(changeset, fn changeset ->
       message = changeset.data
-      messages = fetch_conversation_messages(message, context)
-      new_message_id = Ash.UUID.generate()
 
-      messages
-      |> setup_llm_chain(context, message, new_message_id)
-      |> LLMChain.run(mode: :while_needs_response)
+      try do
+        case run_response_generation(message, context) do
+          :ok -> changeset
+          :blocked -> changeset
+          :skipped -> changeset
+          :error -> Ash.Changeset.add_error(changeset, "AI response generation failed")
+        end
+      rescue
+        e ->
+          Logger.error("""
+          AI response generation failed for message #{message.id}:
+          #{Exception.format(:error, e, __STACKTRACE__)}
+          """)
 
-      changeset
+          reraise e, __STACKTRACE__
+      catch
+        kind, reason ->
+          Logger.error("""
+          AI response generation failed for message #{message.id}:
+          #{inspect(kind)}: #{inspect(reason)}
+          """)
+
+          :erlang.raise(kind, reason, __STACKTRACE__)
+      end
     end)
+  end
+
+  defp run_response_generation(message, context) do
+    case ConsumeCredits.reserve(message, context) do
+      {:ok, reservation} ->
+        run_with_credit_tracking(message, context, reservation)
+
+      {:error, :insufficient_credits} ->
+        broadcast_error(message.conversation_id, "insufficient_credits")
+        :blocked
+
+      {:error, :no_organization} ->
+        run_without_credit_tracking(message, context)
+    end
+  end
+
+  defp run_with_credit_tracking(message, context, reservation) do
+    messages = fetch_conversation_messages(message, context)
+    new_message_id = Ash.UUIDv7.generate()
+    workspace_id = get_workspace_id(message, context)
+    github_tools = get_github_tools(workspace_id)
+
+    case setup_llm_chain(messages, context, message, new_message_id, github_tools) do
+      {:ok, chain} ->
+        case LLMChain.run(chain, mode: :while_needs_response) do
+          {:ok, updated_chain} ->
+            token_usage = TokenUsage.get(updated_chain.last_message)
+            ConsumeCredits.adjust(reservation, token_usage, message.id)
+            :ok
+
+          {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
+            ConsumeCredits.refund(reservation, message.id)
+            :error
+
+          {:error, %LLMChain{} = _chain} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
+            ConsumeCredits.refund(reservation, message.id)
+            :error
+
+          other ->
+            Logger.error(
+              "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
+            )
+
+            ConsumeCredits.refund(reservation, message.id)
+            :error
+        end
+
+      {:error, reason} ->
+        Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
+        ConsumeCredits.refund(reservation, message.id)
+        :skipped
+    end
+  end
+
+  defp run_without_credit_tracking(message, context) do
+    messages = fetch_conversation_messages(message, context)
+    new_message_id = Ash.UUIDv7.generate()
+    workspace_id = get_workspace_id(message, context)
+    github_tools = get_github_tools(workspace_id)
+
+    case setup_llm_chain(messages, context, message, new_message_id, github_tools) do
+      {:ok, chain} ->
+        case LLMChain.run(chain, mode: :while_needs_response) do
+          {:ok, _updated_chain} ->
+            :ok
+
+          {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
+            :error
+
+          {:error, %LLMChain{} = _chain} ->
+            Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
+            :error
+
+          other ->
+            Logger.error(
+              "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
+            )
+
+            :error
+        end
+
+      {:error, reason} ->
+        Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
+        :skipped
+    end
+  end
+
+  defp get_workspace_id(message, context) do
+    case Ash.Context.to_opts(context)[:tenant] do
+      nil ->
+        conversation =
+          Citadel.Chat.Conversation
+          |> Ash.Query.filter(id == ^message.conversation_id)
+          |> Ash.Query.select([:workspace_id])
+          |> Ash.read_one!(authorize?: false)
+
+        conversation && conversation.workspace_id
+
+      tenant_id ->
+        tenant_id
+    end
+  end
+
+  defp get_github_tools(nil), do: []
+
+  defp get_github_tools(workspace_id) do
+    case ClientManager.get_tools(workspace_id) do
+      {:ok, tools} ->
+        Logger.debug("Loaded #{length(tools)} GitHub MCP tools for workspace #{workspace_id}")
+        tools
+
+      {:error, :no_connection} ->
+        []
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to load GitHub tools for workspace #{workspace_id}: #{inspect(reason)}"
+        )
+
+        []
+    end
   end
 
   # Message fetching
@@ -39,36 +185,73 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   # Chain setup
-  defp setup_llm_chain(messages, context, message, new_message_id) do
-    system_prompt = build_system_prompt()
-    message_chain = message_chain(messages)
+  defp setup_llm_chain(messages, context, message, new_message_id, github_tools) do
+    case create_configured_chain(context) do
+      {:ok, chain} ->
+        has_github_tools = github_tools != []
+        system_prompt = build_system_prompt(has_github_tools)
+        message_chain = message_chain(messages)
 
-    {:ok, chain} = create_configured_chain(context)
+        configured_chain =
+          chain
+          |> LLMChain.add_message(system_prompt)
+          |> LLMChain.add_messages(message_chain)
+          |> maybe_add_github_tools(github_tools)
+          |> add_callbacks(message, new_message_id, context)
 
-    chain
-    |> LLMChain.add_message(system_prompt)
-    |> LLMChain.add_messages(message_chain)
-    |> add_callbacks(message, new_message_id, context)
+        {:ok, configured_chain}
+
+      {:error, :provider_not_configured, reason} ->
+        {:error, {:provider_not_configured, reason}}
+
+      {:error, _type, reason} ->
+        {:error, {:chain_creation_failed, reason}}
+    end
   end
 
-  defp build_system_prompt do
-    LangChain.Message.new_system!("""
+  defp maybe_add_github_tools(chain, []), do: chain
+
+  defp maybe_add_github_tools(chain, github_tools) do
+    LLMChain.add_tools(chain, github_tools)
+  end
+
+  defp build_system_prompt(has_github_tools) do
+    base_prompt = """
     You are a helpful chat bot.
     Your job is to use the tools at your disposal to assist the user.
-    """)
+    """
+
+    if has_github_tools do
+      LangChain.Message.new_system!(
+        base_prompt <>
+          """
+
+          You have access to GitHub tools that allow you to interact with the user's connected repositories:
+          - Search code across repositories
+          - Read file contents from repositories
+          - View commit history
+          - Search for repositories
+          - And more
+
+          Use these tools when the user asks about their codebase, wants to find code, or needs help with their repositories.
+          """
+      )
+    else
+      LangChain.Message.new_system!(base_prompt)
+    end
   end
 
   defp create_configured_chain(context) do
+    context_opts = Ash.Context.to_opts(context)
+
     Citadel.AI.create_chain(context.actor,
       stream: true,
       setup_ash_ai: true,
       ash_ai_opts: [
-        otp_app: :citadel
-        # add the names of tools you want available in your conversation here.
-        # i.e tools: [:list_tasks, :create_task]
-        # tools: []
+        otp_app: :citadel,
+        tenant: context_opts[:tenant]
       ],
-      custom_context: Map.new(Ash.Context.to_opts(context))
+      custom_context: Map.new(context_opts)
     )
   end
 
@@ -80,20 +263,72 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   # Callback handlers
-  defp handle_llm_delta(_model, data, message_id, message, context) do
-    if has_content?(data) do
-      upsert_message_response(message_id, message, data.content, %{}, context)
+  defp handle_llm_delta(_model, deltas, message_id, message, _context) when is_list(deltas) do
+    content = extract_delta_content(deltas)
+
+    if content && content != "" do
+      broadcast_stream_delta(message.conversation_id, message_id, content)
     end
   end
 
+  defp handle_llm_delta(_model, data, message_id, message, _context) do
+    if has_content?(data) do
+      broadcast_stream_delta(message.conversation_id, message_id, extract_content(data.content))
+    end
+  end
+
+  defp broadcast_stream_delta(conversation_id, message_id, content) do
+    CitadelWeb.Endpoint.broadcast(
+      "chat:stream:#{conversation_id}",
+      "delta",
+      %{message_id: message_id, content: content}
+    )
+  end
+
+  defp broadcast_message_complete(conversation_id, message_id) do
+    CitadelWeb.Endpoint.broadcast(
+      "chat:stream:#{conversation_id}",
+      "complete",
+      %{message_id: message_id}
+    )
+  end
+
+  defp broadcast_error(conversation_id, error_type) do
+    CitadelWeb.Endpoint.broadcast(
+      "chat:stream:#{conversation_id}",
+      "error",
+      %{type: error_type, message: error_message(error_type)}
+    )
+  end
+
+  defp error_message("insufficient_credits") do
+    "You've run out of credits. Please upgrade your plan to continue using AI features."
+  end
+
+  defp error_message(_), do: "An error occurred. Please try again."
+
+  defp extract_delta_content(deltas) do
+    deltas
+    |> Enum.map(fn delta -> extract_content(delta.content) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("")
+  end
+
+  defp extract_content(%LangChain.Message.ContentPart{type: :text, content: content}), do: content
+  defp extract_content(content) when is_binary(content), do: content
+  defp extract_content(_), do: nil
+
   defp handle_message_processed(_chain, data, message_id, message, context) do
     if should_persist_message?(data) do
-      upsert_message_response(
+      content = extract_message_content(data.content)
+
+      broadcast_message_complete(message.conversation_id, message_id)
+
+      create_message_response(
         message_id,
         message,
-        data.content || "",
+        content || "",
         %{
-          complete: true,
           tool_calls: transform_tool_calls(data.tool_calls),
           tool_results: transform_tool_results(data.tool_results)
         },
@@ -102,8 +337,30 @@ defmodule Citadel.Chat.Message.Changes.Respond do
     end
   end
 
+  defp extract_message_content(nil), do: nil
+  defp extract_message_content(content) when is_binary(content), do: content
+
+  defp extract_message_content(content) when is_list(content) do
+    content
+    |> Enum.map(&extract_content_part/1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("")
+  end
+
+  defp extract_message_content(%LangChain.Message.ContentPart{} = part) do
+    extract_content_part(part)
+  end
+
+  defp extract_message_content(_), do: nil
+
+  defp extract_content_part(%LangChain.Message.ContentPart{type: :text, content: content}),
+    do: content
+
+  defp extract_content_part(%{"type" => "text", "text" => text}), do: text
+  defp extract_content_part(_), do: nil
+
   # Message persistence
-  defp upsert_message_response(id, message, text, additional_attrs, context) do
+  defp create_message_response(id, message, text, additional_attrs, context) do
     base_attrs = %{
       id: id,
       response_to_id: message.id,
@@ -115,7 +372,7 @@ defmodule Citadel.Chat.Message.Changes.Respond do
 
     Citadel.Chat.Message
     |> Ash.Changeset.for_create(
-      :upsert_response,
+      :create_response,
       Map.merge(base_attrs, additional_attrs),
       Keyword.merge([actor: %AshAi{}], context_opts)
     )
@@ -123,7 +380,12 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   # Condition helpers
-  defp has_content?(data), do: data.content && data.content != ""
+  defp has_content?(%{content: content}) do
+    extracted = extract_message_content(content)
+    extracted && extracted != ""
+  end
+
+  defp has_content?(_), do: false
 
   defp should_persist_message?(data) do
     has_tool_calls?(data) || has_tool_results?(data) || has_content?(data)
@@ -153,7 +415,8 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   defp extract_tool_result_fields(tool_result) do
-    Map.take(tool_result, [
+    tool_result
+    |> Map.take([
       :type,
       :tool_call_id,
       :name,
@@ -162,7 +425,20 @@ defmodule Citadel.Chat.Message.Changes.Respond do
       :is_error,
       :options
     ])
+    |> Map.update(:content, nil, &normalize_tool_result_content/1)
   end
+
+  defp normalize_tool_result_content(content) when is_list(content) do
+    Enum.map(content, &normalize_content_part/1)
+  end
+
+  defp normalize_tool_result_content(content), do: content
+
+  defp normalize_content_part(%LangChain.Message.ContentPart{} = part) do
+    %{type: part.type, content: part.content}
+  end
+
+  defp normalize_content_part(other), do: other
 
   # Message chain conversion
   defp message_chain(messages) do
