@@ -66,10 +66,11 @@ defmodule Citadel.Billing.Stripe do
     - `seat_count` - Number of seats to include
     - `success_url` - URL to redirect to after successful payment
     - `cancel_url` - URL to redirect to if payment is cancelled
+    - `customer_email` - Optional email to pre-fill in checkout form
 
   ## Examples
 
-      iex> create_checkout_session(subscription, :pro, :monthly, 3, "https://...", "https://...")
+      iex> create_checkout_session(subscription, :pro, :monthly, 3, "https://...", "https://...", "user@example.com")
       {:ok, "https://checkout.stripe.com/..."}
   """
   @spec create_checkout_session(
@@ -78,7 +79,8 @@ defmodule Citadel.Billing.Stripe do
           billing_period(),
           integer(),
           String.t(),
-          String.t()
+          String.t(),
+          String.t() | nil
         ) ::
           {:ok, String.t()} | {:error, term()}
   def create_checkout_session(
@@ -87,7 +89,8 @@ defmodule Citadel.Billing.Stripe do
         billing_period,
         seat_count,
         success_url,
-        cancel_url
+        cancel_url,
+        customer_email \\ nil
       ) do
     base_price_id = Plan.stripe_price_id(tier, billing_period)
     seat_price_id = Plan.stripe_seat_price_id(tier, billing_period)
@@ -97,22 +100,24 @@ defmodule Citadel.Billing.Stripe do
     else
       line_items = build_line_items(base_price_id, seat_price_id, seat_count)
 
-      params = %{
-        mode: "subscription",
-        customer: subscription.stripe_customer_id,
-        success_url: success_url,
-        cancel_url: cancel_url,
-        line_items: line_items,
-        subscription_data: %{
+      params =
+        %{
+          mode: "subscription",
+          customer: subscription.stripe_customer_id,
+          success_url: success_url,
+          cancel_url: cancel_url,
+          line_items: line_items,
+          subscription_data: %{
+            metadata: %{
+              organization_id: subscription.organization_id,
+              billing_period: to_string(billing_period)
+            }
+          },
           metadata: %{
-            organization_id: subscription.organization_id,
-            billing_period: to_string(billing_period)
+            organization_id: subscription.organization_id
           }
-        },
-        metadata: %{
-          organization_id: subscription.organization_id
         }
-      }
+        |> maybe_add_customer_email(customer_email)
 
       case Stripe.Checkout.Session.create(params) do
         {:ok, %Stripe.Checkout.Session{url: url}} ->
@@ -140,6 +145,13 @@ defmodule Citadel.Billing.Stripe do
     else
       [base_item]
     end
+  end
+
+  defp maybe_add_customer_email(params, nil), do: params
+  defp maybe_add_customer_email(params, ""), do: params
+
+  defp maybe_add_customer_email(params, email) when is_binary(email) do
+    Map.put(params, :customer_email, email)
   end
 
   @doc """

@@ -23,7 +23,8 @@ defmodule CitadelWeb.BillingController do
              String.to_existing_atom(billing_period),
              seat_count,
              success_url,
-             cancel_url
+             cancel_url,
+             user.email
            ) do
         {:ok, checkout_url} ->
           redirect(conn, external: checkout_url)
