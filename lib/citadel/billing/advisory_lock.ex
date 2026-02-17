@@ -11,13 +11,16 @@ defmodule Citadel.Billing.AdvisoryLock do
 
   alias Ecto.Adapters.SQL
 
-  @lock_namespace 1_234_567_890
+  # Namespace derived from module name to avoid conflicts with other advisory locks.
+  # Using phash2 of atom ensures deterministic value across restarts while being
+  # unique to this module's purpose.
+  @lock_namespace :erlang.phash2({__MODULE__, :credit_operations}, 2_147_483_647)
 
   @doc """
   Acquires a transaction-scoped advisory lock for credit operations on an organization.
 
   The lock uses a two-key approach:
-  - First key: A namespace constant to avoid conflicts with other advisory locks
+  - First key: A namespace derived from this module to avoid conflicts with other advisory locks
   - Second key: A hash of the organization_id
 
   This function blocks until the lock is acquired. The lock is automatically
