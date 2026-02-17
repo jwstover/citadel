@@ -4,14 +4,8 @@ defmodule Citadel.Tasks.TaskRelationshipsTest do
   alias Citadel.Tasks
 
   setup do
-    todo_state =
-      Tasks.create_task_state!(%{name: "Todo", order: 1, is_complete: false}, authorize?: false)
-
-    Tasks.create_task_state!(%{name: "In Progress", order: 2, is_complete: false},
-      authorize?: false
-    )
-
-    Tasks.create_task_state!(%{name: "Complete", order: 3, is_complete: true}, authorize?: false)
+    all_states = Tasks.list_task_states!(authorize?: false)
+    todo_state = Enum.find(all_states, &(&1.is_complete == false))
 
     user = generate(user())
     workspace = generate(workspace([], actor: user))

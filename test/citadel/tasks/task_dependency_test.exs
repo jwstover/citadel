@@ -4,18 +4,12 @@ defmodule Citadel.Tasks.TaskDependencyTest do
   alias Citadel.Tasks
 
   setup do
-    todo_state =
-      Tasks.create_task_state!(%{name: "Todo", order: 1, is_complete: false}, authorize?: false)
+    all_states = Tasks.list_task_states!(authorize?: false)
+    incomplete_states = Enum.filter(all_states, &(&1.is_complete == false))
 
-    in_progress_state =
-      Tasks.create_task_state!(%{name: "In Progress", order: 2, is_complete: false},
-        authorize?: false
-      )
-
-    complete_state =
-      Tasks.create_task_state!(%{name: "Complete", order: 3, is_complete: true},
-        authorize?: false
-      )
+    todo_state = Enum.at(incomplete_states, 0)
+    in_progress_state = Enum.at(incomplete_states, 1) || todo_state
+    complete_state = Enum.find(all_states, &(&1.is_complete == true))
 
     %{
       todo_state: todo_state,

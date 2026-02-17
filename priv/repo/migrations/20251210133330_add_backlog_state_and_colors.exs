@@ -6,8 +6,9 @@ defmodule Citadel.Repo.Migrations.AddBacklogStateAndColors do
   use Ecto.Migration
 
   def up do
-    # Add unique constraint on name for upserts
-    create unique_index(:task_states, [:name], if_not_exists: true)
+    # Add unique constraint on name for upserts (drop first to be idempotent)
+    drop_if_exists unique_index(:task_states, [:name])
+    create unique_index(:task_states, [:name])
 
     # Upsert In Progress state
     execute """
