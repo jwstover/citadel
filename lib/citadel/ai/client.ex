@@ -336,7 +336,8 @@ defmodule Citadel.AI.Client do
 
     config = %{
       api_key: api_key,
-      model: model
+      model: model,
+      tools: Keyword.get(opts, :tools, true)
     }
 
     case provider_module.validate_config(config) do

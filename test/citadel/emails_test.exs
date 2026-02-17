@@ -1,20 +1,15 @@
 defmodule Citadel.EmailsTest do
   use Citadel.DataCase, async: true
 
-  alias Citadel.Accounts
   alias Citadel.Emails
 
   describe "workspace_invitation_email/2" do
     test "composes email with correct recipients and subject" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
-        Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
+        generate(workspace_invitation([workspace_id: workspace.id], actor: owner))
         |> Ash.load!([:workspace, :invited_by], authorize?: false)
 
       accept_url = "https://example.com/invitations/#{invitation.token}"
@@ -28,15 +23,11 @@ defmodule Citadel.EmailsTest do
     end
 
     test "email body contains workspace name and inviter email" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("My Project #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
-        Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
+        generate(workspace_invitation([workspace_id: workspace.id], actor: owner))
         |> Ash.load!([:workspace, :invited_by], authorize?: false)
 
       email =
@@ -49,15 +40,11 @@ defmodule Citadel.EmailsTest do
     end
 
     test "includes expiration date in email body" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
-        Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
+        generate(workspace_invitation([workspace_id: workspace.id], actor: owner))
         |> Ash.load!([:workspace, :invited_by], authorize?: false)
 
       email =
@@ -68,15 +55,11 @@ defmodule Citadel.EmailsTest do
     end
 
     test "includes from address" do
-      owner = create_user()
-
-      workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+      owner = generate(user())
+      workspace = generate(workspace([], actor: owner))
 
       invitation =
-        Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
+        generate(workspace_invitation([workspace_id: workspace.id], actor: owner))
         |> Ash.load!([:workspace, :invited_by], authorize?: false)
 
       email =

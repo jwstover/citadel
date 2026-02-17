@@ -25,9 +25,13 @@ defmodule Citadel.Workers.SendPasswordResetEmailWorker do
       {:ok, user} ->
         send_email(user, token)
 
-      {:error, _} ->
-        Logger.warning("Failed to load user #{user_id}")
+      {:error, %Ash.Error.Invalid{errors: [%Ash.Error.Query.NotFound{} | _]}} ->
+        Logger.warning("User #{user_id} not found for password reset")
         :ok
+
+      {:error, reason} ->
+        Logger.warning("Failed to load user #{user_id}: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 

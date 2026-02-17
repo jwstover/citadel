@@ -16,14 +16,14 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
 
   describe "workspace isolation via conversation" do
     setup do
-      # Create two separate workspaces with different owners
       owner1 = generate(user())
-      workspace1 = generate(workspace([], actor: owner1))
+      org1 = generate(organization([], actor: owner1))
+      workspace1 = generate(workspace([organization_id: org1.id], actor: owner1))
 
       owner2 = generate(user())
-      workspace2 = generate(workspace([], actor: owner2))
+      org2 = generate(organization([], actor: owner2))
+      workspace2 = generate(workspace([organization_id: org2.id], actor: owner2))
 
-      # Create conversations in each workspace
       conv1 =
         generate(
           conversation(
@@ -45,16 +45,17 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
       {:ok,
        workspace1: workspace1,
        owner1: owner1,
+       org1: org1,
        conv1: conv1,
        workspace2: workspace2,
        owner2: owner2,
+       org2: org2,
        conv2: conv2}
     end
 
     test "messages respect workspace boundaries through conversation", context do
       %{conv1: conv1, owner1: owner1, workspace1: workspace1} = context
 
-      # Create message in workspace1's conversation
       message =
         generate(
           message(
@@ -67,7 +68,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      # Owner1 should be able to see their message
       messages = Ash.read!(Citadel.Chat.Message, actor: owner1)
       refute Enum.empty?(messages)
       assert Enum.any?(messages, fn m -> m.id == message.id end)
@@ -76,7 +76,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
     test "cannot access messages from other workspace conversations", context do
       %{conv1: conv1, owner1: owner1, owner2: owner2, workspace1: workspace1} = context
 
-      # Create message in workspace1's conversation
       message =
         generate(
           message(
@@ -89,7 +88,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      # Owner2 should NOT be able to see messages from workspace1
       messages_for_owner2 = Ash.read!(Citadel.Chat.Message, actor: owner2)
       refute Enum.any?(messages_for_owner2, fn m -> m.id == message.id end)
     end
@@ -98,28 +96,22 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
       %{
         workspace1: workspace1,
         owner1: owner1,
+        org1: org1,
         conv1: conv1,
         workspace2: workspace2,
         owner2: owner2,
+        org2: org2,
         conv2: conv2
       } = context
 
-      # Create a user who is a member of both workspaces
+      upgrade_to_pro(org1)
+      upgrade_to_pro(org2)
+
       multi_workspace_user = generate(user())
 
-      Accounts.add_workspace_member!(
-        multi_workspace_user.id,
-        workspace1.id,
-        actor: owner1
-      )
+      add_user_to_workspace(multi_workspace_user.id, workspace1.id, actor: owner1)
+      add_user_to_workspace(multi_workspace_user.id, workspace2.id, actor: owner2)
 
-      Accounts.add_workspace_member!(
-        multi_workspace_user.id,
-        workspace2.id,
-        actor: owner2
-      )
-
-      # Create messages in both workspace conversations
       msg1 =
         generate(
           message(
@@ -144,7 +136,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      # Multi-workspace user should see messages from both
       messages = Ash.read!(Citadel.Chat.Message, actor: multi_workspace_user)
       message_ids = Enum.map(messages, & &1.id)
 
@@ -156,7 +147,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
          context do
       %{conv1: conv1, owner1: owner1, owner2: owner2, workspace1: workspace1} = context
 
-      # Create message in workspace1's conversation
       message =
         generate(
           message(
@@ -169,9 +159,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      # Loading message directly should fail for owner2
-      # Note: This depends on how your read action is configured
-      # Messages inherit authorization through conversation
       messages_for_owner2 = Ash.read!(Citadel.Chat.Message, actor: owner2)
       refute Enum.any?(messages_for_owner2, fn m -> m.id == message.id end)
     end
@@ -180,7 +167,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
          context do
       %{conv1: conv1, owner1: owner1, owner2: owner2, workspace1: workspace1} = context
 
-      # Create multiple messages in workspace1's conversation
       for i <- 1..3 do
         generate(
           message(
@@ -194,7 +180,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
         )
       end
 
-      # Owner1 should see all messages in their conversation
       messages_for_owner1 =
         Citadel.Chat.Message
         |> Ash.Query.filter(conversation_id == ^conv1.id)
@@ -202,7 +187,6 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
 
       assert length(messages_for_owner1) == 3
 
-      # Owner2 should not see any messages from workspace1's conversation
       messages_for_owner2 =
         Citadel.Chat.Message
         |> Ash.Query.filter(conversation_id == ^conv1.id)
@@ -215,7 +199,9 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
   describe "workspace membership changes affect message access" do
     setup do
       owner = generate(user())
-      workspace = generate(workspace([], actor: owner))
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
 
       conversation =
         generate(
@@ -226,20 +212,17 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      {:ok, workspace: workspace, owner: owner, conversation: conversation}
+      {:ok, workspace: workspace, owner: owner, org: org, conversation: conversation}
     end
 
     test "leaving workspace removes access to all messages in workspace conversations",
          context do
       %{workspace: workspace, owner: owner, conversation: conversation} = context
 
-      # Create a member
       member = generate(user())
 
-      membership =
-        Accounts.add_workspace_member!(member.id, workspace.id, actor: owner)
+      membership = add_user_to_workspace(member.id, workspace.id, actor: owner)
 
-      # Create messages in workspace conversation
       msg1 =
         generate(
           message(
@@ -264,16 +247,13 @@ defmodule Citadel.Chat.MessageMultitenancyTest do
           )
         )
 
-      # Member should be able to see both messages
       messages = Ash.read!(Citadel.Chat.Message, actor: member)
       message_ids = Enum.map(messages, & &1.id)
       assert msg1.id in message_ids
       assert msg2.id in message_ids
 
-      # Remove member from workspace
       Accounts.remove_workspace_member!(membership, actor: owner)
 
-      # Member should no longer see any messages from that workspace
       messages_after = Ash.read!(Citadel.Chat.Message, actor: member)
       message_ids_after = Enum.map(messages_after, & &1.id)
       refute msg1.id in message_ids_after

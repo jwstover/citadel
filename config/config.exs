@@ -16,10 +16,30 @@ config :citadel, Oban,
     default: 10,
     chat_responses: [limit: 10],
     conversations: [limit: 10],
-    invitations: [limit: 5]
+    invitations: [limit: 5],
+    billing: [limit: 5]
   ],
   repo: Citadel.Repo,
-  plugins: [{Oban.Plugins.Cron, []}]
+  plugins: [
+    {Oban.Plugins.Cron,
+     crontab: [
+       {"0 0 1 * *", Citadel.Workers.MonthlyCreditResetWorker},
+       {"0 3 * * *", Citadel.Workers.WebhookEventCleanupWorker}
+     ]}
+  ]
+
+# Credit cost configuration for AI usage billing
+# 1 credit ~= $0.001 in AI cost
+config :citadel, Citadel.Billing.Credits,
+  default_cost_per_input_token: 0.003,
+  default_cost_per_output_token: 0.015,
+  models: %{
+    "claude-sonnet-4-20250514" => %{input: 0.003, output: 0.015},
+    "claude-3-5-sonnet-20241022" => %{input: 0.003, output: 0.015},
+    "claude-3-opus-20240229" => %{input: 0.015, output: 0.075},
+    "gpt-4o" => %{input: 0.005, output: 0.015}
+  },
+  minimum_credits_required: 1
 
 config :ash,
   allow_forbidden_field_for_relationships_by_default?: true,
@@ -65,7 +85,15 @@ config :spark,
 config :citadel,
   ecto_repos: [Citadel.Repo],
   generators: [timestamp_type: :utc_datetime],
-  ash_domains: [Citadel.Chat, Citadel.Tasks, Citadel.Accounts]
+  ash_domains: [
+    Citadel.Chat,
+    Citadel.Tasks,
+    Citadel.Accounts,
+    Citadel.Integrations,
+    Citadel.Billing,
+    Citadel.Settings
+  ],
+  feature_flag_adapter: Citadel.Settings.FeatureFlagAdapters.CacheAdapter
 
 # Configures the endpoint
 config :citadel, CitadelWeb.Endpoint,

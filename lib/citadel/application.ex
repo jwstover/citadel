@@ -8,8 +8,11 @@ defmodule Citadel.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      Citadel.Vault,
       CitadelWeb.Telemetry,
       Citadel.Repo,
+      {Registry, keys: :unique, name: Citadel.MCP.ClientRegistry},
+      {DynamicSupervisor, name: Citadel.MCP.ClientSupervisor, strategy: :one_for_one},
       {DNSCluster, query: Application.get_env(:citadel, :dns_cluster_query) || :ignore},
       {Oban,
        AshOban.config(
@@ -17,6 +20,7 @@ defmodule Citadel.Application do
          Application.fetch_env!(:citadel, Oban)
        )},
       {Phoenix.PubSub, name: Citadel.PubSub},
+      Citadel.Settings.FeatureFlagCache,
       # Start a worker by calling: Citadel.Worker.start_link(arg)
       # {Citadel.Worker, arg},
       # Start to serve requests, typically the last entry

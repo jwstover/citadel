@@ -60,13 +60,23 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
   end
 
   defp assign_new_form(socket) do
+    current_user = socket.assigns.current_user
+
+    # Get user's first organization to use for new workspaces
+    organizations = Accounts.list_organizations!(actor: current_user)
+    organization_id = List.first(organizations) && List.first(organizations).id
+
     form =
-      AshPhoenix.Form.for_create(Workspace, :create, actor: socket.assigns.current_user)
+      AshPhoenix.Form.for_create(Workspace, :create,
+        actor: current_user,
+        params: %{"organization_id" => organization_id}
+      )
       |> to_form()
 
     socket
     |> assign(:form, form)
     |> assign(:workspace, nil)
+    |> assign(:organization_id, organization_id)
     |> assign(:page_title, "New Workspace")
   end
 
@@ -119,6 +129,12 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
         <.card class="bg-base-200 border-base-300">
           <:title>{@page_title}</:title>
           <.form for={@form} phx-submit="save" class="space-y-4">
+            <input
+              :if={assigns[:organization_id]}
+              type="hidden"
+              name="form[organization_id]"
+              value={@organization_id}
+            />
             <.input
               field={@form[:name]}
               label="Workspace Name"

@@ -44,20 +44,102 @@ defmodule Citadel.Generator do
   end
 
   @doc """
-  Generates a workspace using changeset_generator.
+  Generates an organization using changeset_generator.
 
   ## Parameters
 
-    * `overrides` - Field values to override (e.g., [name: "Custom Name"])
+    * `overrides` - Field values to override (e.g., [name: "Custom Org"])
     * `generator_opts` - Options passed to changeset_generator (e.g., [actor: owner])
 
   ## Examples
 
       owner = generate(user())
+      organization = generate(organization([], actor: owner))
+      organization = generate(organization([name: "My Org"], actor: owner))
+  """
+  def organization(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Accounts.Organization,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            name: sequence(:organization_name, &"Organization #{&1}")
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates an organization membership.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, user_id: user_id, role: :admin])
+    * `generator_opts` - Options passed to changeset_generator
+
+  ## Examples
+
+      membership = generate(organization_membership(
+        [organization_id: org.id, user_id: user.id, role: :member],
+        authorize?: false
+      ))
+  """
+  def organization_membership(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Accounts.OrganizationMembership,
+      :join,
+      Keyword.merge(
+        [
+          defaults: [
+            role: :member
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates a workspace using changeset_generator.
+
+  If `organization_id` is not provided in overrides, an organization will be
+  automatically created for the actor.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [name: "Custom Name", organization_id: org_id])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: owner])
+
+  ## Examples
+
+      owner = generate(user())
+      # Auto-creates organization for owner:
       workspace = generate(workspace([], actor: owner))
-      workspace = generate(workspace([name: "My Workspace"], actor: owner))
+
+      # Or specify organization explicitly:
+      org = generate(organization([], actor: owner))
+      workspace = generate(workspace([organization_id: org.id], actor: owner))
   """
   def workspace(overrides \\ [], generator_opts \\ []) do
+    overrides =
+      if Keyword.has_key?(overrides, :organization_id) do
+        overrides
+      else
+        actor = Keyword.get(generator_opts, :actor)
+
+        if actor do
+          org = Ash.Generator.generate(organization([], actor: actor))
+          Keyword.put(overrides, :organization_id, org.id)
+        else
+          overrides
+        end
+      end
+
     changeset_generator(
       Citadel.Accounts.Workspace,
       :create,
@@ -76,6 +158,9 @@ defmodule Citadel.Generator do
   @doc """
   Generates a workspace membership.
 
+  Automatically ensures the user is a member of the workspace's organization
+  before creating the workspace membership (required by UserIsOrgMember validation).
+
   ## Parameters
 
     * `overrides` - Field values to override (e.g., [user_id: user_id, workspace_id: workspace_id])
@@ -89,11 +174,43 @@ defmodule Citadel.Generator do
       ))
   """
   def workspace_membership(overrides \\ [], generator_opts \\ []) do
+    user_id = Keyword.get(overrides, :user_id)
+    workspace_id = Keyword.get(overrides, :workspace_id)
+
+    if user_id && workspace_id do
+      ensure_org_membership(user_id, workspace_id)
+    end
+
     changeset_generator(
       Citadel.Accounts.WorkspaceMembership,
       :join,
       Keyword.merge([overrides: overrides], generator_opts)
     )
+  end
+
+  defp ensure_org_membership(user_id, workspace_id) do
+    require Ash.Query
+
+    case Citadel.Accounts.Workspace
+         |> Ash.Query.filter(id == ^workspace_id)
+         |> Ash.Query.select([:organization_id])
+         |> Ash.read_one(authorize?: false) do
+      {:ok, %{organization_id: org_id}} when not is_nil(org_id) ->
+        unless user_is_org_member?(user_id, org_id) do
+          Citadel.Accounts.add_organization_member(org_id, user_id, :member, authorize?: false)
+        end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp user_is_org_member?(user_id, organization_id) do
+    require Ash.Query
+
+    Citadel.Accounts.OrganizationMembership
+    |> Ash.Query.filter(user_id == ^user_id and organization_id == ^organization_id)
+    |> Ash.exists?(authorize?: false)
   end
 
   @doc """
@@ -222,6 +339,110 @@ defmodule Citadel.Generator do
         [
           defaults: [
             text: sequence(:message_text, &"Message #{&1}")
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates or updates a subscription for an organization.
+
+  Since organizations auto-create subscriptions, this generator will update
+  the existing subscription if one exists for the given organization_id,
+  or create a new one if no organization_id is provided.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, tier: :pro])
+    * `generator_opts` - Options passed to the action (e.g., [authorize?: false])
+
+  ## Examples
+
+      subscription = generate(subscription(
+        [organization_id: org.id],
+        authorize?: false
+      ))
+      subscription = generate(subscription(
+        [organization_id: org.id, tier: :pro, billing_period: :monthly],
+        authorize?: false
+      ))
+  """
+  def subscription(overrides \\ [], generator_opts \\ []) do
+    org_id = Keyword.get(overrides, :organization_id)
+
+    if org_id do
+      subscription_for_organization(org_id, overrides, generator_opts)
+    else
+      create_subscription_generator(overrides, generator_opts)
+    end
+  end
+
+  defp subscription_for_organization(org_id, overrides, generator_opts) do
+    require Ash.Query
+
+    case Citadel.Billing.Subscription
+         |> Ash.Query.filter(organization_id == ^org_id)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, nil} ->
+        create_subscription_generator(overrides, generator_opts)
+
+      {:ok, existing} ->
+        update_existing_subscription(existing, overrides, generator_opts)
+    end
+  end
+
+  defp create_subscription_generator(overrides, generator_opts) do
+    changeset_generator(
+      Citadel.Billing.Subscription,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [tier: :free],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  defp update_existing_subscription(existing, overrides, generator_opts) do
+    update_attrs =
+      overrides
+      |> Keyword.delete(:organization_id)
+      |> Map.new()
+
+    updated = Citadel.Billing.update_subscription!(existing, update_attrs, generator_opts)
+    Stream.repeatedly(fn -> updated end)
+  end
+
+  @doc """
+  Generates a credit ledger entry for an organization.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [organization_id: org_id, amount: 500])
+    * `generator_opts` - Options passed to changeset_generator
+
+  ## Examples
+
+      entry = generate(credit_ledger_entry(
+        [organization_id: org.id, amount: 500, transaction_type: :purchase],
+        authorize?: false
+      ))
+  """
+  def credit_ledger_entry(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Billing.CreditLedger,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            amount: 100,
+            description: sequence(:credit_description, &"Credit entry #{&1}"),
+            transaction_type: :purchase
           ],
           overrides: overrides
         ],

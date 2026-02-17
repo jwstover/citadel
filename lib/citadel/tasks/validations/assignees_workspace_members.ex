@@ -11,13 +11,13 @@ defmodule Citadel.Tasks.Validations.AssigneesWorkspaceMembers do
   def init(opts), do: {:ok, opts}
 
   @impl true
-  def validate(changeset, _opts, _context) do
+  def validate(changeset, _opts, context) do
     assignees = Ash.Changeset.get_argument(changeset, :assignees)
 
     if is_nil(assignees) or assignees == [] do
       :ok
     else
-      workspace_id = get_workspace_id(changeset)
+      workspace_id = get_workspace_id(changeset, context)
 
       if is_nil(workspace_id) do
         :ok
@@ -27,12 +27,12 @@ defmodule Citadel.Tasks.Validations.AssigneesWorkspaceMembers do
     end
   end
 
-  defp get_workspace_id(changeset) do
+  defp get_workspace_id(changeset, context) do
     Ash.Changeset.get_attribute(changeset, :workspace_id) ||
-      get_workspace_id_from_parent(changeset)
+      get_workspace_id_from_parent(changeset, context)
   end
 
-  defp get_workspace_id_from_parent(changeset) do
+  defp get_workspace_id_from_parent(changeset, context) do
     case Ash.Changeset.get_attribute(changeset, :parent_task_id) do
       nil ->
         nil
@@ -43,7 +43,7 @@ defmodule Citadel.Tasks.Validations.AssigneesWorkspaceMembers do
         case Citadel.Tasks.Task
              |> Ash.Query.filter(id == ^parent_task_id)
              |> Ash.Query.select([:workspace_id])
-             |> Ash.read_one(authorize?: false) do
+             |> Ash.read_one(authorize?: false, tenant: context.tenant) do
           {:ok, %{workspace_id: workspace_id}} -> workspace_id
           _ -> nil
         end

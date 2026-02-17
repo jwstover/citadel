@@ -1,6 +1,5 @@
 defmodule Citadel.Workers.SendConfirmationEmailWorkerTest do
   use Citadel.DataCase, async: true
-  use Oban.Testing, repo: Citadel.Repo
 
   import Swoosh.TestAssertions
 

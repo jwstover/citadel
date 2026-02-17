@@ -1,6 +1,5 @@
 defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
   use Citadel.DataCase, async: true
-  use Oban.Testing, repo: Citadel.Repo
 
   import Swoosh.TestAssertions
 
@@ -9,12 +8,12 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
 
   describe "perform/1" do
     test "sends invitation email successfully" do
-      owner = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
 
       workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitee_email = unique_user_email()
       invitation = Accounts.create_invitation!(invitee_email, workspace.id, actor: owner)
@@ -28,12 +27,12 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
     end
 
     test "email contains acceptance link with token" do
-      owner = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
 
       workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitation = Accounts.create_invitation!(unique_user_email(), workspace.id, actor: owner)
 
@@ -51,13 +50,13 @@ defmodule Citadel.Workers.SendInvitationEmailWorkerTest do
     end
 
     test "succeeds when invitation already accepted" do
-      owner = create_user()
-      invitee = create_user()
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+      upgrade_to_pro(org)
+      invitee = generate(user())
 
       workspace =
-        Accounts.create_workspace!("Test Workspace #{System.unique_integer([:positive])}",
-          actor: owner
-        )
+        generate(workspace([organization_id: org.id, name: "Test Workspace"], actor: owner))
 
       invitation = Accounts.create_invitation!(invitee.email, workspace.id, actor: owner)
 

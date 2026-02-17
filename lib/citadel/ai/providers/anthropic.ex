@@ -9,6 +9,7 @@ defmodule Citadel.AI.Providers.Anthropic do
   @behaviour Citadel.AI.Provider
 
   alias Citadel.AI.Provider
+  alias Citadel.AI.SchemaNormalizer
   alias LangChain.Chains.LLMChain
   alias LangChain.ChatModels.ChatAnthropic
   alias LangChain.Message
@@ -21,24 +22,27 @@ defmodule Citadel.AI.Providers.Anthropic do
         api_key: config.api_key
       })
 
-    result =
+    chain =
       %{llm: model}
       |> LLMChain.new!()
-      |> AshAi.setup_ash_ai(actor: actor, otp_app: :citadel)
+
+    chain =
+      if config[:tools] == false do
+        chain
+      else
+        AshAi.setup_ash_ai(chain, actor: actor, otp_app: :citadel)
+      end
+
+    result =
+      chain
       |> LLMChain.add_message(Message.new_user!(message))
       |> LLMChain.run()
 
     case result do
       {:ok, chain} ->
-        case chain.last_message do
-          %Message{content: response} when is_binary(response) ->
-            {:ok, response}
+        extract_response(chain.last_message)
 
-          _ ->
-            {:error, :api_error, "No response from AI"}
-        end
-
-      {:error, %LLMChain{}} ->
+      {:error, %LLMChain{} = _chain} ->
         {:error, :api_error,
          "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
 
@@ -84,15 +88,9 @@ defmodule Citadel.AI.Providers.Anthropic do
 
     case result do
       {:ok, chain} ->
-        case chain.last_message do
-          %Message{content: response} when is_binary(response) ->
-            {:ok, response}
+        extract_response(chain.last_message)
 
-          _ ->
-            {:error, :api_error, "No response from AI"}
-        end
-
-      {:error, %LLMChain{}} ->
+      {:error, %LLMChain{} = _chain} ->
         {:error, :api_error,
          "The AI service encountered an error processing your request. This may be due to tool configuration issues."}
 
@@ -163,7 +161,7 @@ defmodule Citadel.AI.Providers.Anthropic do
 
   @impl true
   def default_model do
-    "claude-3-5-sonnet-20241022"
+    "claude-sonnet-4-5"
   end
 
   @impl true
@@ -196,7 +194,9 @@ defmodule Citadel.AI.Providers.Anthropic do
           |> Keyword.get(:ash_ai_opts, [])
           |> Keyword.put(:actor, actor)
 
-        AshAi.setup_ash_ai(chain, ash_ai_opts)
+        chain
+        |> AshAi.setup_ash_ai(ash_ai_opts)
+        |> SchemaNormalizer.normalize_chain()
       else
         chain
       end
@@ -208,6 +208,27 @@ defmodule Citadel.AI.Providers.Anthropic do
   end
 
   # Private helpers
+
+  defp extract_response(%Message{content: response}) when is_binary(response) do
+    {:ok, response}
+  end
+
+  defp extract_response(%Message{content: content_parts}) when is_list(content_parts) do
+    text =
+      content_parts
+      |> Enum.filter(&match?(%{type: :text}, &1))
+      |> Enum.map_join("", & &1.content)
+
+    if text != "" do
+      {:ok, text}
+    else
+      {:error, :api_error, "No text response from AI"}
+    end
+  end
+
+  defp extract_response(_) do
+    {:error, :api_error, "No response from AI"}
+  end
 
   defp extract_api_error_message(%{"error" => %{"type" => type, "message" => message}}, _status) do
     "Anthropic API Error (#{type}): #{message}"

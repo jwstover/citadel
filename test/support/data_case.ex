@@ -58,8 +58,14 @@ defmodule Citadel.DataCase do
       # along with all our custom generator functions
       import Citadel.Generator
 
+      # Import feature flag test helpers for fast, isolated flag testing
+      import Citadel.TestSupport.FeatureFlagHelpers
+
       # Import ExUnitProperties for property-based testing
       use ExUnitProperties
+
+      # Import Oban testing helpers for job assertions
+      use Oban.Testing, repo: Citadel.Repo
     end
   end
 
@@ -72,7 +78,17 @@ defmodule Citadel.DataCase do
   Sets up the sandbox based on the test tags.
   """
   def setup_sandbox(tags) do
-    pid = Sandbox.start_owner!(Citadel.Repo, shared: not tags[:async])
+    # Increase timeout to 60 seconds to prevent timeouts in slower tests
+    # especially property-based tests that generate many records
+    pid = Sandbox.start_owner!(Citadel.Repo, shared: not tags[:async], timeout: 60_000)
+
+    # Allow FeatureFlagCache GenServer to access the sandbox
+    # The GenServer might not be started yet in some test scenarios,
+    # so we check if it's available before granting permissions
+    if Process.whereis(Citadel.Settings.FeatureFlagCache) do
+      Sandbox.allow(Citadel.Repo, pid, Citadel.Settings.FeatureFlagCache)
+    end
+
     on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 
@@ -132,5 +148,74 @@ defmodule Citadel.DataCase do
     else
       Keyword.delete(opts, :workspace)
     end
+  end
+
+  @doc """
+  Upgrades an organization to pro tier for testing.
+
+  This is useful for tests that need to add multiple members to an organization,
+  as free tier only allows 1 member (the owner).
+
+  ## Examples
+
+      organization = create_organization(owner)
+      upgrade_to_pro(organization)
+      # Now can add up to 5 members
+  """
+  def upgrade_to_pro(organization) do
+    generate(
+      subscription([organization_id: organization.id, tier: :pro, billing_period: :monthly],
+        authorize?: false
+      )
+    )
+
+    organization
+  end
+
+  @doc """
+  Adds a user to a workspace, automatically ensuring org membership first.
+
+  Since workspaces require users to be organization members, this helper
+  adds the user to the workspace's organization (if not already a member)
+  before adding them to the workspace.
+
+  ## Options
+
+    * `:actor` - The user performing the action (required)
+    * Other options are passed through to `add_workspace_member!`
+
+  ## Examples
+
+      add_user_to_workspace(other_user.id, workspace.id, actor: owner)
+  """
+  def add_user_to_workspace(user_id, workspace_id, opts \\ []) do
+    require Ash.Query
+
+    workspace =
+      Citadel.Accounts.Workspace
+      |> Ash.Query.filter(id == ^workspace_id)
+      |> Ash.Query.select([:organization_id])
+      |> Ash.read_one!(authorize?: false)
+
+    if workspace.organization_id do
+      unless user_is_org_member?(user_id, workspace.organization_id) do
+        Citadel.Accounts.add_organization_member(
+          workspace.organization_id,
+          user_id,
+          :member,
+          authorize?: false
+        )
+      end
+    end
+
+    Citadel.Accounts.add_workspace_member!(user_id, workspace_id, opts)
+  end
+
+  defp user_is_org_member?(user_id, organization_id) do
+    require Ash.Query
+
+    Citadel.Accounts.OrganizationMembership
+    |> Ash.Query.filter(user_id == ^user_id and organization_id == ^organization_id)
+    |> Ash.exists?(authorize?: false)
   end
 end

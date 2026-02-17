@@ -2,6 +2,7 @@ defmodule CitadelWeb.ChatLive do
   use Elixir.CitadelWeb, :live_view
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+  on_mount {CitadelWeb.LiveUserAuth, :require_ai_chat_feature}
 
   import CitadelWeb.Components.Markdown
 
@@ -73,6 +74,19 @@ defmodule CitadelWeb.ChatLive do
                 </div>
               </div>
             <% end %>
+            <div :if={@streaming_message} id="streaming-message" class="chat chat-start">
+              <div class="chat-image avatar">
+                <div class="w-10 rounded-full bg-base-300 p-1">
+                  <img
+                    src="https://github.com/ash-project/ash_ai/blob/main/logos/ash_ai.png?raw=true"
+                    alt="Logo"
+                  />
+                </div>
+              </div>
+              <div class="chat-bubble">
+                {to_markdown(@streaming_message.text)}
+              </div>
+            </div>
           </div>
         </div>
         <div class="p-4 border-t h-16">
@@ -152,6 +166,7 @@ defmodule CitadelWeb.ChatLive do
     socket =
       socket
       |> assign(:page_title, "Chat")
+      |> assign(:streaming_message, nil)
       |> stream(
         :conversations,
         Citadel.Chat.my_conversations!(
@@ -176,17 +191,21 @@ defmodule CitadelWeb.ChatLive do
         :ok
 
       socket.assigns[:conversation] ->
-        # Switch message subscriptions when changing conversations
+        # Switch subscriptions when changing conversations
         CitadelWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
+        CitadelWeb.Endpoint.unsubscribe("chat:stream:#{socket.assigns.conversation.id}")
         CitadelWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
+        CitadelWeb.Endpoint.subscribe("chat:stream:#{conversation.id}")
 
       true ->
-        # Subscribe to message updates for the selected conversation
+        # Subscribe to message and stream updates for the selected conversation
         CitadelWeb.Endpoint.subscribe("chat:messages:#{conversation.id}")
+        CitadelWeb.Endpoint.subscribe("chat:stream:#{conversation.id}")
     end
 
     socket
     |> assign(:conversation, conversation)
+    |> assign(:streaming_message, nil)
     |> stream(
       :messages,
       Citadel.Chat.message_history!(conversation.id,
@@ -202,10 +221,12 @@ defmodule CitadelWeb.ChatLive do
   def handle_params(_, _, socket) do
     if socket.assigns[:conversation] do
       CitadelWeb.Endpoint.unsubscribe("chat:messages:#{socket.assigns.conversation.id}")
+      CitadelWeb.Endpoint.unsubscribe("chat:stream:#{socket.assigns.conversation.id}")
     end
 
     socket
     |> assign(:conversation, nil)
+    |> assign(:streaming_message, nil)
     |> stream(:messages, [])
     |> assign_message_form()
     |> then(&{:noreply, &1})
@@ -247,6 +268,33 @@ defmodule CitadelWeb.ChatLive do
     end
   end
 
+  # Handle streaming deltas - accumulate text in streaming_message assign
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "chat:stream:" <> _conversation_id,
+          event: "delta",
+          payload: %{message_id: message_id, content: content}
+        },
+        socket
+      ) do
+    streaming = socket.assigns.streaming_message || %{id: message_id, text: "", source: :agent}
+
+    updated_streaming = %{streaming | text: streaming.text <> content}
+
+    {:noreply, assign(socket, :streaming_message, updated_streaming)}
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "chat:stream:" <> _conversation_id,
+          event: "complete"
+        },
+        socket
+      ) do
+    {:noreply, assign(socket, :streaming_message, nil)}
+  end
+
+  # Handle complete messages - clear streaming state and insert into stream
   def handle_info(
         %Phoenix.Socket.Broadcast{
           topic: "chat:messages:" <> conversation_id,
@@ -255,6 +303,14 @@ defmodule CitadelWeb.ChatLive do
         socket
       ) do
     if socket.assigns.conversation && socket.assigns.conversation.id == conversation_id do
+      socket =
+        if socket.assigns.streaming_message &&
+             socket.assigns.streaming_message.id == message.id do
+          assign(socket, :streaming_message, nil)
+        else
+          socket
+        end
+
       {:noreply, stream_insert(socket, :messages, message, at: 0)}
     else
       {:noreply, socket}
@@ -284,7 +340,9 @@ defmodule CitadelWeb.ChatLive do
         Citadel.Chat.form_to_create_message(
           actor: socket.assigns.current_user,
           tenant: socket.assigns.current_workspace.id,
-          private_arguments: %{conversation_id: socket.assigns.conversation.id}
+          prepare_params: fn params, _context ->
+            Map.put(params, "conversation_id", socket.assigns.conversation.id)
+          end
         )
         |> to_form()
       else

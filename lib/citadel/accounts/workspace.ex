@@ -26,13 +26,13 @@ defmodule Citadel.Accounts.Workspace do
     defaults [:read, :destroy]
 
     create :create do
-      accept [:name]
+      accept [:name, :organization_id]
 
       change relate_actor(:owner)
       change Citadel.Accounts.Workspace.Changes.GenerateTaskPrefix
 
       change fn changeset, context ->
-        Ash.Changeset.after_action(changeset, fn changeset, workspace ->
+        Ash.Changeset.after_action(changeset, fn _changeset, workspace ->
           # Automatically create membership for the owner
           Citadel.Accounts.add_workspace_member!(
             workspace.owner_id,
@@ -56,8 +56,9 @@ defmodule Citadel.Accounts.Workspace do
   end
 
   policies do
-    # Any authenticated user can create a workspace
+    # Any authenticated user can create a workspace if within workspace limit
     policy action_type(:create) do
+      forbid_unless Citadel.Billing.Checks.WithinWorkspaceLimit
       authorize_if actor_present()
     end
 
@@ -104,6 +105,12 @@ defmodule Citadel.Accounts.Workspace do
   end
 
   relationships do
+    belongs_to :organization, Citadel.Accounts.Organization do
+      allow_nil? false
+      attribute_writable? true
+      public? true
+    end
+
     belongs_to :owner, Citadel.Accounts.User do
       allow_nil? false
       attribute_writable? true

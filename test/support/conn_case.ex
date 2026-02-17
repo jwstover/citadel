@@ -25,11 +25,21 @@ defmodule CitadelWeb.ConnCase do
       @endpoint CitadelWeb.Endpoint
 
       use CitadelWeb, :verified_routes
+      use Oban.Testing, repo: Citadel.Repo
 
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
       import CitadelWeb.ConnCase
+
+      # Import generators for test data
+      import Citadel.Generator
+
+      # Import feature flag test helpers for fast, isolated flag testing
+      import Citadel.TestSupport.FeatureFlagHelpers
+
+      # Import helper functions from DataCase
+      import Citadel.DataCase, only: [add_user_to_workspace: 3, upgrade_to_pro: 1]
     end
   end
 
@@ -54,11 +64,35 @@ defmodule CitadelWeb.ConnCase do
   """
   def register_and_log_in_user(%{conn: conn} = context) do
     user = Citadel.DataCase.create_user()
-    workspace = generate(workspace([], actor: user))
+
+    # Explicitly create organization to avoid nested generator call
+    organization = generate(organization([], actor: user))
+
+    # Pass organization_id to workspace to skip auto-creation
+    workspace = generate(workspace([organization_id: organization.id], actor: user))
 
     conn = log_in_user(conn, user)
 
-    Map.merge(context, %{conn: conn, user: user, workspace: workspace})
+    Map.merge(context, %{conn: conn, user: user, workspace: workspace, organization: organization})
+  end
+
+  @doc """
+  Creates user + organization + workspace in a single setup.
+  Use for tests that need the full setup but want minimal DB roundtrips.
+
+  ## Usage
+
+      setup do
+        %{user: user, organization: org, workspace: workspace} = create_user_with_workspace()
+        %{user: user, organization: org, workspace: workspace}
+      end
+  """
+  def create_user_with_workspace(attrs \\ %{}) do
+    user = Citadel.DataCase.create_user(attrs)
+    organization = generate(organization([], actor: user))
+    workspace = generate(workspace([organization_id: organization.id], actor: user))
+
+    %{user: user, organization: organization, workspace: workspace}
   end
 
   @doc """

@@ -19,6 +19,7 @@ defmodule CitadelWeb.Router do
     }
 
     plug :load_from_session
+    plug CitadelWeb.Plugs.EnsureWorkspaceInSession
   end
 
   pipeline :api do
@@ -37,6 +38,16 @@ defmodule CitadelWeb.Router do
       required?: true
 
     plug CitadelWeb.Plugs.SetTenantFromApiKey
+  end
+
+  pipeline :stripe_webhook do
+    plug :accepts, ["json"]
+  end
+
+  scope "/webhooks", CitadelWeb do
+    pipe_through :stripe_webhook
+
+    post "/stripe", StripeWebhookController, :handle
   end
 
   scope "/", CitadelWeb do
@@ -72,6 +83,8 @@ defmodule CitadelWeb.Router do
     # Public routes (no authentication required)
     ash_authentication_live_session :public_routes do
       live "/invitations/:token", InvitationLive.Accept, :show
+      live "/terms", LegalLive.Terms, :index
+      live "/privacy", LegalLive.Privacy, :index
     end
   end
 
@@ -95,6 +108,10 @@ defmodule CitadelWeb.Router do
 
     # Workspace session management
     get "/workspaces/switch/:workspace_id", WorkspaceController, :switch
+
+    # Billing routes (Stripe checkout and portal)
+    post "/billing/checkout", BillingController, :create_checkout
+    get "/billing/portal", BillingController, :billing_portal
 
     auth_routes AuthController, Citadel.Accounts.User, path: "/auth"
     sign_out_route AuthController
@@ -159,7 +176,15 @@ defmodule CitadelWeb.Router do
     scope "/admin" do
       pipe_through :browser
 
-      ash_admin "/"
+      ash_admin "/",
+        domains: [
+          Citadel.Accounts,
+          Citadel.Billing,
+          Citadel.Chat,
+          Citadel.Integrations,
+          Citadel.Settings,
+          Citadel.Tasks
+        ]
     end
   end
 end

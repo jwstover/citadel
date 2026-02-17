@@ -29,6 +29,7 @@ defmodule Citadel.Chat.Message do
         worker_module_name Citadel.Chat.Message.Workers.Respond
         scheduler_module_name Citadel.Chat.Message.Schedulers.Respond
         where expr(needs_response)
+        worker_opts unique: [period: :infinity, states: :all], max_attempts: 3
       end
     end
   end
@@ -148,6 +149,21 @@ defmodule Citadel.Chat.Message do
       # on update, only set complete to its new value
       upsert_fields [:complete]
     end
+
+    create :create_response do
+      upsert? true
+      upsert_identity :unique_id
+      accept [:id, :response_to_id, :conversation_id, :text]
+      argument :tool_calls, {:array, :map}
+      argument :tool_results, {:array, :map}
+
+      change set_attribute(:source, :agent)
+      change set_attribute(:complete, true)
+      change set_attribute(:tool_calls, arg(:tool_calls))
+      change set_attribute(:tool_results, arg(:tool_results))
+
+      upsert_fields [:text, :complete, :tool_calls, :tool_results]
+    end
   end
 
   policies do
@@ -178,11 +194,12 @@ defmodule Citadel.Chat.Message do
                    )
     end
 
-    # Create: authenticated users can create messages
+    # Create: authenticated users with sufficient credits can create messages
     # The CreateConversationIfNotProvided change ensures messages are only created
     # in conversations the actor has access to (via conversation policies which check
     # workspace membership), or creates a new conversation for the actor
     policy action_type(:create) do
+      forbid_unless Citadel.Billing.Checks.HasSufficientCredits
       authorize_if actor_present()
     end
 
@@ -205,7 +222,7 @@ defmodule Citadel.Chat.Message do
       end
     end
 
-    publish :upsert_response, ["messages", :conversation_id] do
+    publish :create_response, ["messages", :conversation_id] do
       transform fn %{data: message} ->
         %{text: message.text, id: message.id, source: message.source}
       end
@@ -257,5 +274,9 @@ defmodule Citadel.Chat.Message do
     calculate :needs_response, :boolean do
       calculation expr(source == :user and not exists(response))
     end
+  end
+
+  identities do
+    identity :unique_id, [:id]
   end
 end

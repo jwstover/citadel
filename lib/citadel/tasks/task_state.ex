@@ -52,4 +52,8 @@ defmodule Citadel.Tasks.TaskState do
 
     timestamps()
   end
+
+  identities do
+    identity :unique_name, [:name]
+  end
 end

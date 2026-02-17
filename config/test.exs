@@ -1,6 +1,12 @@
 import Config
 config :citadel, Oban, testing: :manual
 
+# Use process dictionary adapter for fast, isolated feature flag tests
+config :citadel, :feature_flag_adapter, Citadel.Settings.FeatureFlagAdapters.TestAdapter
+
+# Disable GitHub token validation in tests (no real HTTP requests)
+config :citadel, :github_token_validation, enabled: false
+
 config :citadel, Citadel.AI,
   anthropic_api_key: "test-anthropic-key",
   openai_api_key: "test-openai-key",
@@ -8,6 +14,21 @@ config :citadel, Citadel.AI,
     anthropic: Citadel.AI.MockProvider,
     openai: Citadel.AI.MockProvider
   }
+
+# Stripe test configuration
+config :stripity_stripe,
+  api_key: "sk_test_fake_key",
+  signing_secret: "whsec_test_secret"
+
+config :citadel, :stripe, publishable_key: "pk_test_fake_key"
+
+config :citadel, Citadel.Billing,
+  pro_monthly_price_id: "price_test_pro_monthly",
+  pro_annual_price_id: "price_test_pro_annual",
+  pro_seat_monthly_price_id: "price_test_seat_monthly",
+  pro_seat_annual_price_id: "price_test_seat_annual"
+
+config :citadel, skip_stripe_in_tests: true
 
 config :citadel,
   token_signing_secret: "Lu32ul4hfEE2x/l+8SkesaKOI8zopO/1",
@@ -33,6 +54,8 @@ config :citadel, Citadel.Repo,
   # Increased for property tests which create many records concurrently
   pool_size: max(System.schedulers_online() * 4, 32),
   ownership_timeout: 120_000,
+  # Increased from default 15s to handle concurrent test contention
+  checkout_timeout: 30_000,
   queue_target: 5000,
   queue_interval: 10_000
 
