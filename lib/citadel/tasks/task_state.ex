@@ -13,6 +13,10 @@ defmodule Citadel.Tasks.TaskState do
     repo Citadel.Repo
   end
 
+  identities do
+    identity :unique_name, [:name]
+  end
+
   actions do
     defaults [:read, :destroy, create: :*]
 

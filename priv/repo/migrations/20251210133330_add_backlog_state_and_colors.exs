@@ -6,36 +6,54 @@ defmodule Citadel.Repo.Migrations.AddBacklogStateAndColors do
   use Ecto.Migration
 
   def up do
-    # Update existing states with icons, colors, and new order
+    # Add unique constraint on name for upserts
+    create unique_index(:task_states, [:name], if_not_exists: true)
+
+    # Upsert In Progress state
     execute """
-    UPDATE task_states SET
-      icon = 'fa-circle-half-stroke-solid',
-      foreground_color = '#ffffff',
-      background_color = '#eab308',
-      "order" = 1
-    WHERE name = 'In Progress'
+    INSERT INTO task_states (id, name, icon, foreground_color, background_color, "order", is_complete, inserted_at, updated_at)
+    VALUES (
+      uuid_generate_v7(),
+      'In Progress',
+      'fa-circle-half-stroke-solid',
+      '#ffffff',
+      '#eab308',
+      1,
+      false,
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (name) DO UPDATE SET
+      icon = EXCLUDED.icon,
+      foreground_color = EXCLUDED.foreground_color,
+      background_color = EXCLUDED.background_color,
+      "order" = EXCLUDED."order",
+      updated_at = NOW()
     """
 
+    # Upsert Todo state
     execute """
-    UPDATE task_states SET
-      icon = 'fa-circle-regular',
-      foreground_color = '#ffffff',
-      background_color = '#0284c7',
-      "order" = 2
-    WHERE name = 'Todo'
+    INSERT INTO task_states (id, name, icon, foreground_color, background_color, "order", is_complete, inserted_at, updated_at)
+    VALUES (
+      uuid_generate_v7(),
+      'Todo',
+      'fa-circle-regular',
+      '#ffffff',
+      '#0284c7',
+      2,
+      false,
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (name) DO UPDATE SET
+      icon = EXCLUDED.icon,
+      foreground_color = EXCLUDED.foreground_color,
+      background_color = EXCLUDED.background_color,
+      "order" = EXCLUDED."order",
+      updated_at = NOW()
     """
 
-    execute """
-    UPDATE task_states SET
-      icon = 'fa-circle-solid',
-      foreground_color = '#ffffff',
-      background_color = '#16a34a',
-      "order" = 4,
-      is_complete = true
-    WHERE name = 'Complete'
-    """
-
-    # Insert new Backlog state
+    # Upsert Backlog state
     execute """
     INSERT INTO task_states (id, name, icon, foreground_color, background_color, "order", is_complete, inserted_at, updated_at)
     VALUES (
@@ -49,6 +67,35 @@ defmodule Citadel.Repo.Migrations.AddBacklogStateAndColors do
       NOW(),
       NOW()
     )
+    ON CONFLICT (name) DO UPDATE SET
+      icon = EXCLUDED.icon,
+      foreground_color = EXCLUDED.foreground_color,
+      background_color = EXCLUDED.background_color,
+      "order" = EXCLUDED."order",
+      updated_at = NOW()
+    """
+
+    # Upsert Complete state
+    execute """
+    INSERT INTO task_states (id, name, icon, foreground_color, background_color, "order", is_complete, inserted_at, updated_at)
+    VALUES (
+      uuid_generate_v7(),
+      'Complete',
+      'fa-circle-solid',
+      '#ffffff',
+      '#16a34a',
+      4,
+      true,
+      NOW(),
+      NOW()
+    )
+    ON CONFLICT (name) DO UPDATE SET
+      icon = EXCLUDED.icon,
+      foreground_color = EXCLUDED.foreground_color,
+      background_color = EXCLUDED.background_color,
+      "order" = EXCLUDED."order",
+      is_complete = EXCLUDED.is_complete,
+      updated_at = NOW()
     """
   end
 
@@ -86,5 +133,7 @@ defmodule Citadel.Repo.Migrations.AddBacklogStateAndColors do
       is_complete = false
     WHERE name = 'Complete'
     """
+
+    drop_if_exists unique_index(:task_states, [:name])
   end
 end
