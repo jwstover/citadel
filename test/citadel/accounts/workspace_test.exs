@@ -1,5 +1,5 @@
 defmodule Citadel.Accounts.WorkspaceTest do
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   alias Citadel.Accounts
 

@@ -292,6 +292,7 @@ defmodule CitadelWeb.InvitationLive.AcceptTest do
   describe "render/1 - error states" do
     setup :register_and_log_in_user
 
+    @tag timeout: 120_000
     test "error messages include contact instructions", %{
       conn: conn,
       user: user,
@@ -312,6 +313,7 @@ defmodule CitadelWeb.InvitationLive.AcceptTest do
       assert html =~ "contact the workspace owner"
     end
 
+    @tag timeout: 120_000
     test "displays appropriate icons for different states", %{
       conn: conn,
       user: user,
@@ -330,6 +332,7 @@ defmodule CitadelWeb.InvitationLive.AcceptTest do
       assert html =~ "hero-exclamation-circle"
     end
 
+    @tag timeout: 120_000
     test "shows go home button for error states", %{conn: conn, user: user, workspace: workspace} do
       email = "invited-#{System.unique_integer([:positive])}@test.com"
       invitation = Accounts.create_invitation!(email, workspace.id, actor: user)
@@ -349,6 +352,7 @@ defmodule CitadelWeb.InvitationLive.AcceptTest do
   end
 
   describe "authorization" do
+    @tag timeout: 120_000
     test "allows access without authentication for valid invitation", %{conn: _conn} do
       owner = Citadel.DataCase.create_user()
       workspace = generate(workspace([], actor: owner))

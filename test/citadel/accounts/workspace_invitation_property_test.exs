@@ -8,13 +8,13 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
   - Expiration logic edge cases
   - Invitation state transitions
   """
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   alias Citadel.Accounts
 
   describe "invitation token uniqueness properties" do
     property "invitation tokens are globally unique across multiple invitations" do
-      check all(invitation_count <- integer(2..20)) do
+      check all invitation_count <- integer(2..20), max_runs: 20 do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 

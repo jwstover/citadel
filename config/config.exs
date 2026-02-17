@@ -90,8 +90,10 @@ config :citadel,
     Citadel.Tasks,
     Citadel.Accounts,
     Citadel.Integrations,
-    Citadel.Billing
-  ]
+    Citadel.Billing,
+    Citadel.Settings
+  ],
+  feature_flag_adapter: Citadel.Settings.FeatureFlagAdapters.CacheAdapter
 
 # Configures the endpoint
 config :citadel, CitadelWeb.Endpoint,

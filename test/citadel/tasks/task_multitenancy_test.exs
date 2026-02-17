@@ -8,7 +8,7 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
   - Users cannot access tasks in other workspaces
   - Workspace isolation is enforced consistently
   """
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   alias Citadel.{Accounts, Tasks}
 

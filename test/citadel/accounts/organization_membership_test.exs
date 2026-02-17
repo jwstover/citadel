@@ -4,11 +4,16 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
   alias Citadel.Accounts
 
   describe "add_organization_member/4" do
-    test "owner can add a member to their organization" do
+    setup do
       owner = generate(user())
-      new_member = generate(user())
       organization = generate(organization([], actor: owner))
       upgrade_to_pro(organization)
+
+      %{owner: owner, organization: organization}
+    end
+
+    test "owner can add a member to their organization", %{owner: owner, organization: organization} do
+      new_member = generate(user())
 
       assert membership =
                Accounts.add_organization_member!(
@@ -23,12 +28,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership.role == :member
     end
 
-    test "admin can add a member to the organization" do
-      owner = generate(user())
+    test "admin can add a member to the organization", %{owner: owner, organization: organization} do
       admin = generate(user())
       new_member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, admin.id, :admin, actor: owner)
 
@@ -43,12 +45,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership.role == :member
     end
 
-    test "regular member cannot add other members" do
-      owner = generate(user())
+    test "regular member cannot add other members", %{owner: owner, organization: organization} do
       member = generate(user())
       new_member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -62,11 +61,11 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       end
     end
 
-    test "raises error when duplicate membership is created" do
-      owner = generate(user())
+    test "raises error when duplicate membership is created", %{
+      owner: owner,
+      organization: organization
+    } do
       member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -75,12 +74,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       end
     end
 
-    test "non-member cannot add members to organization" do
-      owner = generate(user())
+    test "non-member cannot add members to organization", %{organization: organization} do
       non_member = generate(user())
       new_member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       assert_raise Ash.Error.Forbidden, fn ->
         Accounts.add_organization_member!(
@@ -92,12 +88,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       end
     end
 
-    test "can add member with different roles" do
-      owner = generate(user())
+    test "can add member with different roles", %{owner: owner, organization: organization} do
       admin_user = generate(user())
       member_user = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       admin_membership =
         Accounts.add_organization_member!(organization.id, admin_user.id, :admin, actor: owner)
@@ -111,11 +104,16 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
   end
 
   describe "list_organization_members/1" do
-    test "member can list memberships in their organization" do
+    setup do
       owner = generate(user())
-      member = generate(user())
       organization = generate(organization([], actor: owner))
       upgrade_to_pro(organization)
+
+      %{owner: owner, organization: organization}
+    end
+
+    test "member can list memberships in their organization", %{owner: owner, organization: organization} do
+      member = generate(user())
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -131,8 +129,7 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert member.id in user_ids
     end
 
-    test "user can see their own memberships across organizations" do
-      owner = generate(user())
+    test "user can see their own memberships across organizations", %{owner: owner} do
       member = generate(user())
 
       org1 = generate(organization([], actor: owner))
@@ -157,11 +154,8 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership2.id in membership_ids
     end
 
-    test "can load user and organization relationships" do
-      owner = generate(user())
+    test "can load user and organization relationships", %{owner: owner, organization: organization} do
       member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       _membership =
         Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
@@ -180,11 +174,16 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
   end
 
   describe "update_organization_member_role/2" do
-    test "owner can update member role" do
+    setup do
       owner = generate(user())
-      member = generate(user())
       organization = generate(organization([], actor: owner))
       upgrade_to_pro(organization)
+
+      %{owner: owner, organization: organization}
+    end
+
+    test "owner can update member role", %{owner: owner, organization: organization} do
+      member = generate(user())
 
       membership =
         Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
@@ -197,12 +196,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert updated.role == :admin
     end
 
-    test "admin can update member role" do
-      owner = generate(user())
+    test "admin can update member role", %{owner: owner, organization: organization} do
       admin = generate(user())
       member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, admin.id, :admin, actor: owner)
 
@@ -215,12 +211,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert updated.role == :admin
     end
 
-    test "regular member cannot update roles" do
-      owner = generate(user())
+    test "regular member cannot update roles", %{owner: owner, organization: organization} do
       member1 = generate(user())
       member2 = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member1.id, :member, actor: owner)
 
@@ -234,11 +227,16 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
   end
 
   describe "remove_organization_member/2" do
-    test "owner can remove a member" do
+    setup do
       owner = generate(user())
-      member = generate(user())
       organization = generate(organization([], actor: owner))
       upgrade_to_pro(organization)
+
+      %{owner: owner, organization: organization}
+    end
+
+    test "owner can remove a member", %{owner: owner, organization: organization} do
+      member = generate(user())
 
       membership =
         Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
@@ -255,11 +253,11 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       refute member.id in user_ids
     end
 
-    test "member can leave organization (remove their own membership)" do
-      owner = generate(user())
+    test "member can leave organization (remove their own membership)", %{
+      owner: owner,
+      organization: organization
+    } do
       member = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       membership =
         Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
@@ -267,10 +265,7 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert :ok = Accounts.remove_organization_member!(membership, actor: member)
     end
 
-    test "owner cannot leave their own organization" do
-      owner = generate(user())
-      organization = generate(organization([], actor: owner))
-
+    test "owner cannot leave their own organization", %{owner: owner, organization: organization} do
       [owner_membership] =
         Accounts.list_organization_members!(
           actor: owner,
@@ -282,12 +277,9 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       end
     end
 
-    test "non-owner/non-self cannot remove members" do
-      owner = generate(user())
+    test "non-owner/non-self cannot remove members", %{owner: owner, organization: organization} do
       member1 = generate(user())
       member2 = generate(user())
-      organization = generate(organization([], actor: owner))
-      upgrade_to_pro(organization)
 
       Accounts.add_organization_member!(organization.id, member1.id, :member, actor: owner)
 
@@ -301,11 +293,16 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
   end
 
   describe "workspace membership requires organization membership" do
-    test "org member can be added to workspace" do
+    setup do
       owner = generate(user())
-      member = generate(user())
       organization = generate(organization([], actor: owner))
       upgrade_to_pro(organization)
+
+      %{owner: owner, organization: organization}
+    end
+
+    test "org member can be added to workspace", %{owner: owner, organization: organization} do
+      member = generate(user())
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
 
@@ -317,10 +314,8 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership.user_id == member.id
     end
 
-    test "non-org member cannot be added to workspace" do
-      owner = generate(user())
+    test "non-org member cannot be added to workspace", %{owner: owner, organization: organization} do
       non_member = generate(user())
-      organization = generate(organization([], actor: owner))
 
       workspace = generate(workspace([organization_id: organization.id], actor: owner))
 

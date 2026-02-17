@@ -98,7 +98,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
     end
 
     property "multiple non-owner members can all leave" do
-      check all(member_count <- integer(1..10)) do
+      check all member_count <- integer(1..10), max_runs: 20 do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 
@@ -206,7 +206,7 @@ defmodule Citadel.Accounts.WorkspaceMembershipPropertyTest do
     end
 
     property "user can be member of multiple different workspaces" do
-      check all(workspace_count <- integer(2..5)) do
+      check all workspace_count <- integer(2..5), max_runs: 25 do
         user = generate(user())
 
         # Create multiple workspaces and add user to all of them

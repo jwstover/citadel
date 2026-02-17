@@ -1,5 +1,5 @@
 defmodule Citadel.Integrations.GitHubConnectionTest do
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   require Ash.Query
 

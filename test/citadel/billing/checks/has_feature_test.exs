@@ -67,6 +67,65 @@ defmodule Citadel.Billing.Checks.HasFeatureTest do
     end
   end
 
+  describe "HasFeature check with feature flag overrides" do
+    test "respects enabled flag override - grants access to free tier" do
+      enable_feature(:api_access)
+
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+
+      context = build_context_with_org(org.id)
+
+      assert HasFeature.match?(owner, context, feature: :api_access)
+    end
+
+    test "respects disabled flag override - denies access to pro tier" do
+      disable_feature(:api_access)
+
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+
+      generate(
+        subscription(
+          [organization_id: org.id, tier: :pro, billing_period: :monthly],
+          authorize?: false
+        )
+      )
+
+      context = build_context_with_org(org.id)
+
+      refute HasFeature.match?(owner, context, feature: :api_access)
+    end
+
+    test "falls back to tier when no flag exists" do
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+
+      generate(
+        subscription(
+          [organization_id: org.id, tier: :pro, billing_period: :monthly],
+          authorize?: false
+        )
+      )
+
+      context = build_context_with_org(org.id)
+
+      assert HasFeature.match?(owner, context, feature: :data_export)
+    end
+
+    test "flag override for one feature doesn't affect others" do
+      enable_feature(:api_access)
+
+      owner = generate(user())
+      org = generate(organization([], actor: owner))
+
+      context = build_context_with_org(org.id)
+
+      assert HasFeature.match?(owner, context, feature: :api_access)
+      refute HasFeature.match?(owner, context, feature: :data_export)
+    end
+  end
+
   describe "HasFeature check error cases" do
     test "returns false when no organization is provided" do
       owner = generate(user())

@@ -20,6 +20,7 @@ defmodule Citadel.Application do
          Application.fetch_env!(:citadel, Oban)
        )},
       {Phoenix.PubSub, name: Citadel.PubSub},
+      Citadel.Settings.FeatureFlagCache,
       # Start a worker by calling: Citadel.Worker.start_link(arg)
       # {Citadel.Worker, arg},
       # Start to serve requests, typically the last entry

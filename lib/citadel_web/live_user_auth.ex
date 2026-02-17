@@ -7,6 +7,7 @@ defmodule CitadelWeb.LiveUserAuth do
   use CitadelWeb, :verified_routes
 
   alias AshAuthentication.Phoenix.LiveSession
+  alias Citadel.Settings.FeatureFlags
 
   # This is used for nested liveviews to fetch the current user.
   # To use, place the following at the top of that liveview:
@@ -77,6 +78,21 @@ defmodule CitadelWeb.LiveUserAuth do
       {:cont, socket}
     else
       {:cont, socket}
+    end
+  end
+
+  def on_mount(:require_ai_chat_feature, _params, _session, socket) do
+    case FeatureFlags.get(:ai_chat) do
+      {:ok, true} ->
+        {:cont, socket}
+
+      _ ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "AI Chat is currently unavailable")
+          |> Phoenix.LiveView.redirect(to: ~p"/dashboard")
+
+        {:halt, socket}
     end
   end
 

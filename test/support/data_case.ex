@@ -58,6 +58,9 @@ defmodule Citadel.DataCase do
       # along with all our custom generator functions
       import Citadel.Generator
 
+      # Import feature flag test helpers for fast, isolated flag testing
+      import Citadel.TestSupport.FeatureFlagHelpers
+
       # Import ExUnitProperties for property-based testing
       use ExUnitProperties
 
@@ -78,6 +81,14 @@ defmodule Citadel.DataCase do
     # Increase timeout to 60 seconds to prevent timeouts in slower tests
     # especially property-based tests that generate many records
     pid = Sandbox.start_owner!(Citadel.Repo, shared: not tags[:async], timeout: 60_000)
+
+    # Allow FeatureFlagCache GenServer to access the sandbox
+    # The GenServer might not be started yet in some test scenarios,
+    # so we check if it's available before granting permissions
+    if Process.whereis(Citadel.Settings.FeatureFlagCache) do
+      Sandbox.allow(Citadel.Repo, pid, Citadel.Settings.FeatureFlagCache)
+    end
+
     on_exit(fn -> Sandbox.stop_owner(pid) end)
   end
 

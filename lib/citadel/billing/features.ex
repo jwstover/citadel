@@ -1,9 +1,15 @@
 defmodule Citadel.Billing.Features do
   @moduledoc """
-  Feature catalog with metadata for all subscription features.
+  Feature catalog with metadata for subscription billing features.
 
-  This module defines all features available across subscription tiers
-  and provides metadata for UI display and documentation.
+  This module defines features tied to subscription tiers for billing purposes.
+  This is separate from operational feature flags, which can use any atom key.
+
+  ## Subscription Features vs Feature Flags
+
+  - **This catalog**: Product features tied to subscription tiers (billing)
+  - **Feature flags** (`Citadel.Settings.FeatureFlag`): Operational controls with any key
+  - **Override behavior**: When a flag key matches a feature here, flag overrides tier access
 
   ## Feature Categories
 

@@ -176,7 +176,15 @@ defmodule CitadelWeb.Router do
     scope "/admin" do
       pipe_through :browser
 
-      ash_admin "/"
+      ash_admin "/",
+        domains: [
+          Citadel.Accounts,
+          Citadel.Billing,
+          Citadel.Chat,
+          Citadel.Integrations,
+          Citadel.Settings,
+          Citadel.Tasks
+        ]
     end
   end
 end

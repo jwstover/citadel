@@ -2,8 +2,11 @@ defmodule Citadel.Billing.Checks.HasFeature do
   @moduledoc """
   Policy check that verifies an organization has access to a specific feature.
 
-  This is a generic check that works with any feature defined in the
-  Citadel.Billing.Features catalog.
+  This check respects both subscription tier features and global feature flag overrides.
+  When a feature flag exists matching the feature key, it overrides the tier access.
+
+  Only works with features defined in the Citadel.Billing.Features catalog.
+  For non-billing operational flags, use `has_feature?/2` in LiveView logic instead.
 
   ## Usage
 
@@ -15,9 +18,14 @@ defmodule Citadel.Billing.Checks.HasFeature do
         authorize_if HasFeature, feature: :advanced_ai_models
       end
 
+  ## Feature Access Priority
+
+  1. Global feature flags (if enabled, overrides tier)
+  2. Subscription tier features (default behavior)
+
   ## Options
 
-  - `:feature` (required) - The feature atom to check
+  - `:feature` (required) - The feature atom to check (must be in Features catalog)
 
   ## Context Requirements
 
@@ -91,14 +99,9 @@ defmodule Citadel.Billing.Checks.HasFeature do
   end
 
   defp has_feature?(organization_id, feature) do
-    tier = get_organization_tier(organization_id)
-    Plan.tier_has_feature?(tier, feature)
-  end
-
-  defp get_organization_tier(organization_id) do
-    case Citadel.Billing.get_subscription_by_organization(organization_id, authorize?: false) do
-      {:ok, subscription} -> subscription.tier
-      _ -> :free
+    case Plan.org_has_feature?(organization_id, feature) do
+      {:ok, has_access} -> has_access
+      _ -> false
     end
   end
 end

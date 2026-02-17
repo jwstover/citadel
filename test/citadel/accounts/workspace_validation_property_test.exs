@@ -9,7 +9,7 @@ defmodule Citadel.Accounts.WorkspaceValidationPropertyTest do
   - Unicode characters
   - Empty and nil values
   """
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   alias Citadel.Accounts
 

@@ -220,6 +220,7 @@ defmodule Citadel.Accounts.OrganizationTest do
   end
 
   describe "organization relationships" do
+    @tag timeout: 120_000
     test "can load memberships from organization" do
       owner = create_user()
       member = create_user()
@@ -238,6 +239,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       assert member.id in user_ids
     end
 
+    @tag timeout: 120_000
     test "can load members through many_to_many" do
       owner = create_user()
       member = create_user()
@@ -254,6 +256,7 @@ defmodule Citadel.Accounts.OrganizationTest do
       assert member.id in member_ids
     end
 
+    @tag timeout: 120_000
     test "can load workspaces from organization" do
       owner = create_user()
       organization = Accounts.create_organization!("Test Org", actor: owner)

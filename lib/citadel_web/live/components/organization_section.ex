@@ -6,6 +6,8 @@ defmodule CitadelWeb.Components.OrganizationSection do
 
   use CitadelWeb, :live_component
 
+  import CitadelWeb.Live.FeatureHelpers
+
   alias Citadel.Accounts
   alias Citadel.Billing
   alias Citadel.Billing.Plan
@@ -30,6 +32,7 @@ defmodule CitadelWeb.Components.OrganizationSection do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_feature_checks([:ai_chat])
      |> assign(:organization, organization)
      |> assign(:subscription, subscription)
      |> assign(:balance, balance)
@@ -355,9 +358,9 @@ defmodule CitadelWeb.Components.OrganizationSection do
             </div>
           </div>
 
-          <div class="divider my-2"></div>
+          <div :if={@features.ai_chat} class="divider my-2"></div>
 
-          <div>
+          <div :if={@features.ai_chat}>
             <h4 class="text-sm font-semibold mb-3">Credits</h4>
             <div class="space-y-2">
               <div class="flex justify-between text-sm">

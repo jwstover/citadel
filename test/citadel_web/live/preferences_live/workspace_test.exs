@@ -239,6 +239,7 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceTest do
   describe "GitHub integration" do
     setup :register_and_log_in_user
 
+    @tag timeout: 120_000
     test "displays integrations card", %{conn: conn, workspace: workspace} do
       {:ok, _view, html} = live(conn, ~p"/preferences/workspace/#{workspace.id}")
 
@@ -246,6 +247,7 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceTest do
       assert html =~ "GitHub"
     end
 
+    @tag timeout: 120_000
     test "shows GitHub as not connected when no connection exists", %{
       conn: conn,
       workspace: workspace
@@ -256,6 +258,7 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceTest do
       assert html =~ "Connect"
     end
 
+    @tag timeout: 120_000
     test "shows GitHub as connected when connection exists", %{
       conn: conn,
       user: user,

@@ -27,6 +27,14 @@ defmodule CitadelWeb.Live.FeatureHelpers do
         Upgrade to Pro to access the API
       </div>
 
+  ## Feature Check Priority
+
+  Feature checks follow this priority order:
+  1. **Global feature flags** (from `Citadel.Settings.FeatureFlag`) - checked first
+  2. **Subscription tier features** - checked if no global flag exists
+
+  This allows administrators to override tier-based access via the `/admin` interface.
+
   ## Feature Check Strategies
 
   This module provides multiple ways to check features:
@@ -34,6 +42,11 @@ defmodule CitadelWeb.Live.FeatureHelpers do
   1. **Batch Assignment** - Check multiple features at once with `assign_feature_checks/2`
   2. **Single Check** - Check one feature with `has_feature?/2`
   3. **Tier Features** - Get all features for a tier with `assign_tier_features/2`
+
+  ## Performance
+
+  Feature flag lookups are cached in ETS for fast access without database hits.
+  The cache is automatically invalidated when flags are modified.
   """
 
   import Phoenix.Component, only: [assign: 3]

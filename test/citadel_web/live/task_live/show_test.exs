@@ -193,9 +193,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       assert updated_task.due_date == ~D[2025-12-25]
     end
 
-    test "clears due date when empty", %{conn: conn, user: user, workspace: workspace} do
-      task_state = create_task_state("Todo With Date", 2)
-
+    test "clears due date when empty", %{
+      conn: conn,
+      task_state: task_state,
+      user: user,
+      workspace: workspace
+    } do
       task =
         generate(
           task(

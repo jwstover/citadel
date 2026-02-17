@@ -26,13 +26,20 @@ defmodule Citadel.Billing.Plan do
       # Check if a tier has a feature
       Plan.tier_has_feature?(:pro, :data_export)
 
-      # Check if an organization has a feature
+      # Check if an organization has a feature (respects global flags)
       Plan.org_has_feature?(org_id, :api_access)
 
       # Get all features for a tier
       Plan.features_for_tier(:pro)
 
   See `Citadel.Billing.Features` for the feature catalog with metadata.
+
+  ## Feature Flags Override
+
+  Global feature flags (`Citadel.Settings.FeatureFlag`) can override tier features:
+  - When a flag key matches a billing feature → flag value overrides tier access
+  - When a flag key doesn't match billing → flag value used directly (operational control)
+  - Feature flags enable gradual rollouts, killswitches, and beta features
 
   ## Adding New Features
 
@@ -49,6 +56,8 @@ defmodule Citadel.Billing.Plan do
   | Pro (Monthly) | $19/mo | +$5/member | 10,000 (shared) | 5 | 5 |
   | Pro (Annual) | $190/yr | +$50/member/yr | 10,000 (shared) | 5 | 5 |
   """
+
+  alias Citadel.Settings.FeatureFlags
 
   @type tier :: :free | :pro
   @type billing_period :: :monthly | :annual
@@ -309,7 +318,18 @@ defmodule Citadel.Billing.Plan do
   @doc """
   Checks if an organization has access to a specific feature.
 
-  Queries the organization's subscription tier and checks feature availability.
+  Checks global feature flags first, then falls back to subscription tier features.
+  This allows global flags to override tier-based feature access.
+
+  ## Priority Order
+
+  1. Global feature flags (checked via ETS cache)
+  2. Subscription tier features (if no flag exists)
+
+  ## Graceful Degradation
+
+  - If cache lookup fails, falls back to tier check
+  - If subscription lookup fails, returns the error
 
   ## Examples
 
@@ -321,12 +341,20 @@ defmodule Citadel.Billing.Plan do
   """
   @spec org_has_feature?(Ash.UUID.t(), atom()) :: {:ok, boolean()} | {:error, term()}
   def org_has_feature?(organization_id, feature) do
-    case Citadel.Billing.get_subscription_by_organization(organization_id, authorize?: false) do
-      {:ok, subscription} ->
-        {:ok, tier_has_feature?(subscription.tier, feature)}
+    # Check global feature flags first
+    case FeatureFlags.get(feature) do
+      {:ok, enabled} ->
+        {:ok, enabled}
 
-      {:error, _} = error ->
-        error
+      :not_found ->
+        # Fall back to tier-based feature check
+        case Citadel.Billing.get_subscription_by_organization(organization_id, authorize?: false) do
+          {:ok, subscription} ->
+            {:ok, tier_has_feature?(subscription.tier, feature)}
+
+          {:error, _} = error ->
+            error
+        end
     end
   end
 

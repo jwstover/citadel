@@ -1,5 +1,5 @@
 defmodule Citadel.Workers.SyncSeatCountWorkerTest do
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   alias Citadel.Billing
   alias Citadel.Workers.SyncSeatCountWorker

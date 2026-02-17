@@ -2,6 +2,7 @@ defmodule CitadelWeb.ChatLive do
   use Elixir.CitadelWeb, :live_view
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+  on_mount {CitadelWeb.LiveUserAuth, :require_ai_chat_feature}
 
   import CitadelWeb.Components.Markdown
 
