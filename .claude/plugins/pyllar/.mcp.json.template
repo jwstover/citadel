@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pyllar": {
+      "type": "http",
+      "url": "${PYLLAR_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${PYLLAR_API_KEY}"
+      }
+    }
+  }
+}

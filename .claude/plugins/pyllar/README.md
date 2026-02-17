@@ -23,16 +23,61 @@ claude plugin add pyllar
 
 ## Configuration
 
-1. Set your Pyllar API credentials:
+Pyllar connects to your backend via the Model Context Protocol (MCP). You'll need to configure the MCP server connection.
+
+### Quick Setup
+
+1. Copy the MCP configuration template:
    ```bash
+   cp .mcp.json.template .mcp.json
+   ```
+
+2. Set your environment variables:
+   ```bash
+   # Required: Your Pyllar/Citadel MCP endpoint
    export PYLLAR_MCP_URL="https://your-pyllar-instance.com/mcp"
+
+   # Required for authenticated endpoints
    export PYLLAR_API_KEY="your-api-key"
    ```
 
-2. For local development:
+### Development Setup
+
+For local development with Citadel running on localhost:
+
+```bash
+export PYLLAR_MCP_URL="http://localhost:4110/tidewave/mcp"
+# API key may not be required for local development
+```
+
+Alternatively, edit `.mcp.json` directly with your development URL:
+```json
+{
+  "mcpServers": {
+    "pyllar": {
+      "type": "http",
+      "url": "http://localhost:4110/tidewave/mcp"
+    }
+  }
+}
+```
+
+### Production Setup
+
+For production use:
+
+1. Obtain your API key from your Pyllar instance
+2. Set both environment variables:
    ```bash
-   export PYLLAR_MCP_URL="http://localhost:4110/tidewave/mcp"
+   export PYLLAR_MCP_URL="https://your-instance.pyllar.dev/mcp"
+   export PYLLAR_API_KEY="pyllar_xxxxxxxxxxxx"
    ```
+
+### Authentication
+
+Pyllar currently supports API key authentication via Bearer tokens. The API key is passed in the `Authorization` header of all MCP requests.
+
+**Future Enhancement**: OAuth authentication is planned for a future release to enable more secure, user-scoped access.
 
 ## Quick Start
 
