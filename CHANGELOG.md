@@ -1,3 +1,32 @@
+# [0.16.0](https://github.com/jwstover/citadel/compare/v0.15.0...v0.16.0) (2026-02-17)
+
+
+### Bug Fixes
+
+* derive advisory lock namespace from module name ([5733620](https://github.com/jwstover/citadel/commit/573362044298d1500162ad04ba6060f37109fd69))
+* prevent credit overdraft ([be5bc60](https://github.com/jwstover/citadel/commit/be5bc6074922496449fc817a59598925874408d9))
+* resolve credit race condition ([377a0e2](https://github.com/jwstover/citadel/commit/377a0e20292d73400dfeeb562368472dc9b4dd7f))
+* resolve issue resulting in lost credit consumption ([faa37ef](https://github.com/jwstover/citadel/commit/faa37ef53243ddb7e15ba7ec5bc63521ae26d4c1))
+* resolve issues with duplicate bg jobs ([4dcfe04](https://github.com/jwstover/citadel/commit/4dcfe04591800b4f8a4a678a50abd275c27bff6a))
+* resolve oban job uniqueness issues ([14cc887](https://github.com/jwstover/citadel/commit/14cc887e874046b6fde47c73c9f1d93e3f2f9041))
+* resolve remaining workspace vulnerabilities ([5583e52](https://github.com/jwstover/citadel/commit/5583e52aed84ffe2d282f5a71a6ad2373dae6ba4))
+* resolve test failures caused by orgs ([fedbd6c](https://github.com/jwstover/citadel/commit/fedbd6c6cc6a52dfa448b1fe9f0cc6b28d7b83ed))
+* use existing task states in tests instead of creating duplicates ([68cd037](https://github.com/jwstover/citadel/commit/68cd0376f6535d826369e72664a32024b829995e))
+
+
+### Features
+
+* add billing resources ([4546c65](https://github.com/jwstover/citadel/commit/4546c65bc739c9a75f8a3327b72bee5fc8832ad0))
+* add feature gating ([8152b60](https://github.com/jwstover/citadel/commit/8152b6070f1ff4932e89b114ab093f5d6951e9a2))
+* add github mcp tools to ai chat ([41e8234](https://github.com/jwstover/citadel/commit/41e823485192da4a14880abedae355ba3a7e7b96))
+* add organizations ([7928b97](https://github.com/jwstover/citadel/commit/7928b977f09257694b3afefa901c5407fa2f4899))
+* add template legal ([416f9b8](https://github.com/jwstover/citadel/commit/416f9b8ed41f7b9fde77b904db216f9227386ff3))
+* add upgrade UI ([8319405](https://github.com/jwstover/citadel/commit/8319405d99b8c0ab6b0cb0b387c7ebf36375a242))
+* implement extensible tier system ([4d5ce73](https://github.com/jwstover/citadel/commit/4d5ce73301b3b532c569a7801743d640a8919a64))
+* set user email when initiating checkout session ([8ea9f6e](https://github.com/jwstover/citadel/commit/8ea9f6e6d5740d922b0572a84c018ce58a398c44))
+
+
+
 # [0.15.0](https://github.com/jwstover/citadel/compare/v0.14.0...v0.15.0) (2026-01-14)
 
 
@@ -41,20 +70,6 @@
 ### Features
 
 * add ability to log in with password ([88f9501](https://github.com/jwstover/citadel/commit/88f9501431e38c0477cb3f6bca203794d6c99f75))
-
-
-
-# [0.11.0](https://github.com/jwstover/citadel/compare/v0.10.1...v0.11.0) (2025-12-15)
-
-
-### Bug Fixes
-
-* convert task list to use streams ([6d610b2](https://github.com/jwstover/citadel/commit/6d610b2ff55dc0456692f3233406ddac6508c8f2))
-
-
-### Features
-
-* add a sidebar to task show page with additional fields ([f4b798a](https://github.com/jwstover/citadel/commit/f4b798a20d20e783777cc6dddc0d68b8300976bf))
 
 
 
