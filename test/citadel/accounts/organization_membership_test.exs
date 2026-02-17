@@ -12,7 +12,10 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       %{owner: owner, organization: organization}
     end
 
-    test "owner can add a member to their organization", %{owner: owner, organization: organization} do
+    test "owner can add a member to their organization", %{
+      owner: owner,
+      organization: organization
+    } do
       new_member = generate(user())
 
       assert membership =
@@ -112,7 +115,10 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       %{owner: owner, organization: organization}
     end
 
-    test "member can list memberships in their organization", %{owner: owner, organization: organization} do
+    test "member can list memberships in their organization", %{
+      owner: owner,
+      organization: organization
+    } do
       member = generate(user())
 
       Accounts.add_organization_member!(organization.id, member.id, :member, actor: owner)
@@ -154,7 +160,10 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership2.id in membership_ids
     end
 
-    test "can load user and organization relationships", %{owner: owner, organization: organization} do
+    test "can load user and organization relationships", %{
+      owner: owner,
+      organization: organization
+    } do
       member = generate(user())
 
       _membership =
@@ -314,7 +323,10 @@ defmodule Citadel.Accounts.OrganizationMembershipTest do
       assert membership.user_id == member.id
     end
 
-    test "non-org member cannot be added to workspace", %{owner: owner, organization: organization} do
+    test "non-org member cannot be added to workspace", %{
+      owner: owner,
+      organization: organization
+    } do
       non_member = generate(user())
 
       workspace = generate(workspace([organization_id: organization.id], actor: owner))

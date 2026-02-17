@@ -250,7 +250,7 @@ defmodule Citadel.Accounts.WorkspaceAuthorizationPropertyTest do
     end
 
     property "users can access all and only their own workspaces" do
-      check all workspace_count <- integer(1..5), max_runs: 25 do
+      check all(workspace_count <- integer(1..5), max_runs: 25) do
         user = generate(user())
 
         # Create multiple workspaces for this user

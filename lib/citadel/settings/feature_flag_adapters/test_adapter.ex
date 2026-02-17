@@ -2,25 +2,26 @@ defmodule Citadel.Settings.FeatureFlagAdapters.TestAdapter do
   @moduledoc """
   Test adapter that uses an ETS table for fast, isolated tests.
 
-  Uses a per-test ETS table (scoped by test process PID) to store feature flags.
+  Uses a shared ETS table with composite keys `{test_id, flag_key}` to store feature flags.
   This enables:
   - Tests to run with `async: true`
   - Zero sleep delays for flag propagation
-  - Automatic cleanup when test process exits (via heir mechanism)
   - Works across processes (important for LiveView tests)
   - Simple API: `set_feature_flag(:flag_name, true)`
   """
 
   @behaviour Citadel.Settings.FeatureFlagAdapter
 
-  @table_prefix :feature_flags_test
+  @table_name :citadel_feature_flags_test
 
   @impl true
   def get(key) when is_atom(key) do
     table = get_or_create_table()
+    test_id = get_test_id()
+    composite_key = {test_id, key}
 
-    case :ets.lookup(table, key) do
-      [{^key, value}] -> {:ok, value}
+    case :ets.lookup(table, composite_key) do
+      [{^composite_key, value}] -> {:ok, value}
       [] -> :not_found
     end
   end
@@ -39,7 +40,8 @@ defmodule Citadel.Settings.FeatureFlagAdapters.TestAdapter do
   """
   def set_feature_flag(key, value) when is_atom(key) and is_boolean(value) do
     table = get_or_create_table()
-    :ets.insert(table, {key, value})
+    test_id = get_test_id()
+    :ets.insert(table, {{test_id, key}, value})
     :ok
   end
 
@@ -55,9 +57,10 @@ defmodule Citadel.Settings.FeatureFlagAdapters.TestAdapter do
   """
   def set_feature_flags(flags) when is_map(flags) do
     table = get_or_create_table()
+    test_id = get_test_id()
 
     Enum.each(flags, fn {key, value} ->
-      :ets.insert(table, {key, value})
+      :ets.insert(table, {{test_id, key}, value})
     end)
 
     :ok
@@ -68,32 +71,28 @@ defmodule Citadel.Settings.FeatureFlagAdapters.TestAdapter do
   """
   def clear_feature_flags do
     table = get_or_create_table()
-    :ets.delete_all_objects(table)
+    test_id = get_test_id()
+    :ets.match_delete(table, {{test_id, :_}, :_})
     :ok
   end
 
-  # Gets or creates a test-specific ETS table
-  # Uses $callers to find the root test process
-  # This ensures all processes spawned by the test (like LiveViews) share the same table
-  defp get_or_create_table do
-    # Get the root caller (test process) from the $callers list
-    # When a LiveView spawns, $callers contains [test_pid, ...]
+  defp get_test_id do
     test_pid =
       case Process.get(:"$callers") do
         [root | _] -> root
         _ -> self()
       end
 
-    test_id = :erlang.phash2(test_pid)
-    table_name = :"#{@table_prefix}_#{test_id}"
+    :erlang.phash2(test_pid)
+  end
 
-    case :ets.whereis(table_name) do
+  defp get_or_create_table do
+    case :ets.whereis(@table_name) do
       :undefined ->
-        # Create table as public so all processes can access it
-        :ets.new(table_name, [:named_table, :public, :set, read_concurrency: true])
+        :ets.new(@table_name, [:named_table, :public, :set, read_concurrency: true])
 
       _ ->
-        table_name
+        @table_name
     end
   end
 end

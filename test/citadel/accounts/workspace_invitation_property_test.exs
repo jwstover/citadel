@@ -14,7 +14,7 @@ defmodule Citadel.Accounts.WorkspaceInvitationPropertyTest do
 
   describe "invitation token uniqueness properties" do
     property "invitation tokens are globally unique across multiple invitations" do
-      check all invitation_count <- integer(2..20), max_runs: 20 do
+      check all(invitation_count <- integer(2..20), max_runs: 20) do
         owner = generate(user())
         workspace = generate(workspace([], actor: owner))
 

@@ -99,7 +99,7 @@ defmodule Citadel.Settings.FeatureFlag do
     attribute :key, :atom do
       allow_nil? false
       public? true
-      constraints [unsafe_to_atom?: true]
+      constraints unsafe_to_atom?: true
 
       description "Feature flag key (any atom). When key matches a billing feature, flag overrides tier access."
     end

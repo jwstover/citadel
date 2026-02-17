@@ -2,8 +2,7 @@ import Config
 config :citadel, Oban, testing: :manual
 
 # Use process dictionary adapter for fast, isolated feature flag tests
-config :citadel, :feature_flag_adapter,
-  Citadel.Settings.FeatureFlagAdapters.TestAdapter
+config :citadel, :feature_flag_adapter, Citadel.Settings.FeatureFlagAdapters.TestAdapter
 
 # Disable GitHub token validation in tests (no real HTTP requests)
 config :citadel, :github_token_validation, enabled: false
