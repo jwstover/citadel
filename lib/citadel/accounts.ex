@@ -39,6 +39,7 @@ defmodule Citadel.Accounts do
 
     resource Citadel.Accounts.Workspace do
       define :create_workspace, action: :create, args: [:name]
+      define :current_workspace, action: :current
       define :destroy_workspace, action: :destroy
       define :get_workspace_by_id, action: :read, get_by: [:id]
       define :list_workspaces, action: :read

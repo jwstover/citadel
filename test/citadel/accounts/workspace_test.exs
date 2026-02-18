@@ -269,4 +269,55 @@ defmodule Citadel.Accounts.WorkspaceTest do
       assert updated.task_prefix == original_prefix
     end
   end
+
+  describe "current_workspace/1" do
+    test "returns workspace matching the tenant" do
+      user = generate(user())
+      workspace = generate(workspace([], actor: user))
+
+      result = Accounts.current_workspace!(actor: user, tenant: workspace.id)
+
+      assert result.id == workspace.id
+    end
+
+    test "only returns the id field" do
+      user = generate(user())
+      workspace = generate(workspace([], actor: user))
+
+      result = Accounts.current_workspace!(actor: user, tenant: workspace.id)
+
+      assert result.id == workspace.id
+      assert %Ash.NotLoaded{} = result.name
+      assert %Ash.NotLoaded{} = result.owner_id
+    end
+
+    test "raises error when tenant is not set" do
+      user = generate(user())
+      _workspace = generate(workspace([], actor: user))
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Accounts.current_workspace!(actor: user)
+      end
+    end
+
+    test "raises error when tenant does not match any workspace" do
+      user = generate(user())
+      _workspace = generate(workspace([], actor: user))
+      fake_id = Ash.UUID.generate()
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Accounts.current_workspace!(actor: user, tenant: fake_id)
+      end
+    end
+
+    test "raises error when user is not a member of the workspace" do
+      owner = generate(user())
+      other_user = generate(user())
+      workspace = generate(workspace([], actor: owner))
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Accounts.current_workspace!(actor: other_user, tenant: workspace.id)
+      end
+    end
+  end
 end
