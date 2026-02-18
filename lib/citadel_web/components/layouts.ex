@@ -87,6 +87,12 @@ defmodule CitadelWeb.Layouts do
                   </.link>
                 </li>
                 <li>
+                  <.link navigate={~p"/billing"} class="flex items-center gap-2">
+                    <.icon name="hero-credit-card" class="size-4 text-base-content/70" />
+                    <span>Billing</span>
+                  </.link>
+                </li>
+                <li>
                   <.link navigate={~p"/preferences"} class="flex items-center gap-2">
                     <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/70" />
                     <span>Preferences</span>
