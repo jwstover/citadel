@@ -94,23 +94,17 @@ defmodule Citadel.Settings.FeatureFlagCache do
   # Private Functions
 
   defp load_flags_into_cache do
-    try do
-      flags = Citadel.Settings.list_feature_flags!(authorize?: false)
+    flags = Citadel.Settings.list_feature_flags!(authorize?: false)
 
-      # Clear existing cache
-      :ets.delete_all_objects(@table_name)
+    :ets.delete_all_objects(@table_name)
 
-      # Insert all flags
-      Enum.each(flags, fn flag ->
-        :ets.insert(@table_name, {flag.key, flag.enabled})
-      end)
+    Enum.each(flags, fn flag ->
+      :ets.insert(@table_name, {flag.key, flag.enabled})
+    end)
 
-      Logger.debug("Loaded #{length(flags)} feature flags into cache")
-    rescue
-      e ->
-        # During test startup, sandbox might not be ready yet
-        # Log and continue - cache will be loaded when first accessed
-        Logger.debug("FeatureFlagCache init deferred: #{inspect(e)}")
-    end
+    Logger.debug("Loaded #{length(flags)} feature flags into cache")
+  rescue
+    e ->
+      Logger.debug("FeatureFlagCache init deferred: #{inspect(e)}")
   end
 end

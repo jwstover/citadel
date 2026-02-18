@@ -14,16 +14,13 @@ defmodule Citadel.Accounts.Workspace do
     repo Citadel.Repo
   end
 
-  code_interface do
-    define :create, args: [:name]
-    define :list, action: :read
-    define :get_by_id, action: :read, get_by: [:id]
-    define :update
-    define :destroy
-  end
-
   actions do
     defaults [:read, :destroy]
+
+    read :current do
+      get? true
+      filter expr(id == ^tenant())
+    end
 
     create :create do
       accept [:name, :organization_id]

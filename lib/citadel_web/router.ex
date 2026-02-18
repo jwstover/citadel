@@ -93,6 +93,7 @@ defmodule CitadelWeb.Router do
 
     forward "/", AshAi.Mcp.Router,
       tools: [
+        :get_current_workspace,
         :list_tasks,
         :create_task,
         :update_task,
