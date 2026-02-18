@@ -1,3 +1,15 @@
+# [0.17.0](https://github.com/jwstover/citadel/compare/v0.16.0...v0.17.0) (2026-02-18)
+
+
+### Features
+
+* **P-18:** add :current read action to Workspace resource ([3eca363](https://github.com/jwstover/citadel/commit/3eca363e4f8a423bba2c98908458e441e77c1ff8))
+* **P-19:** add AshAi extension and get_current_workspace tool to Accounts domain ([f788819](https://github.com/jwstover/citadel/commit/f788819ac8812a425689cc90188c9f3803a8f0bf))
+* **P-20:** register get_current_workspace tool in MCP router ([b17bf44](https://github.com/jwstover/citadel/commit/b17bf44f677d5896a6a1a4f8e63a6bc46a95539c))
+* **P-21:** add tests for MCP get_current_workspace tool ([98d71b7](https://github.com/jwstover/citadel/commit/98d71b75ca1c71d10ff546d4a482a29d76d962f3))
+
+
+
 # [0.16.0](https://github.com/jwstover/citadel/compare/v0.15.0...v0.16.0) (2026-02-17)
 
 
@@ -61,15 +73,6 @@
 ### Features
 
 * make task pages auto update with changes ([956f885](https://github.com/jwstover/citadel/commit/956f88510679754b84b3d4e820fd4efcdfe5bc27))
-
-
-
-# [0.12.0](https://github.com/jwstover/citadel/compare/v0.11.0...v0.12.0) (2025-12-15)
-
-
-### Features
-
-* add ability to log in with password ([88f9501](https://github.com/jwstover/citadel/commit/88f9501431e38c0477cb3f6bca203794d6c99f75))
 
 
 
