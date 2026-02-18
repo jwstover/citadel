@@ -6,7 +6,7 @@ defmodule Citadel.Accounts do
 
   tools do
     tool :get_current_workspace, Citadel.Accounts.Workspace, :current do
-      description "Returns the workspace ID associated with the current API key session"
+      description "Returns the workspace associated with the current API key session"
     end
   end
 

@@ -280,15 +280,16 @@ defmodule Citadel.Accounts.WorkspaceTest do
       assert result.id == workspace.id
     end
 
-    test "only returns the id field" do
+    test "returns full workspace record" do
       user = generate(user())
-      workspace = generate(workspace([], actor: user))
+      workspace = generate(workspace([name: "Test Workspace"], actor: user))
 
       result = Accounts.current_workspace!(actor: user, tenant: workspace.id)
 
       assert result.id == workspace.id
-      assert %Ash.NotLoaded{} = result.name
-      assert %Ash.NotLoaded{} = result.owner_id
+      assert result.name == "Test Workspace"
+      assert result.owner_id == user.id
+      assert result.task_prefix != nil
     end
 
     test "raises error when tenant is not set" do
