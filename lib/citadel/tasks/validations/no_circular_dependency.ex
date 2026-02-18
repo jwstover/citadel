@@ -21,6 +21,9 @@ defmodule Citadel.Tasks.Validations.NoCircularDependency do
 
   defp validate_no_circular_dependency(task_id, depends_on_task_id) do
     cond do
+      is_nil(task_id) or is_nil(depends_on_task_id) ->
+        :ok
+
       task_id == depends_on_task_id ->
         {:error, field: :depends_on_task_id, message: "a task cannot depend on itself"}
 

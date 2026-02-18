@@ -13,7 +13,7 @@ defmodule Citadel.Tasks do
     end
 
     tool :create_task, Citadel.Tasks.Task, :create do
-      description "Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id. Can also set assignees (array of user IDs), due_date, and priority (low, medium, high, urgent)."
+      description "Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id. Can also set assignees (array of user IDs), due_date, priority (low, medium, high, urgent), and dependencies (array of task IDs that must be completed before this task)."
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
@@ -26,6 +26,14 @@ defmodule Citadel.Tasks do
 
     tool :delete_task, Citadel.Tasks.Task, :destroy do
       description "Deletes an existing task by ID. Sub-tasks will also be deleted."
+    end
+
+    tool :create_task_dependency, Citadel.Tasks.TaskDependency, :create do
+      description "Creates a dependency between two tasks. The task specified by task_id will depend on (be blocked by) the task specified by depends_on_task_id."
+    end
+
+    tool :delete_task_dependency, Citadel.Tasks.TaskDependency, :destroy do
+      description "Deletes an existing task dependency by its ID"
     end
   end
 
