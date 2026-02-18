@@ -28,7 +28,12 @@ defmodule Citadel.Tasks.TaskDependency do
   end
 
   actions do
-    defaults [:read, :destroy, create: :*]
+    defaults [:read, :destroy]
+
+    create :create do
+      primary? true
+      accept [:task_id, :depends_on_task_id]
+    end
 
     update :update do
       primary? true

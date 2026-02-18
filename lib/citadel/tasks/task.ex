@@ -49,12 +49,14 @@ defmodule Citadel.Tasks.Task do
       ]
 
       argument :assignees, {:array, :uuid}
+      argument :dependencies, {:array, :uuid}
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritParentWorkspace
       change Citadel.Tasks.Changes.AssignHumanId
       change Citadel.Tasks.Changes.SetDefaultTaskState
       change manage_relationship(:assignees, type: :append_and_remove, on_lookup: :relate)
+      change manage_relationship(:dependencies, type: :append_and_remove, on_lookup: :relate)
 
       validate Citadel.Tasks.Validations.NoCircularParent
       validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
