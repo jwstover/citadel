@@ -9,7 +9,7 @@ defmodule Citadel.Repo.Migrations.AddInReviewTaskState do
     VALUES (
       uuid_generate_v7(),
       'In Review',
-      'fa-circle-dot-solid',
+      'fa-dot-circle-solid',
       '#ffffff',
       '#9333ea',
       4,
