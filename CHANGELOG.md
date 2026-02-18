@@ -1,3 +1,12 @@
+## [0.17.1](https://github.com/jwstover/citadel/compare/v0.17.0...v0.17.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* **docker:** add Node.js and npm install for JS dependencies ([c7f200d](https://github.com/jwstover/citadel/commit/c7f200df20683ae7cbd3b7f899273e8811b98aa6))
+
+
+
 # [0.17.0](https://github.com/jwstover/citadel/compare/v0.16.0...v0.17.0) (2026-02-18)
 
 
@@ -64,15 +73,6 @@
 ### Features
 
 * add landing page ([5a35576](https://github.com/jwstover/citadel/commit/5a355768b57da63eb4c31cac197b689501bc038b))
-
-
-
-# [0.13.0](https://github.com/jwstover/citadel/compare/v0.12.0...v0.13.0) (2025-12-15)
-
-
-### Features
-
-* make task pages auto update with changes ([956f885](https://github.com/jwstover/citadel/commit/956f88510679754b84b3d4e820fd4efcdfe5bc27))
 
 
 
