@@ -135,7 +135,7 @@ html { font-family: "Exo 2", sans-serif; }
 /* This file is for your main application CSS */
 
 /* Safelist: Task state icons stored in database */
-@source inline("fa-circle-regular fa-circle-solid fa-circle-half-stroke-solid fa-circle-check-solid fa-circle-xmark-solid");
+@source inline("fa-circle-regular fa-circle-solid fa-circle-half-stroke-solid fa-circle-check-solid fa-circle-xmark-solid fa-circle-dot-solid");
 
 /* Milkdown Editor - DaisyUI Theme Integration */
 .milkdown-container {
