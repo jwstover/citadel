@@ -1,3 +1,13 @@
+# [0.18.0](https://github.com/jwstover/citadel/compare/v0.17.1...v0.18.0) (2026-02-18)
+
+
+### Features
+
+* add In Review task state ([6c7c03f](https://github.com/jwstover/citadel/commit/6c7c03f86787588461d1c78cad7e193f1edb485c))
+* expose TaskDependency via MCP tools ([4a47f49](https://github.com/jwstover/citadel/commit/4a47f4976ec2a85053459b6d768647e46a0584f9))
+
+
+
 ## [0.17.1](https://github.com/jwstover/citadel/compare/v0.17.0...v0.17.1) (2026-02-18)
 
 
@@ -64,15 +74,6 @@
 * **PER-236:** Add soft enforcement warning for completing blocked tasks ([5fadc92](https://github.com/jwstover/citadel/commit/5fadc92fabde091a5efa42b6e12cb0a51210ac31))
 * **PER-238:** Add comprehensive LiveView tests for task dependencies ([df33f03](https://github.com/jwstover/citadel/commit/df33f0393de06803fbf031c67c99481ed40071c4))
 * **PER-239:** Add dependency support to MCP task tools ([009d658](https://github.com/jwstover/citadel/commit/009d65859f9fd8a4fbb98fdbe580eb52a7cada5d))
-
-
-
-# [0.14.0](https://github.com/jwstover/citadel/compare/v0.13.0...v0.14.0) (2025-12-28)
-
-
-### Features
-
-* add landing page ([5a35576](https://github.com/jwstover/citadel/commit/5a355768b57da63eb4c31cac197b689501bc038b))
 
 
 
