@@ -20,7 +20,6 @@ defmodule Citadel.Accounts.Workspace do
     read :current do
       get? true
       filter expr(id == ^tenant())
-      prepare build(select: [:id])
     end
 
     create :create do
