@@ -63,6 +63,7 @@ defmodule CitadelWeb.Router do
       live "/chat/:conversation_id", ChatLive
       live "/dashboard", DashboardLive.Index, :index
       live "/tasks/:id", TaskLive.Show, :show
+      live "/billing", BillingLive.Index, :index
       live "/preferences", PreferencesLive.Index, :index
       live "/preferences/workspaces/new", PreferencesLive.WorkspaceForm, :new
       live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
