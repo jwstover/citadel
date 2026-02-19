@@ -1,3 +1,15 @@
+# [0.19.0](https://github.com/jwstover/citadel/compare/v0.18.1...v0.19.0) (2026-02-19)
+
+
+### Features
+
+* **P-2:** create BillingLive.Index LiveView ([6258460](https://github.com/jwstover/citadel/commit/6258460de359a7cdeb32b111232d25ca38425500))
+* **P-4:** add Billing link to sidebar navigation ([868b768](https://github.com/jwstover/citadel/commit/868b7680c82e58aa143fd3908c1147602d7dd2f4))
+* **P-5:** remove billing sections from OrganizationSection ([8b7ff2f](https://github.com/jwstover/citadel/commit/8b7ff2f4c0f43b11919d24a0d18ef6622a723609))
+* **P-6:** update BillingController redirects to /billing ([bae12e8](https://github.com/jwstover/citadel/commit/bae12e82b0b26e04ac4af76c89dbba4630f70e41))
+
+
+
 ## [0.18.1](https://github.com/jwstover/citadel/compare/v0.18.0...v0.18.1) (2026-02-19)
 
 
@@ -35,35 +47,6 @@
 * **P-19:** add AshAi extension and get_current_workspace tool to Accounts domain ([f788819](https://github.com/jwstover/citadel/commit/f788819ac8812a425689cc90188c9f3803a8f0bf))
 * **P-20:** register get_current_workspace tool in MCP router ([b17bf44](https://github.com/jwstover/citadel/commit/b17bf44f677d5896a6a1a4f8e63a6bc46a95539c))
 * **P-21:** add tests for MCP get_current_workspace tool ([98d71b7](https://github.com/jwstover/citadel/commit/98d71b75ca1c71d10ff546d4a482a29d76d962f3))
-
-
-
-# [0.16.0](https://github.com/jwstover/citadel/compare/v0.15.0...v0.16.0) (2026-02-17)
-
-
-### Bug Fixes
-
-* derive advisory lock namespace from module name ([5733620](https://github.com/jwstover/citadel/commit/573362044298d1500162ad04ba6060f37109fd69))
-* prevent credit overdraft ([be5bc60](https://github.com/jwstover/citadel/commit/be5bc6074922496449fc817a59598925874408d9))
-* resolve credit race condition ([377a0e2](https://github.com/jwstover/citadel/commit/377a0e20292d73400dfeeb562368472dc9b4dd7f))
-* resolve issue resulting in lost credit consumption ([faa37ef](https://github.com/jwstover/citadel/commit/faa37ef53243ddb7e15ba7ec5bc63521ae26d4c1))
-* resolve issues with duplicate bg jobs ([4dcfe04](https://github.com/jwstover/citadel/commit/4dcfe04591800b4f8a4a678a50abd275c27bff6a))
-* resolve oban job uniqueness issues ([14cc887](https://github.com/jwstover/citadel/commit/14cc887e874046b6fde47c73c9f1d93e3f2f9041))
-* resolve remaining workspace vulnerabilities ([5583e52](https://github.com/jwstover/citadel/commit/5583e52aed84ffe2d282f5a71a6ad2373dae6ba4))
-* resolve test failures caused by orgs ([fedbd6c](https://github.com/jwstover/citadel/commit/fedbd6c6cc6a52dfa448b1fe9f0cc6b28d7b83ed))
-* use existing task states in tests instead of creating duplicates ([68cd037](https://github.com/jwstover/citadel/commit/68cd0376f6535d826369e72664a32024b829995e))
-
-
-### Features
-
-* add billing resources ([4546c65](https://github.com/jwstover/citadel/commit/4546c65bc739c9a75f8a3327b72bee5fc8832ad0))
-* add feature gating ([8152b60](https://github.com/jwstover/citadel/commit/8152b6070f1ff4932e89b114ab093f5d6951e9a2))
-* add github mcp tools to ai chat ([41e8234](https://github.com/jwstover/citadel/commit/41e823485192da4a14880abedae355ba3a7e7b96))
-* add organizations ([7928b97](https://github.com/jwstover/citadel/commit/7928b977f09257694b3afefa901c5407fa2f4899))
-* add template legal ([416f9b8](https://github.com/jwstover/citadel/commit/416f9b8ed41f7b9fde77b904db216f9227386ff3))
-* add upgrade UI ([8319405](https://github.com/jwstover/citadel/commit/8319405d99b8c0ab6b0cb0b387c7ebf36375a242))
-* implement extensible tier system ([4d5ce73](https://github.com/jwstover/citadel/commit/4d5ce73301b3b532c569a7801743d640a8919a64))
-* set user email when initiating checkout session ([8ea9f6e](https://github.com/jwstover/citadel/commit/8ea9f6e6d5740d922b0572a84c018ce58a398c44))
 
 
 
