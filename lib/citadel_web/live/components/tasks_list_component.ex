@@ -202,7 +202,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
   def render(assigns) do
     ~H"""
     <table class="w-full" phx-hook="TaskDragDrop" id={@id} phx-target={@myself}>
-      <%= for state <- @task_states do %>
+      <%= for state <- @task_states, (@tasks_by_state_count[state.id] || 0) > 0 do %>
         <thead class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border">
           <tr class="sticky top-0 bg-base-200 z-100">
             <td colspan="7" class="px-6 py-4">
