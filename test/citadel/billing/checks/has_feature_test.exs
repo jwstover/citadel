@@ -1,5 +1,5 @@
 defmodule Citadel.Billing.Checks.HasFeatureTest do
-  use Citadel.DataCase, async: true
+  use Citadel.DataCase, async: false
 
   import Citadel.Generator
 
