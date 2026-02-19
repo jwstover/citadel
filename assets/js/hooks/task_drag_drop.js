@@ -2,6 +2,19 @@ import Sortable from "../../vendor/sortable.js"
 
 const TaskDragDrop = {
   mounted() {
+    this.initSortables()
+  },
+
+  updated() {
+    this.destroySortables()
+    this.initSortables()
+  },
+
+  destroyed() {
+    this.destroySortables()
+  },
+
+  initSortables() {
     this.sortables = []
 
     // Find all dropzones (one per task state)
@@ -39,10 +52,11 @@ const TaskDragDrop = {
     })
   },
 
-  destroyed() {
-    // Clean up Sortable instances
-    this.sortables.forEach(sortable => sortable.destroy())
-    this.sortables = []
+  destroySortables() {
+    if (this.sortables) {
+      this.sortables.forEach(sortable => sortable.destroy())
+      this.sortables = []
+    }
   }
 }
 
