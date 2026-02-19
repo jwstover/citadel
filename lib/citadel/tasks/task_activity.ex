@@ -4,7 +4,8 @@ defmodule Citadel.Tasks.TaskActivity do
     otp_app: :citadel,
     domain: Citadel.Tasks,
     data_layer: AshPostgres.DataLayer,
-    authorizers: [Ash.Policy.Authorizer]
+    authorizers: [Ash.Policy.Authorizer],
+    notifiers: [Ash.Notifier.PubSub]
 
   alias Citadel.Tasks.TaskActivity.Types.{ActivityType, ActorType}
 
@@ -26,6 +27,24 @@ defmodule Citadel.Tasks.TaskActivity do
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritTaskWorkspace
     end
+
+    create :create_comment do
+      accept [:body, :task_id]
+
+      change set_attribute(:type, :comment)
+      change set_attribute(:actor_type, :user)
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+    end
+
+    read :list_by_task do
+      argument :task_id, :uuid, allow_nil?: false
+
+      filter expr(task_id == ^arg(:task_id))
+      prepare build(sort: [inserted_at: :asc])
+    end
+
+    destroy :destroy_comment
   end
 
   policies do
@@ -41,11 +60,16 @@ defmodule Citadel.Tasks.TaskActivity do
     end
 
     policy action_type(:destroy) do
-      authorize_if expr(
-                     workspace.owner_id == ^actor(:id) or
-                       exists(workspace.memberships, user_id == ^actor(:id))
-                   )
+      authorize_if expr(user_id == ^actor(:id))
     end
+  end
+
+  pub_sub do
+    module CitadelWeb.Endpoint
+    prefix "tasks"
+
+    publish :create_comment, ["task_activities", :task_id]
+    publish :destroy_comment, ["task_activities", :task_id]
   end
 
   multitenancy do
