@@ -14,8 +14,8 @@ defmodule CitadelWeb.BillingController do
          {:ok, workspace} <- get_current_workspace(conn, user),
          {:ok, subscription} <- get_subscription(workspace.organization_id, user),
          {:ok, seat_count} <- get_member_count(workspace.organization_id, user) do
-      success_url = url(conn, ~p"/preferences?checkout=success")
-      cancel_url = url(conn, ~p"/preferences?checkout=cancelled")
+      success_url = url(conn, ~p"/billing?checkout=success")
+      cancel_url = url(conn, ~p"/billing?checkout=cancelled")
 
       case StripeService.create_checkout_session(
              subscription,
@@ -32,7 +32,7 @@ defmodule CitadelWeb.BillingController do
         {:error, _reason} ->
           conn
           |> put_flash(:error, "Failed to create checkout session")
-          |> redirect(to: ~p"/preferences")
+          |> redirect(to: ~p"/billing")
       end
     else
       {:error, :unauthorized} ->
@@ -43,7 +43,7 @@ defmodule CitadelWeb.BillingController do
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Failed to initiate checkout")
-        |> redirect(to: ~p"/preferences")
+        |> redirect(to: ~p"/billing")
     end
   end
 
@@ -51,7 +51,7 @@ defmodule CitadelWeb.BillingController do
     with {:ok, user} <- get_current_user(conn),
          {:ok, workspace} <- get_current_workspace(conn, user),
          {:ok, subscription} <- get_subscription(workspace.organization_id, user) do
-      return_url = url(conn, ~p"/preferences")
+      return_url = url(conn, ~p"/billing")
 
       case StripeService.create_portal_session(subscription.stripe_customer_id, return_url) do
         {:ok, portal_url} ->
@@ -60,7 +60,7 @@ defmodule CitadelWeb.BillingController do
         {:error, _reason} ->
           conn
           |> put_flash(:error, "Failed to access billing portal")
-          |> redirect(to: ~p"/preferences")
+          |> redirect(to: ~p"/billing")
       end
     else
       {:error, :unauthorized} ->
@@ -71,7 +71,7 @@ defmodule CitadelWeb.BillingController do
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Failed to access billing portal")
-        |> redirect(to: ~p"/preferences")
+        |> redirect(to: ~p"/billing")
     end
   end
 
