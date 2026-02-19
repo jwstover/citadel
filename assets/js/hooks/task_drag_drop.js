@@ -40,6 +40,10 @@ const TaskDragDrop = {
 
           // Only send event if the state actually changed
           if (oldStateId !== newStateId) {
+            // Move element back to original position - LiveView will handle the actual DOM update
+            // This prevents duplicates from Sortable moving the element AND LiveView inserting it
+            evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex])
+
             this.pushEventTo(this.el, "task-moved", {
               task_id: taskId,
               new_state_id: newStateId
