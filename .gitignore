@@ -35,3 +35,4 @@ citadel-*.tar
 npm-debug.log
 /assets/node_modules/
 worktrees
+.expert/
