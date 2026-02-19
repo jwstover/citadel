@@ -1,3 +1,19 @@
+# [0.20.0](https://github.com/jwstover/citadel/compare/v0.19.0...v0.20.0) (2026-02-19)
+
+
+### Bug Fixes
+
+* **P-13:** prevent duplicate tasks when dragging between states ([37860c5](https://github.com/jwstover/citadel/commit/37860c5da9c5b76ade1d9bfe17b93ef3380b522c))
+* **P-13:** reinitialize drag-drop sortables when DOM updates ([c0e15c0](https://github.com/jwstover/citadel/commit/c0e15c0c1f7d20f4544e09e07da85a52b5f4975d))
+
+
+### Features
+
+* **P-13:** filter out empty task states from rendering ([20c0e91](https://github.com/jwstover/citadel/commit/20c0e9120607bd9bdacb59a0cf20856d325b31cf))
+* **P-14:** add empty state UI when no tasks exist ([ba23bb7](https://github.com/jwstover/citadel/commit/ba23bb7198bf0a518c682193ee87f1571fac238a))
+
+
+
 # [0.19.0](https://github.com/jwstover/citadel/compare/v0.18.1...v0.19.0) (2026-02-19)
 
 
@@ -35,18 +51,6 @@
 ### Bug Fixes
 
 * **docker:** add Node.js and npm install for JS dependencies ([c7f200d](https://github.com/jwstover/citadel/commit/c7f200df20683ae7cbd3b7f899273e8811b98aa6))
-
-
-
-# [0.17.0](https://github.com/jwstover/citadel/compare/v0.16.0...v0.17.0) (2026-02-18)
-
-
-### Features
-
-* **P-18:** add :current read action to Workspace resource ([3eca363](https://github.com/jwstover/citadel/commit/3eca363e4f8a423bba2c98908458e441e77c1ff8))
-* **P-19:** add AshAi extension and get_current_workspace tool to Accounts domain ([f788819](https://github.com/jwstover/citadel/commit/f788819ac8812a425689cc90188c9f3803a8f0bf))
-* **P-20:** register get_current_workspace tool in MCP router ([b17bf44](https://github.com/jwstover/citadel/commit/b17bf44f677d5896a6a1a4f8e63a6bc46a95539c))
-* **P-21:** add tests for MCP get_current_workspace tool ([98d71b7](https://github.com/jwstover/citadel/commit/98d71b75ca1c71d10ff546d4a482a29d76d962f3))
 
 
 
