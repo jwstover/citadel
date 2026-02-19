@@ -199,57 +199,74 @@ defmodule CitadelWeb.Components.TasksListComponent do
 
   defp dom_id(state_id, task_id), do: "tasks_#{state_id}-#{task_id}"
 
+  defp total_task_count(tasks_by_state_count) do
+    Enum.sum(Map.values(tasks_by_state_count))
+  end
+
   def render(assigns) do
+    assigns = assign(assigns, :total_count, total_task_count(assigns.tasks_by_state_count))
+
     ~H"""
-    <table class="w-full" phx-hook="TaskDragDrop" id={@id} phx-target={@myself}>
-      <%= for state <- @task_states, (@tasks_by_state_count[state.id] || 0) > 0 do %>
-        <thead class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border">
-          <tr class="sticky top-0 bg-base-200 z-100">
-            <td colspan="7" class="px-6 py-4">
-              <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-base-content">
-                  {state.name}
-                </h2>
-                <span class="badge badge-neutral badge-sm">
-                  {@tasks_by_state_count[state.id] || 0}
-                </span>
-              </div>
-            </td>
-          </tr>
-          <tr class="sticky top-[60px] bg-base-200 z-100">
-            <th></th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-              ID
-            </th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left">Name</th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-              Priority
-            </th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-              Due Date
-            </th>
-            <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
-              Assignee
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id={"#{@id}-state-#{state.id}"}
-          phx-update="stream"
-          data-dropzone
-          data-state-id={state.id}
-        >
-          <.task_row
-            :for={{dom_id, task} <- @streams[stream_name(state.id)] || []}
-            id={dom_id}
-            task={task}
-            current_user={@current_user}
-            current_workspace={@current_workspace}
-          />
-        </tbody>
-      <% end %>
-    </table>
+    <div id={@id} phx-hook="TaskDragDrop" phx-target={@myself}>
+      <div
+        :if={@total_count == 0}
+        class="flex flex-col items-center justify-center py-16 text-base-content/50"
+      >
+        <.icon name="hero-clipboard-document-list" class="size-16 mb-4" />
+        <p class="text-lg">No tasks yet. Create one to get started!</p>
+      </div>
+      <table :if={@total_count > 0} class="w-full">
+        <%= for state <- @task_states, (@tasks_by_state_count[state.id] || 0) > 0 do %>
+          <thead class="[&:not(:first-child)]:border-t [&:not(:first-child)]:border-border">
+            <tr class="sticky top-0 bg-base-200 z-100">
+              <td colspan="7" class="px-6 py-4">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-lg font-semibold text-base-content">
+                    {state.name}
+                  </h2>
+                  <span class="badge badge-neutral badge-sm">
+                    {@tasks_by_state_count[state.id] || 0}
+                  </span>
+                </div>
+              </td>
+            </tr>
+            <tr class="sticky top-[60px] bg-base-200 z-100">
+              <th></th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 px-2"></th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+                ID
+              </th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left">
+                Name
+              </th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+                Priority
+              </th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+                Due Date
+              </th>
+              <th class="text-xs uppercase text-base-content/50 font-semibold pb-2 text-left px-2">
+                Assignee
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id={"#{@id}-state-#{state.id}"}
+            phx-update="stream"
+            data-dropzone
+            data-state-id={state.id}
+          >
+            <.task_row
+              :for={{dom_id, task} <- @streams[stream_name(state.id)] || []}
+              id={dom_id}
+              task={task}
+              current_user={@current_user}
+              current_workspace={@current_workspace}
+            />
+          </tbody>
+        <% end %>
+      </table>
+    </div>
     """
   end
 end
