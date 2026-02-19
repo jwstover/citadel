@@ -67,6 +67,8 @@ defmodule Citadel.Tasks do
       define :destroy_task_dependency, action: :destroy
     end
 
+    resource Citadel.Tasks.TaskActivity
+
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read
