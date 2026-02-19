@@ -59,13 +59,14 @@ defmodule CitadelWeb.Components.TaskStateDropdown do
   end
 
   defp complete_state_change(socket, state_id) do
-    Tasks.update_task!(socket.assigns.task.id, %{task_state_id: state_id},
-      actor: socket.assigns.current_user,
-      tenant: socket.assigns.current_workspace.id
-    )
+    updated_task =
+      Tasks.update_task!(socket.assigns.task.id, %{task_state_id: state_id},
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
 
     task =
-      Ash.load!(socket.assigns.task, [:task_state],
+      Ash.load!(updated_task, [:task_state],
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )

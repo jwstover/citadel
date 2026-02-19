@@ -57,7 +57,7 @@ defmodule CitadelWeb.Components.TaskComponents do
       <td class="p-2 w-24 align-middle">
         <.live_component
           module={CitadelWeb.Components.PriorityDropdown}
-          id={"task-priority-#{@task.id}"}
+          id={"task-priority-#{@task.id}-#{@task.task_state_id}"}
           task={@task}
           current_user={@current_user}
           current_workspace={@current_workspace}

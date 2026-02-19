@@ -133,6 +133,54 @@ defmodule CitadelWeb.DashboardLive.IndexTest do
     end
   end
 
+  describe "priority badge persistence after state change" do
+    setup :register_and_log_in_user
+
+    setup %{user: user, workspace: workspace} do
+      todo_state = create_task_state("Todo", 1)
+      done_state = create_task_state("Done", 2, is_complete: true)
+
+      task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: todo_state.id,
+              title: "Priority Test Task",
+              priority: :high
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, todo_state: todo_state, done_state: done_state}
+    end
+
+    test "priority badge remains visible after task state change", %{
+      conn: conn,
+      task: task,
+      todo_state: todo_state,
+      done_state: done_state
+    } do
+      {:ok, view, html} = live(conn, ~p"/dashboard")
+
+      # Verify priority badge is initially displayed
+      assert html =~ "high"
+      assert has_element?(view, "#task-priority-#{task.id}-#{todo_state.id}")
+
+      # Change the task state via the dropdown
+      view
+      |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
+      |> render_click()
+
+      # Priority badge should still be visible after state change (with new state ID in component ID)
+      html = render(view)
+      assert html =~ "high"
+      assert has_element?(view, "#task-priority-#{task.id}-#{done_state.id}")
+    end
+  end
+
   describe "handle_info task_priority_changed" do
     setup :register_and_log_in_user
 
