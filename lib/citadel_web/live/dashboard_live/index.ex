@@ -29,13 +29,21 @@ defmodule CitadelWeb.DashboardLive.Index do
     {:noreply, assign(socket, :show_task_form, false)}
   end
 
-  def handle_info({:task_state_changed, _task}, socket) do
-    send_update(CitadelWeb.Components.TasksListComponent, id: "tasks-container")
+  def handle_info({:task_state_changed, task}, socket) do
+    send_update(CitadelWeb.Components.TasksListComponent,
+      id: "tasks-container",
+      updated_task: task
+    )
+
     {:noreply, socket}
   end
 
-  def handle_info({:task_priority_changed, _task}, socket) do
-    send_update(CitadelWeb.Components.TasksListComponent, id: "tasks-container")
+  def handle_info({:task_priority_changed, task}, socket) do
+    send_update(CitadelWeb.Components.TasksListComponent,
+      id: "tasks-container",
+      updated_task: task
+    )
+
     {:noreply, socket}
   end
 

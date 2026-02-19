@@ -13,7 +13,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
 
     socket =
       socket
-      |> stream_delete_by_dom_id(stream_name(task_state_id), "tasks-#{task_id}")
+      |> stream_delete_by_dom_id(stream_name(task_state_id), dom_id(task_state_id, task_id))
       |> assign(
         :tasks_by_state_count,
         Map.put(socket.assigns.tasks_by_state_count, task_state_id, max(old_count - 1, 0))
@@ -52,7 +52,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
             |> Map.put(task.task_state_id, new_count + 1)
 
           socket
-          |> stream_delete_by_dom_id(stream_name(old_state_id), "tasks-#{task.id}")
+          |> stream_delete_by_dom_id(stream_name(old_state_id), dom_id(old_state_id, task.id))
           |> stream_insert(stream_name(task.task_state_id), task)
           |> assign(:tasks_by_state_count, updated_counts)
           |> assign(:task_state_map, task_state_map)
@@ -78,16 +78,21 @@ defmodule CitadelWeb.Components.TasksListComponent do
     {:ok, socket}
   end
 
-  defp ensure_loaded(%{__struct__: Citadel.Tasks.Task} = task, socket) do
-    case task.task_state do
-      %Ash.NotLoaded{} ->
-        Ash.load!(task, [:task_state, :assignees, :overdue?],
-          actor: socket.assigns.current_user,
-          tenant: socket.assigns.current_workspace.id
-        )
+  @required_loads [:task_state, :assignees, :overdue?]
 
-      _ ->
-        task
+  defp ensure_loaded(%{__struct__: Citadel.Tasks.Task} = task, socket) do
+    loads_needed =
+      Enum.filter(@required_loads, fn field ->
+        match?(%Ash.NotLoaded{}, Map.get(task, field))
+      end)
+
+    if loads_needed == [] do
+      task
+    else
+      Ash.load!(task, loads_needed,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
     end
   end
 
@@ -95,7 +100,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
     Tasks.get_task!(id,
       actor: socket.assigns.current_user,
       tenant: socket.assigns.current_workspace.id,
-      load: [:task_state, :assignees, :overdue?]
+      load: @required_loads
     )
   end
 
@@ -191,6 +196,8 @@ defmodule CitadelWeb.Components.TasksListComponent do
 
   # sobelow_skip ["DOS.BinToAtom"]
   defp stream_name(state_id), do: :"tasks_#{state_id}"
+
+  defp dom_id(state_id, task_id), do: "tasks_#{state_id}-#{task_id}"
 
   def render(assigns) do
     ~H"""
