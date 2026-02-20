@@ -43,6 +43,13 @@ defmodule CitadelWeb.TaskLive.Show do
         tenant: socket.assigns.current_workspace.id
       )
 
+    activities =
+      Tasks.list_task_activities!(task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:user]
+      )
+
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
     can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
@@ -51,6 +58,7 @@ defmodule CitadelWeb.TaskLive.Show do
       CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
     end
 
     socket =
@@ -63,8 +71,43 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:can_delete, can_delete)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
+      |> stream(:activities, activities)
 
     {:ok, socket}
+  end
+
+  def handle_event("submit-comment", %{"body" => body}, socket) do
+    body = String.trim(body)
+
+    if body == "" do
+      {:noreply, socket}
+    else
+      activity =
+        Tasks.create_comment!(
+          %{body: body, task_id: socket.assigns.task.id},
+          actor: socket.assigns.current_user,
+          tenant: socket.assigns.current_workspace.id
+        )
+
+      activity = Ash.load!(activity, [:user], tenant: socket.assigns.current_workspace.id)
+
+      {:noreply, stream_insert(socket, :activities, activity)}
+    end
+  end
+
+  def handle_event("delete-comment", %{"id" => activity_id}, socket) do
+    activity =
+      Ash.get!(Citadel.Tasks.TaskActivity, activity_id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    Tasks.destroy_comment!(activity,
+      actor: socket.assigns.current_user,
+      tenant: socket.assigns.current_workspace.id
+    )
+
+    {:noreply, stream_delete(socket, :activities, activity)}
   end
 
   def handle_event("new-sub-task", _params, socket) do
@@ -401,6 +444,109 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "tasks:task_activities:" <> _task_id,
+          event: "create_comment",
+          payload: %{data: activity}
+        },
+        socket
+      ) do
+    activity = Ash.load!(activity, [:user], tenant: socket.assigns.current_workspace.id)
+    {:noreply, stream_insert(socket, :activities, activity)}
+  end
+
+  def handle_info(
+        %Phoenix.Socket.Broadcast{
+          topic: "tasks:task_activities:" <> _task_id,
+          event: "destroy_comment",
+          payload: %{data: activity}
+        },
+        socket
+      ) do
+    {:noreply, stream_delete(socket, :activities, activity)}
+  end
+
+  attr :activity, :map, required: true
+
+  defp activity_actor_avatar(%{activity: %{actor_type: :user, user: user}} = assigns)
+       when not is_nil(user) do
+    assigns = assign(assigns, :user, user)
+
+    ~H"""
+    <.user_avatar user={@user} />
+    """
+  end
+
+  defp activity_actor_avatar(%{activity: %{actor_type: :system}} = assigns) do
+    ~H"""
+    <div class="avatar avatar-placeholder">
+      <div class="w-6 h-6 rounded-full bg-base-300 flex items-center justify-center text-xs">
+        <.icon name="hero-cog-6-tooth" class="size-3.5 text-base-content/60" />
+      </div>
+    </div>
+    """
+  end
+
+  defp activity_actor_avatar(%{activity: %{actor_type: :ai}} = assigns) do
+    ~H"""
+    <div class="avatar avatar-placeholder">
+      <div class="w-6 h-6 rounded-full bg-base-300 flex items-center justify-center text-xs">
+        <.icon name="hero-cpu-chip" class="size-3.5 text-base-content/60" />
+      </div>
+    </div>
+    """
+  end
+
+  defp activity_actor_avatar(assigns) do
+    ~H"""
+    <div class="avatar avatar-placeholder">
+      <div class="w-6 h-6 rounded-full bg-base-300 flex items-center justify-center text-xs">
+        ?
+      </div>
+    </div>
+    """
+  end
+
+  attr :activity, :map, required: true
+
+  defp activity_actor_name(%{activity: %{actor_type: :user, user: user}} = assigns)
+       when not is_nil(user) do
+    assigns = assign(assigns, :user, user)
+
+    ~H"""
+    {to_string(@user.email)}
+    """
+  end
+
+  defp activity_actor_name(%{activity: %{actor_display_name: name}} = assigns)
+       when not is_nil(name) do
+    assigns = assign(assigns, :name, name)
+
+    ~H"""
+    {@name}
+    """
+  end
+
+  defp activity_actor_name(assigns) do
+    ~H"""
+    Unknown
+    """
+  end
+
+  defp relative_time(datetime) do
+    now = DateTime.utc_now()
+    diff = DateTime.diff(now, datetime, :second)
+
+    cond do
+      diff < 60 -> "just now"
+      diff < 3600 -> "#{div(diff, 60)} min ago"
+      diff < 86_400 -> "#{div(diff, 3600)} hours ago"
+      diff < 604_800 -> "#{div(diff, 86_400)} days ago"
+      true -> Calendar.strftime(datetime, "%b %d, %Y")
+    end
+  end
+
   defp reload_task_with_dependencies(socket) do
     task =
       Tasks.get_task!(socket.assigns.task.id,
@@ -668,6 +814,68 @@ defmodule CitadelWeb.TaskLive.Show do
                 current_workspace={@current_workspace}
               />
             <% end %>
+          </div>
+
+          <div class="py-4 border-t border-base-300">
+            <h2 class="text-sm font-semibold text-base-content/70 mb-4">Activity</h2>
+
+            <div id="activities" phx-update="stream" class="space-y-4 mb-6">
+              <div id="activities-empty" class="hidden only:block text-base-content/50 italic text-sm">
+                No activity yet
+              </div>
+              <div
+                :for={{dom_id, activity} <- @streams.activities}
+                id={dom_id}
+                class="flex gap-3 group"
+              >
+                <div class="flex-shrink-0 pt-0.5">
+                  <.activity_actor_avatar activity={activity} />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium text-base-content">
+                      <.activity_actor_name activity={activity} />
+                    </span>
+                    <span class="text-xs text-base-content/40">
+                      {relative_time(activity.inserted_at)}
+                    </span>
+                    <button
+                      :if={activity.user_id == @current_user.id}
+                      phx-click="delete-comment"
+                      phx-value-id={activity.id}
+                      class="text-xs text-base-content/30 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                      data-confirm="Delete this comment?"
+                    >
+                      <.icon name="hero-trash" class="size-3" />
+                    </button>
+                  </div>
+                  <p class="text-sm text-base-content/80 mt-0.5 whitespace-pre-wrap">
+                    {activity.body}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <form id="comment-form" phx-submit="submit-comment" class="flex gap-3">
+              <div class="flex-shrink-0 pt-0.5">
+                <.user_avatar user={@current_user} />
+              </div>
+              <div class="flex-1">
+                <textarea
+                  name="body"
+                  rows="2"
+                  placeholder="Add a comment..."
+                  class="textarea textarea-bordered w-full text-sm resize-none"
+                  phx-hook="ClearOnSubmit"
+                  id="comment-body"
+                />
+                <div class="flex justify-end mt-2">
+                  <button type="submit" class="btn btn-sm btn-primary">
+                    Comment
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       </div>
