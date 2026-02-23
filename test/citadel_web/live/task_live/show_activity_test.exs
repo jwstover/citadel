@@ -27,7 +27,9 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
         )
       )
 
-    %{task: task, task_state: task_state}
+    component_id = "task-activities-#{task.id}"
+
+    %{task: task, task_state: task_state, component_id: component_id}
   end
 
   describe "activity section rendering" do
@@ -37,11 +39,11 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       assert html =~ "Activity"
     end
 
-    test "displays comment form", %{conn: conn, task: task} do
+    test "displays comment form", %{conn: conn, task: task, component_id: cid} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert has_element?(view, "#comment-form")
-      assert has_element?(view, "#comment-form textarea[name=\"body\"]")
+      assert has_element?(view, "##{cid}-form")
+      assert has_element?(view, ~s|##{cid}-form textarea[name="body"]|)
     end
 
     test "displays empty state when no activities", %{conn: conn, task: task} do
@@ -52,37 +54,46 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
   end
 
   describe "submitting comments" do
-    test "creates comment and displays it in timeline", %{conn: conn, task: task} do
+    test "creates comment and displays it in timeline", %{
+      conn: conn,
+      task: task,
+      component_id: cid
+    } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       html =
         view
-        |> form("#comment-form", %{body: "My first comment"})
+        |> form("##{cid}-form", %{body: "My first comment"})
         |> render_submit()
 
       assert html =~ "My first comment"
     end
 
-    test "clears form after successful submission", %{conn: conn, task: task} do
+    test "clears form after successful submission", %{
+      conn: conn,
+      task: task,
+      component_id: cid
+    } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("#comment-form", %{body: "Comment to clear"})
+      |> form("##{cid}-form", %{body: "Comment to clear"})
       |> render_submit()
 
-      refute has_element?(view, "#comment-form textarea[name=\"body\"]", "Comment to clear")
+      refute has_element?(view, ~s|##{cid}-form textarea[name="body"]|, "Comment to clear")
     end
 
     test "does not submit empty comment", %{
       conn: conn,
       task: task,
       user: user,
-      workspace: workspace
+      workspace: workspace,
+      component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("#comment-form", %{body: ""})
+      |> form("##{cid}-form", %{body: ""})
       |> render_submit()
 
       activities = Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
@@ -93,12 +104,13 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       conn: conn,
       task: task,
       user: user,
-      workspace: workspace
+      workspace: workspace,
+      component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("#comment-form", %{body: "   "})
+      |> form("##{cid}-form", %{body: "   "})
       |> render_submit()
 
       activities = Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
