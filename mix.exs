@@ -65,7 +65,7 @@ defmodule Citadel.MixProject do
       {:picosat_elixir, "~> 0.2"},
       {:sourceror, "~> 1.8", only: [:dev, :test]},
       {:oban, "~> 2.0"},
-      {:usage_rules, "~> 0.1", only: [:dev]},
+      {:usage_rules, "~> 1.2", only: [:dev]},
       {:ash_ai, "~> 0.2"},
       {:langchain, "~> 0.3"},
       {:hermes_mcp, "~> 0.14"},
