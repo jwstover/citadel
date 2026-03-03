@@ -67,6 +67,12 @@ defmodule Citadel.Tasks do
       define :destroy_task_dependency, action: :destroy
     end
 
+    resource Citadel.Tasks.TaskActivity do
+      define :create_comment, action: :create_comment
+      define :list_task_activities, action: :list_by_task, args: [:task_id]
+      define :destroy_comment, action: :destroy_comment
+    end
+
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read

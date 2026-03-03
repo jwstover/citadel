@@ -8,6 +8,8 @@ defmodule CitadelWeb.TaskLive.Show do
   import CitadelWeb.Components.TaskComponents,
     only: [task_state_icon: 1, user_avatar: 1, priority_badge: 1]
 
+  alias CitadelWeb.Components.TaskActivitySection
+
   on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
   on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
@@ -51,6 +53,7 @@ defmodule CitadelWeb.TaskLive.Show do
       CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
     end
 
     socket =
@@ -401,6 +404,18 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:task_activities:" <> _task_id} = broadcast,
+        socket
+      ) do
+    send_update(TaskActivitySection,
+      id: "task-activities-#{socket.assigns.task.id}",
+      broadcast: broadcast
+    )
+
+    {:noreply, socket}
+  end
+
   defp reload_task_with_dependencies(socket) do
     task =
       Tasks.get_task!(socket.assigns.task.id,
@@ -669,6 +684,14 @@ defmodule CitadelWeb.TaskLive.Show do
               />
             <% end %>
           </div>
+
+          <.live_component
+            module={TaskActivitySection}
+            id={"task-activities-#{@task.id}"}
+            task={@task}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
         </div>
       </div>
 

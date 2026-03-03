@@ -264,6 +264,8 @@ defmodule Citadel.Tasks.Task do
       destination_attribute_on_join_resource :task_id
       public? true
     end
+
+    has_many :activities, Citadel.Tasks.TaskActivity
   end
 
   calculations do
