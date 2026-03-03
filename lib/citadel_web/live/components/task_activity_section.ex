@@ -37,7 +37,12 @@ defmodule CitadelWeb.Components.TaskActivitySection do
          %Phoenix.Socket.Broadcast{event: "create_comment", payload: %{data: activity}},
          socket
        ) do
-    activity = Ash.load!(activity, [:user], tenant: socket.assigns.current_workspace.id)
+    activity =
+      Ash.load!(activity, [:user],
+        tenant: socket.assigns.current_workspace.id,
+        actor: socket.assigns.current_user
+      )
+
     stream_insert(socket, :activities, activity)
   end
 
@@ -61,7 +66,11 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           tenant: socket.assigns.current_workspace.id
         )
 
-      activity = Ash.load!(activity, [:user], tenant: socket.assigns.current_workspace.id)
+      activity =
+        Ash.load!(activity, [:user],
+          tenant: socket.assigns.current_workspace.id,
+          actor: socket.assigns.current_user
+        )
 
       {:noreply, stream_insert(socket, :activities, activity)}
     end
