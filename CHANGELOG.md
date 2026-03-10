@@ -1,3 +1,14 @@
+# [0.21.0](https://github.com/jwstover/citadel/compare/v0.20.0...v0.21.0) (2026-03-10)
+
+
+### Features
+
+* add TaskActivity resource with polymorphic actor support ([617b409](https://github.com/jwstover/citadel/commit/617b409cdfce8af9e8370b550991bfe5f78a7059))
+* **P-10:** add activity section UI with comments to TaskLive.Show ([ff899d7](https://github.com/jwstover/citadel/commit/ff899d7f3391d959f151f7705eb69e1e9c56764a))
+* **P-9:** add code interfaces, policies, and PubSub for task activities ([8f04358](https://github.com/jwstover/citadel/commit/8f0435854dcd44a96e9c3e577fb520910bc278e8))
+
+
+
 # [0.20.0](https://github.com/jwstover/citadel/compare/v0.19.0...v0.20.0) (2026-02-19)
 
 
@@ -42,15 +53,6 @@
 
 * add In Review task state ([6c7c03f](https://github.com/jwstover/citadel/commit/6c7c03f86787588461d1c78cad7e193f1edb485c))
 * expose TaskDependency via MCP tools ([4a47f49](https://github.com/jwstover/citadel/commit/4a47f4976ec2a85053459b6d768647e46a0584f9))
-
-
-
-## [0.17.1](https://github.com/jwstover/citadel/compare/v0.17.0...v0.17.1) (2026-02-18)
-
-
-### Bug Fixes
-
-* **docker:** add Node.js and npm install for JS dependencies ([c7f200d](https://github.com/jwstover/citadel/commit/c7f200df20683ae7cbd3b7f899273e8811b98aa6))
 
 
 
