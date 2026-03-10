@@ -66,7 +66,16 @@ defmodule Citadel.Tasks.Task do
     update :update do
       primary? true
       require_atomic? false
-      accept [:title, :description, :task_state_id, :due_date, :priority, :parent_task_id, :agent_eligible]
+
+      accept [
+        :title,
+        :description,
+        :task_state_id,
+        :due_date,
+        :priority,
+        :parent_task_id,
+        :agent_eligible
+      ]
 
       argument :assignees, {:array, :uuid}
 

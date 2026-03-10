@@ -123,6 +123,28 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  def handle_event("toggle_agent_eligible", _params, socket) do
+    new_value = !socket.assigns.task.agent_eligible
+
+    case Tasks.update_task(socket.assigns.task.id, %{agent_eligible: new_value},
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.current_workspace.id
+         ) do
+      {:ok, task} ->
+        task =
+          Ash.load!(
+            task,
+            [:task_state, :user, :parent_task, :ancestors, :assignees, :overdue?],
+            tenant: socket.assigns.current_workspace.id
+          )
+
+        {:noreply, assign(socket, :task, task)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to update agent eligibility")}
+    end
+  end
+
   def handle_event("confirm_delete", _params, socket) do
     {:noreply, assign(socket, :confirm_delete, true)}
   end
@@ -645,6 +667,39 @@ defmodule CitadelWeb.TaskLive.Show do
                       {if @task.due_date,
                         do: Calendar.strftime(@task.due_date, "%b %d, %Y"),
                         else: "Not set"}
+                    </span>
+                  <% end %>
+                </div>
+
+                <div class="flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    Agent
+                  </label>
+                  <%= if @can_edit do %>
+                    <button
+                      phx-click="toggle_agent_eligible"
+                      class={[
+                        "flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-full transition-colors cursor-pointer",
+                        if(@task.agent_eligible,
+                          do: "bg-emerald-500/15 text-emerald-400",
+                          else: "bg-base-300/50 text-base-content/40 hover:text-base-content/60"
+                        )
+                      ]}
+                    >
+                      <.icon
+                        name={
+                          if(@task.agent_eligible, do: "hero-cpu-chip-solid", else: "hero-cpu-chip")
+                        }
+                        class="size-3.5"
+                      />
+                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
+                    </button>
+                  <% else %>
+                    <span class={[
+                      "text-sm",
+                      if(@task.agent_eligible, do: "text-emerald-400", else: "text-base-content/40")
+                    ]}>
+                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
                     </span>
                   <% end %>
                 </div>
