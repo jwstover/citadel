@@ -28,6 +28,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         socket
         |> stream(:activities, activities)
         |> assign(:activities_loaded, true)
+        |> assign(:form, to_form(%{"body" => ""}, as: :comment))
       end
 
     {:ok, socket}
@@ -53,7 +54,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     stream_delete(socket, :activities, activity)
   end
 
-  def handle_event("submit-comment", %{"body" => body}, socket) do
+  def handle_event("submit-comment", %{"comment" => %{"body" => body}}, socket) do
     body = String.trim(body)
 
     if body == "" do
@@ -72,7 +73,12 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           actor: socket.assigns.current_user
         )
 
-      {:noreply, stream_insert(socket, :activities, activity)}
+      socket =
+        socket
+        |> stream_insert(:activities, activity)
+        |> assign(:form, to_form(%{"body" => ""}, as: :comment))
+
+      {:noreply, socket}
     end
   end
 
@@ -134,18 +140,25 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         </div>
       </div>
 
-      <form id={"#{@id}-form"} phx-submit="submit-comment" phx-target={@myself} class="flex gap-2">
+      <.form
+        for={@form}
+        id={"#{@id}-form"}
+        phx-submit="submit-comment"
+        phx-target={@myself}
+        class="flex gap-2"
+      >
         <div class="flex-shrink-0 pt-0.5">
           <.user_avatar user={@current_user} />
         </div>
         <div class="flex-1">
           <textarea
-            name="body"
+            name={@form[:body].name}
+            value={@form[:body].value}
             rows="2"
             placeholder="Add a comment..."
             class="textarea textarea-bordered w-full text-sm resize-none"
-            phx-hook="ClearOnSubmit"
             id={"#{@id}-body"}
+            phx-hook="CmdEnterSubmit"
           />
           <div class="flex justify-end mt-2">
             <button type="submit" class="btn btn-sm btn-primary">
@@ -153,7 +166,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
             </button>
           </div>
         </div>
-      </form>
+      </.form>
     </div>
     """
   end
