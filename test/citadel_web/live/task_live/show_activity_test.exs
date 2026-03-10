@@ -43,7 +43,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       assert has_element?(view, "##{cid}-form")
-      assert has_element?(view, ~s|##{cid}-form textarea[name="body"]|)
+      assert has_element?(view, ~s|##{cid}-form textarea[name="comment[body]"]|)
     end
 
     test "displays empty state when no activities", %{conn: conn, task: task} do
@@ -63,7 +63,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
 
       html =
         view
-        |> form("##{cid}-form", %{body: "My first comment"})
+        |> form("##{cid}-form", %{comment: %{body: "My first comment"}})
         |> render_submit()
 
       assert html =~ "My first comment"
@@ -77,10 +77,14 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("##{cid}-form", %{body: "Comment to clear"})
+      |> form("##{cid}-form", %{comment: %{body: "Comment to clear"}})
       |> render_submit()
 
-      refute has_element?(view, ~s|##{cid}-form textarea[name="body"]|, "Comment to clear")
+      refute has_element?(
+               view,
+               ~s|##{cid}-form textarea[name="comment[body]"]|,
+               "Comment to clear"
+             )
     end
 
     test "does not submit empty comment", %{
@@ -93,7 +97,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("##{cid}-form", %{body: ""})
+      |> form("##{cid}-form", %{comment: %{body: ""}})
       |> render_submit()
 
       activities = Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
@@ -110,7 +114,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> form("##{cid}-form", %{body: "   "})
+      |> form("##{cid}-form", %{comment: %{body: "   "}})
       |> render_submit()
 
       activities = Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
