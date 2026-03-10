@@ -282,6 +282,37 @@ defmodule Citadel.Generator do
   end
 
   @doc """
+  Generates an agent run.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [task_id: task_id])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      agent_run = generate(agent_run(
+        [task_id: task.id],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def agent_run(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.AgentRun,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            status: :pending
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
   Generates a conversation.
 
   ## Parameters
