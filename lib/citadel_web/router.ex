@@ -30,6 +30,8 @@ defmodule CitadelWeb.Router do
     plug AshAuthentication.Strategy.ApiKey.Plug,
       resource: Citadel.Accounts.User,
       required?: true
+
+    plug CitadelWeb.Plugs.SetTenantFromApiKey
   end
 
   pipeline :mcp do
@@ -146,10 +148,13 @@ defmodule CitadelWeb.Router do
     )
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", CitadelWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", CitadelWeb.Api do
+    pipe_through :api
+
+    get "/agent/tasks/next", AgentController, :next_task
+    post "/agent/tasks/:task_id/runs", AgentController, :create_run
+    patch "/agent/runs/:id", AgentController, :update_run
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:citadel, :dev_routes) do

@@ -233,7 +233,7 @@ defmodule Citadel.Tasks.AgentRunTest do
         )
       end
 
-      runs = Tasks.list_agent_runs!(task.id, actor: user, tenant: workspace.id)
+      runs = Tasks.list_agent_runs_by_task!(task.id, actor: user, tenant: workspace.id)
       assert length(runs) == 3
     end
 
@@ -242,7 +242,7 @@ defmodule Citadel.Tasks.AgentRunTest do
       workspace: workspace,
       task: task
     } do
-      runs = Tasks.list_agent_runs!(task.id, actor: user, tenant: workspace.id)
+      runs = Tasks.list_agent_runs_by_task!(task.id, actor: user, tenant: workspace.id)
       assert runs == []
     end
 
@@ -276,7 +276,7 @@ defmodule Citadel.Tasks.AgentRunTest do
         tenant: workspace.id
       )
 
-      runs = Tasks.list_agent_runs!(task.id, actor: user, tenant: workspace.id)
+      runs = Tasks.list_agent_runs_by_task!(task.id, actor: user, tenant: workspace.id)
       assert length(runs) == 1
       assert hd(runs).task_id == task.id
     end

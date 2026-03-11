@@ -107,22 +107,24 @@ Elixir Agent                          Claude Code CLI
 
 ## Architecture Decisions Still Open
 
-### Communication Protocol
-- Leaning toward **WebSocket (Phoenix Channels)** for real-time task pickup and log streaming
-- REST API as fallback / for simpler operations
-- Need to finalize the contract between Citadel and the agent
+### Communication Protocol — DECIDED
+**Decision:** Hybrid WebSocket + REST.
+
+- **WebSocket (Phoenix Channels + Presence)** for agent connection lifecycle and status tracking. The agent connects via `slipstream`, joins an `agents:workspace_id` channel, and Presence tracks online/offline/idle/working status automatically. No heartbeat polling or database writes needed for status.
+- **REST API** for task pickup (`GET /api/agent/tasks/next`), result reporting (`POST /api/agent/tasks/:id/runs`), and event logging (`POST /api/agent/runs/:id/events`). These are stateless request/response operations that don't benefit from persistent connections.
+- Future: task assignment could move to channel push (server assigns work to agent via WebSocket instead of agent polling), but polling is fine for PoC.
 
 ### Agent Execution Loop (Proposed)
 1. Agent starts, authenticates with Citadel via API token
 2. Connects via WebSocket, subscribes to task assignments
 3. Picks up a task (e.g., "Implement the user profile endpoint")
-4. Pulls latest from the repo branch
+4. Creates an isolated git worktree for the task branch (keeps main working tree clean)
 5. Calls AI with repo context + task description + project conventions
-6. AI produces changes, agent applies them to a branch
+6. AI produces changes in the worktree
 7. Runs tests locally
-8. Reports results back to Citadel (diff, test output, logs)
+8. Reports structured results back to Citadel (diff, test output, typed event log)
 9. Creates PR or waits for human approval
-10. Loops back
+10. Cleans up worktree, loops back
 
 ### Unit of Work
 - What exactly does an agent work on? A task? A subtask? A PR?
@@ -143,22 +145,35 @@ Elixir Agent                          Claude Code CLI
 - `POST /api/agent/auth` — Exchange credentials for a session token
 - `GET /api/agent/next-task` — Return the next task assigned to an agent for a given project
 - `POST /api/agent/tasks/:id/result` — Accept results (status, diff, test output, logs)
+- `POST /api/agent/tasks/:id/events` — Accept structured execution events (see Structured Event Log below)
 - API token authentication
 
 **Agent side (Elixir app, separate Mix project):**
 - Authenticate with Citadel
 - Poll for next task
-- `git checkout -b citadel/task-{id}`
+- **Preflight check** — Verify Claude Code CLI is available and API key is valid before accepting work
+- Create isolated git worktree: `git worktree add .worktrees/task-{id} -b citadel/task-{id}`
 - Construct prompt from task title + description + any context
-- Shell out to `claude --task <prompt>` against the project directory
+- Shell out to `claude --task <prompt>` against the worktree directory
 - Capture exit code and output
 - `git diff` to capture changes
 - POST results back to Citadel
+- **Stall detection** — Monitor agent idle time; kill and report failure if no progress for configurable timeout (default 10 min)
+- Clean up worktree on completion/failure
 - Loop
+
+**Structured Event Log (MVP):**
+Agent reports typed events to Citadel during and after execution, stored as an append-only log per agent run:
+- `run_started` — Agent picked up the task
+- `run_completed` / `run_failed` — Terminal states with exit code
+- `stage_started` / `stage_completed` — For multi-step tasks (future), but even in PoC, marks "agent working" vs "agent done"
+- `error` — Capture failures with context
+
+This replaces raw log dumps with queryable, structured data that powers the review UI.
 
 **Citadel UI:**
 - Show task execution status (pending → in_progress → completed/failed)
-- Display the diff and logs returned by the agent
+- Display the diff and structured event log returned by the agent
 - Basic approve/reject flow
 
 **Not in scope for PoC:**
@@ -167,6 +182,7 @@ Elixir Agent                          Claude Code CLI
 - Hooks/skills for progress reporting
 - Multi-agent
 - Planning/decomposition
+- Checkpoint/resume (agent runs are short enough to restart)
 
 ### Phase 2: Reframe Existing Features
 - Add project concept (linked to git repositories)

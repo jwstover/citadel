@@ -1,5 +1,7 @@
 # Citadel
 
+An AI-powered task management platform built with Phoenix LiveView and Ash Framework.
+
 Citadel is a task management and AI chat application built with Phoenix LiveView and Ash Framework. It features workspace-based collaboration, AI-powered chat conversations, and intelligent task management.
 
 ## Features
