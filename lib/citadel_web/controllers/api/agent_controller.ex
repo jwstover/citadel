@@ -85,7 +85,7 @@ defmodule CitadelWeb.Api.AgentController do
   end
 
   defp fetch_agent_run(id, actor, tenant) do
-    case Ash.get(Citadel.Tasks.AgentRun, id, actor: actor, tenant: tenant) do
+    case Tasks.get_agent_run(id, actor: actor, tenant: tenant) do
       {:ok, agent_run} -> {:ok, agent_run}
       {:error, _} -> :not_found
     end
