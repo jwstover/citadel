@@ -84,6 +84,39 @@ defmodule CitadelWeb.Api.AgentController do
     end
   end
 
+  def update_task(conn, %{"id" => id} = params) do
+    tenant = Ash.PlugHelpers.get_tenant(conn)
+    actor = conn.assigns.current_user
+
+    input =
+      params
+      |> Map.take(["task_state_id"])
+      |> atomize_keys()
+
+    case Tasks.update_task(id, input, actor: actor, tenant: tenant, load: [:task_state]) do
+      {:ok, updated} ->
+        conn
+        |> put_status(:ok)
+        |> render(:task, task: updated)
+
+      {:error, %Ash.Error.Invalid{errors: errors} = error} ->
+        if Enum.any?(errors, &match?(%Ash.Error.Query.NotFound{}, &1)) do
+          conn
+          |> put_status(:not_found)
+          |> json(%{errors: %{detail: "Not Found"}})
+        else
+          conn
+          |> put_status(:unprocessable_entity)
+          |> render(:error, error: error)
+        end
+
+      {:error, _error} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{errors: %{detail: "Not Found"}})
+    end
+  end
+
   defp fetch_agent_run(id, actor, tenant) do
     case Tasks.get_agent_run(id, actor: actor, tenant: tenant) do
       {:ok, agent_run} -> {:ok, agent_run}

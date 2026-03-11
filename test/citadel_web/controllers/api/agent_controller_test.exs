@@ -175,6 +175,51 @@ defmodule CitadelWeb.Api.AgentControllerTest do
     end
   end
 
+  describe "PATCH /api/agent/tasks/:id" do
+    test "updates a task's state", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      new_state =
+        Tasks.create_task_state!(%{
+          name: "In Review #{System.unique_integer([:positive])}",
+          order: 4
+        })
+
+      conn =
+        patch(ctx.conn, ~p"/api/agent/tasks/#{task.id}", %{
+          "task_state_id" => new_state.id
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == task.id
+      assert data["task_state"]["id"] == new_state.id
+      assert data["task_state"]["name"] == new_state.name
+    end
+
+    test "returns 404 for non-existent task", ctx do
+      fake_id = Ash.UUID.generate()
+
+      conn =
+        patch(ctx.conn, ~p"/api/agent/tasks/#{fake_id}", %{
+          "task_state_id" => ctx.task_state.id
+        })
+
+      assert json_response(conn, 404)
+    end
+
+    test "returns 422 for invalid task_state_id", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      fake_state_id = Ash.UUID.generate()
+
+      conn =
+        patch(ctx.conn, ~p"/api/agent/tasks/#{task.id}", %{
+          "task_state_id" => fake_state_id
+        })
+
+      assert json_response(conn, 422)
+    end
+  end
+
   describe "PATCH /api/agent/runs/:id" do
     test "updates an agent run status", ctx do
       task = create_task(ctx.workspace, ctx.user, ctx.task_state)

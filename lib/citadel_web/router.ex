@@ -152,6 +152,7 @@ defmodule CitadelWeb.Router do
     pipe_through :api
 
     get "/agent/tasks/next", AgentController, :next_task
+    patch "/agent/tasks/:id", AgentController, :update_task
     post "/agent/tasks/:task_id/runs", AgentController, :create_run
     patch "/agent/runs/:id", AgentController, :update_run
   end
