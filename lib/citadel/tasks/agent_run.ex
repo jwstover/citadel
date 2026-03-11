@@ -95,5 +95,7 @@ defmodule Citadel.Tasks.AgentRun do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
+
+    has_many :events, Citadel.Tasks.AgentRunEvent
   end
 end

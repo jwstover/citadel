@@ -1,6 +1,6 @@
 # Agent Design Principles
 
-Insights and guiding principles for Citadel's agent execution model, informed by research into [Kilroy](https://github.com/danshapiro/kilroy) and the emerging patterns in AI-assisted software development.
+Insights and guiding principles for Citadel's agent execution model, informed by research into [Kilroy](https://github.com/danshapiro/kilroy), [StrongDM Factory](https://factory.strongdm.ai/), and the emerging patterns in AI-assisted software development.
 
 ---
 
@@ -44,6 +44,81 @@ Kilroy starts with cheaper models and escalates to more capable ones only after 
 
 ---
 
+## Key Learnings from StrongDM Factory
+
+StrongDM Factory is an agentic development platform that pursues fully autonomous, non-interactive development — agents write code, validate it, and ship it without human review. Their position is more aggressive than Citadel's, but several of their techniques and insights are directly applicable.
+
+### 1. Scenario-Based Validation Over Boolean Tests
+
+StrongDM replaces traditional pass/fail test suites with end-to-end "scenarios" (user stories stored outside codebases) and a probabilistic "satisfaction" metric — what fraction of observed user trajectories through the scenario would satisfy a real user. This is more resilient than brittle assertions when agents are generating code.
+
+**Citadel application:** Agents that can self-validate against scenarios before presenting work to the developer produce better results and reduce review burden. As we build validation infrastructure, think in terms of "does this satisfy the user's intent?" not just "do the tests pass?"
+
+### 2. Digital Twin Universe (DTU)
+
+StrongDM clones the externally observable behavior of third-party services (Okta, Jira, Slack, Google Docs) to enable testing at volumes and rates far exceeding production limits. This also allows testing failure modes impossible against live services.
+
+**Citadel application:** As agents interact with external services and APIs, having behavioral clones of dependencies enables reliable, repeatable validation. Worth keeping in mind as the platform matures.
+
+### 3. Shift Work — Separating Intent from Execution
+
+StrongDM cleanly separates interactive development (spec writing, intent clarification) from fully-specified execution. Once the specification is complete, the agent runs end-to-end without human back-and-forth.
+
+**Citadel application:** The quality of the task description is the boundary between human and agent work. A well-specified task should be everything an agent needs. This reinforces investing in good task structure and making it easy for developers to provide complete specifications upfront.
+
+### 4. The Filesystem as Agent Memory
+
+Rather than complex memory systems, StrongDM's agents use the repository filesystem itself as working memory — reading and writing files for state management. Simple, auditable, and version-controlled.
+
+**Citadel application:** The worktree *is* the agent's memory. This aligns with our isolation model and means agent state is naturally captured in git history. No need for separate state stores during execution.
+
+### 5. Validate Behavior, Not Structure
+
+StrongDM treats generated code as opaque — like ML model weights — and validates exclusively through externally observable behavior, never by inspecting source code structure.
+
+**Citadel application:** Agent work should be validated by running tests and checking behavior, not by having another model review the code. Invest in automated validation that proves the work is correct, rather than structural analysis of the output.
+
+### 6. Weather Reports for Model Performance
+
+Instead of traditional metrics dashboards, StrongDM publishes narrative "Weather Reports" tracking which models perform best for which task categories, with configuration parameters and performance notes across 13+ task types.
+
+**Citadel application:** As Citadel supports multiple AI providers and models, tracking model performance per task type will inform model escalation chains and default recommendations. The structured data we already capture in AgentRunEvents can power this.
+
+---
+
+## The Autonomy Spectrum
+
+Citadel's long-term trajectory is to progressively reduce mandatory human intervention as validation infrastructure matures. This is not a binary choice between "human reviews everything" and "no humans needed" — it's a spectrum that the developer controls.
+
+### The Progression
+
+**Stage 1: Human-in-the-Loop (current target)**
+Agent does work, human reviews everything. This is where trust gets established. The review UI is the primary surface.
+
+**Stage 2: Human-at-the-Gates**
+Agent does work, automated validation catches most issues, human only reviews what fails validation or exceeds a confidence threshold. Human Gates become the exception, not the rule.
+
+**Stage 3: Human-Sets-the-Harness**
+Human writes the scenarios and validation criteria. Agent writes code, validates it, and ships it. Human only intervenes when satisfaction metrics drop. The developer's role shifts from *reviewer* to *specification writer and validation architect*.
+
+### The Principle
+
+**Invest in validation infrastructure so that human review becomes optional, not mandatory.** Better scenarios, better test harnesses, better behavioral validation — these are the building blocks that let agents earn increasing autonomy. A senior dev lead doesn't review every line of a trusted team member's code. They set standards, define acceptance criteria, and review strategically.
+
+### Design Implications
+
+Every feature we build should be evaluated against: **does this move us toward optional human review, or does it entrench mandatory review?** Look for opportunities to:
+
+- Build automated validation hooks that agents can run before requesting review
+- Capture validation results as structured data alongside the work output
+- Let developers configure confidence thresholds that determine when review is required
+- Track agent success rates per task type to inform trust calibration
+- Design the task specification format to be rich enough for autonomous execution
+
+The goal is not to remove the developer — it's to shift their contribution from low-value review to high-value specification and validation design.
+
+---
+
 ## What to Get Right
 
 These are the capabilities that, if done well, define Citadel's value. Getting them wrong or skipping them undermines the entire product.
@@ -58,15 +133,17 @@ This means:
 - Structured error reporting on failure
 - Clean resource cleanup (worktrees, processes) in all exit paths
 
-### 2. The Review Experience Must Be Good
+### 2. The Review Experience Must Be Good (Today), Optional (Tomorrow)
 
-The developer reviews agent output like a tech lead reviews a junior's PR. The review UI is the most important surface in the product. It needs to show:
+The developer reviews agent output like a tech lead reviews a junior's PR. The review UI is the most important surface in the product *today*. It needs to show:
 - What changed (diff)
 - Why it changed (the task description and agent's reasoning)
-- Whether it works (test results, event log)
+- Whether it works (test results, validation results, event log)
 - What to do next (approve, reject, request changes)
 
 A bad review experience makes the developer feel like they're debugging the agent instead of leading it.
+
+However, review is a starting point, not an end state. As validation infrastructure matures, the review UI should progressively become a *spot-check* surface rather than a *mandatory gate*. Design it so that automated validation results are front-and-center — when all scenarios pass and confidence is high, the developer should be able to approve with a glance or configure auto-merge.
 
 ### 3. Status Must Be Transparent
 
@@ -82,9 +159,11 @@ When an agent finishes work, the result should be a clean git branch with atomic
 
 Reference these when making implementation decisions.
 
-### Agents Are Junior Developers, Not Autonomous Systems
+### Agents Are Junior Developers Growing Into Senior Ones
 
-Design every interaction as if you're managing a capable but inexperienced team member. They need clear instructions (task descriptions), a defined workspace (worktree), supervision (status tracking, stall detection), and a review process (approve/reject). They should escalate when uncertain (human gates), not guess.
+Design every interaction as if you're managing a capable but inexperienced team member — today. They need clear instructions (task descriptions), a defined workspace (worktree), supervision (status tracking, stall detection), and a review process (approve/reject). They should escalate when uncertain (human gates), not guess.
+
+But the system should also be designed so agents can *earn* autonomy over time. As validation infrastructure improves and agent success rates climb, the developer should be able to grant increasing trust — fewer mandatory reviews, higher confidence thresholds for escalation, and eventually fully autonomous execution within well-validated domains.
 
 ### Visibility Over Autonomy
 
@@ -109,3 +188,9 @@ Prefer typed events over log lines. Prefer queryable fields over free-text blobs
 ### The Developer's Time Is the Bottleneck
 
 The product exists to multiply developer productivity. Every feature should be evaluated against: does this save the developer time, or does it create more work? A review flow that takes 30 seconds to understand is worth more than an autonomous flow that sometimes produces wrong results the developer has to debug.
+
+The highest-leverage use of developer time is writing good specifications and building validation harnesses — not reviewing generated code line by line. As the platform matures, shift the developer's contribution upstream (intent, acceptance criteria) rather than downstream (code review).
+
+### Validation Is the Path to Autonomy
+
+Every investment in automated validation infrastructure — scenario harnesses, behavioral testing, confidence metrics — is an investment in reducing mandatory human oversight. When building any feature, ask: "does this make it possible for an agent to prove its own work is correct?" If yes, it's a step toward optional review. If no, it entrenches the bottleneck.

@@ -51,6 +51,20 @@ defmodule CitadelWeb.Api.AgentJSON do
     }
   end
 
+  def agent_run_event(%{event: event}) do
+    %{
+      data: %{
+        id: event.id,
+        agent_run_id: event.agent_run_id,
+        event_type: event.event_type,
+        message: event.message,
+        metadata: event.metadata,
+        inserted_at: event.inserted_at,
+        updated_at: event.updated_at
+      }
+    }
+  end
+
   def error(%{error: error}) do
     %{
       errors:

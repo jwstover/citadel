@@ -156,6 +156,7 @@ defmodule CitadelWeb.Router do
     patch "/agent/tasks/:id", AgentController, :update_task
     post "/agent/tasks/:task_id/runs", AgentController, :create_run
     patch "/agent/runs/:id", AgentController, :update_run
+    post "/agent/runs/:id/events", AgentController, :create_run_event
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development

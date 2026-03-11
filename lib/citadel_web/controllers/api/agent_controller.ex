@@ -85,6 +85,29 @@ defmodule CitadelWeb.Api.AgentController do
     end
   end
 
+  def create_run_event(conn, %{"id" => run_id} = params) do
+    tenant = Ash.PlugHelpers.get_tenant(conn)
+    actor = conn.assigns.current_user
+
+    input =
+      params
+      |> Map.take(["event_type", "message", "metadata"])
+      |> Map.put("agent_run_id", run_id)
+      |> atomize_keys()
+
+    case Tasks.create_agent_run_event(input, actor: actor, tenant: tenant) do
+      {:ok, event} ->
+        conn
+        |> put_status(:created)
+        |> render(:agent_run_event, event: event)
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(:error, error: error)
+    end
+  end
+
   def list_task_states(conn, _params) do
     task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
 

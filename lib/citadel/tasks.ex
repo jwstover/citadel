@@ -73,6 +73,11 @@ defmodule Citadel.Tasks do
       define :destroy_comment, action: :destroy_comment
     end
 
+    resource Citadel.Tasks.AgentRunEvent do
+      define :create_agent_run_event, action: :create
+      define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
+    end
+
     resource Citadel.Tasks.AgentRun do
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update

@@ -253,6 +253,77 @@ defmodule CitadelWeb.Api.AgentControllerTest do
     end
   end
 
+  describe "POST /api/agent/runs/:id/events" do
+    test "creates an agent run event", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      conn =
+        post(ctx.conn, ~p"/api/agent/runs/#{run.id}/events", %{
+          "event_type" => "run_started",
+          "message" => "Agent starting work"
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["agent_run_id"] == run.id
+      assert data["event_type"] == "run_started"
+      assert data["message"] == "Agent starting work"
+    end
+
+    test "creates an event with metadata", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      conn =
+        post(ctx.conn, ~p"/api/agent/runs/#{run.id}/events", %{
+          "event_type" => "run_failed",
+          "message" => "Compilation failed",
+          "metadata" => %{"exit_code" => 1, "file" => "lib/foo.ex"}
+        })
+
+      assert %{"data" => data} = json_response(conn, 201)
+      assert data["event_type"] == "run_failed"
+      assert data["metadata"]["exit_code"] == 1
+      assert data["metadata"]["file"] == "lib/foo.ex"
+    end
+
+    test "returns 422 for invalid event_type", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      conn =
+        post(ctx.conn, ~p"/api/agent/runs/#{run.id}/events", %{
+          "event_type" => "invalid_type"
+        })
+
+      assert json_response(conn, 422)
+    end
+  end
+
   describe "PATCH /api/agent/runs/:id" do
     test "updates an agent run status", ctx do
       task = create_task(ctx.workspace, ctx.user, ctx.task_state)
