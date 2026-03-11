@@ -7,6 +7,7 @@ defmodule CitadelAgent.Application do
   def start(_type, _args) do
     children =
       if CitadelAgent.config(:api_key) do
+        CitadelAgent.Preflight.run!()
         [{CitadelAgent.Worker, []}]
       else
         []

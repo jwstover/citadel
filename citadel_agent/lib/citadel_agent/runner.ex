@@ -2,9 +2,14 @@ defmodule CitadelAgent.Runner do
   @moduledoc """
   Orchestrates task execution: creates an isolated git worktree, invokes Claude Code CLI,
   captures output and git diff, returns structured results. Cleans up the worktree on completion.
+
+  Includes stall detection: if the Claude Code process exceeds the configured timeout,
+  it is killed and the run is marked as failed.
   """
 
   require Logger
+
+  @default_stall_timeout 600_000
 
   def execute(task, project_path) do
     human_id = task["human_id"]
@@ -114,8 +119,10 @@ defmodule CitadelAgent.Runner do
 
   defp run_claude(task, worktree_path) do
     prompt = build_prompt(task)
+    human_id = task["human_id"]
+    timeout = stall_timeout()
 
-    Logger.info("Executing Claude Code CLI for task #{task["human_id"]}")
+    Logger.info("Executing Claude Code CLI for task #{human_id} (stall timeout: #{timeout}ms)")
 
     claude_path = System.find_executable("claude")
 
@@ -129,23 +136,50 @@ defmodule CitadelAgent.Runner do
           [:binary, :exit_status, cd: worktree_path]
         )
 
-      collect_port_output(port, task["human_id"], [])
+      collect_port_output(port, human_id, [], timeout)
     end
   end
 
-  defp collect_port_output(port, human_id, acc) do
+  defp collect_port_output(port, human_id, acc, timeout) do
     receive do
       {^port, {:data, data}} ->
         for line <- String.split(data, "\n", trim: true) do
           Logger.info("[claude:#{human_id}] #{line}")
         end
 
-        collect_port_output(port, human_id, [data | acc])
+        collect_port_output(port, human_id, [data | acc], timeout)
 
       {^port, {:exit_status, code}} ->
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
         {:ok, %{exit_code: code, output: output}}
+    after
+      timeout ->
+        Logger.error("Claude Code process stalled for task #{human_id} (exceeded #{timeout}ms)")
+        kill_port(port)
+        output = acc |> Enum.reverse() |> IO.iodata_to_binary()
+
+        {:error,
+         "Claude Code process stalled after #{div(timeout, 1_000)}s of inactivity. " <>
+           "Partial output (#{byte_size(output)} bytes) captured before kill."}
     end
+  end
+
+  defp kill_port(port) do
+    {:os_pid, os_pid} = Port.info(port, :os_pid)
+    System.cmd("kill", ["-9", to_string(os_pid)], stderr_to_stdout: true)
+
+    receive do
+      {^port, {:exit_status, _code}} -> :ok
+    after
+      5_000 ->
+        Port.close(port)
+    end
+  rescue
+    _ -> Port.close(port)
+  end
+
+  defp stall_timeout do
+    CitadelAgent.config(:stall_timeout_ms) || @default_stall_timeout
   end
 
   defp build_prompt(task) do
