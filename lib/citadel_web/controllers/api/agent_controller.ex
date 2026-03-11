@@ -84,6 +84,14 @@ defmodule CitadelWeb.Api.AgentController do
     end
   end
 
+  def list_task_states(conn, _params) do
+    task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
+
+    conn
+    |> put_status(:ok)
+    |> render(:task_states, task_states: task_states)
+  end
+
   def update_task(conn, %{"id" => id} = params) do
     tenant = Ash.PlugHelpers.get_tenant(conn)
     actor = conn.assigns.current_user

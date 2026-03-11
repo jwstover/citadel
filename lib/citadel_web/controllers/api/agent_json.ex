@@ -19,6 +19,20 @@ defmodule CitadelWeb.Api.AgentJSON do
     }
   end
 
+  def task_states(%{task_states: task_states}) do
+    %{
+      data:
+        Enum.map(task_states, fn state ->
+          %{
+            id: state.id,
+            name: state.name,
+            order: state.order,
+            is_complete: state.is_complete
+          }
+        end)
+    }
+  end
+
   def agent_run(%{agent_run: agent_run}) do
     %{
       data: %{

@@ -49,6 +49,19 @@ defmodule CitadelAgent.Client do
     end
   end
 
+  def fetch_task_states do
+    case req_get("/api/agent/task-states") do
+      {:ok, %Req.Response{status: 200, body: %{"data" => states}}} ->
+        {:ok, states}
+
+      {:ok, %Req.Response{status: status, body: body}} ->
+        {:error, {status, body}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   def update_task_state(task_id, task_state_id) do
     case req_patch("/api/agent/tasks/#{task_id}", %{"task_state_id" => task_state_id}) do
       {:ok, %Req.Response{status: 200, body: %{"data" => task}}} ->

@@ -220,6 +220,39 @@ defmodule CitadelWeb.Api.AgentControllerTest do
     end
   end
 
+  describe "GET /api/agent/task-states" do
+    test "returns all task states", ctx do
+      conn = get(ctx.conn, ~p"/api/agent/task-states")
+
+      assert %{"data" => states} = json_response(conn, 200)
+      assert is_list(states)
+      assert length(states) >= 1
+
+      state = List.first(states)
+      assert Map.has_key?(state, "id")
+      assert Map.has_key?(state, "name")
+      assert Map.has_key?(state, "order")
+      assert Map.has_key?(state, "is_complete")
+    end
+
+    test "returns states sorted by order", ctx do
+      conn = get(ctx.conn, ~p"/api/agent/task-states")
+
+      assert %{"data" => states} = json_response(conn, 200)
+      orders = Enum.map(states, & &1["order"])
+      assert orders == Enum.sort(orders)
+    end
+
+    test "returns 401 without authentication" do
+      conn =
+        build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get(~p"/api/agent/task-states")
+
+      assert json_response(conn, 401)
+    end
+  end
+
   describe "PATCH /api/agent/runs/:id" do
     test "updates an agent run status", ctx do
       task = create_task(ctx.workspace, ctx.user, ctx.task_state)

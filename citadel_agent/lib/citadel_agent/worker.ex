@@ -98,6 +98,10 @@ defmodule CitadelAgent.Worker do
 
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
 
+        if result.status == "completed" do
+          transition_task_to_in_review(task)
+        end
+
       {:error, reason} ->
         CitadelAgent.Client.update_run(run["id"], %{
           "status" => "failed",
@@ -106,6 +110,27 @@ defmodule CitadelAgent.Worker do
         })
 
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
+    end
+  end
+
+  defp transition_task_to_in_review(task) do
+    with {:ok, states} <- CitadelAgent.Client.fetch_task_states(),
+         %{"id" => state_id} <- Enum.find(states, &(&1["name"] == "In Review")) do
+      case CitadelAgent.Client.update_task_state(task["id"], state_id) do
+        {:ok, _task} ->
+          Logger.info("Task #{task["human_id"]} transitioned to In Review")
+
+        {:error, reason} ->
+          Logger.warning(
+            "Failed to transition task #{task["human_id"]} to In Review: #{inspect(reason)}"
+          )
+      end
+    else
+      nil ->
+        Logger.warning("Could not find 'In Review' task state")
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch task states: #{inspect(reason)}")
     end
   end
 end
