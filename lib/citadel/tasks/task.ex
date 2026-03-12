@@ -12,6 +12,7 @@ defmodule Citadel.Tasks.Task do
     extensions: [AshAi],
     notifiers: [Ash.Notifier.PubSub]
 
+  alias Ash.Error.Query.NotFound
   alias Citadel.AI.Helpers
 
   # AI model access is now abstracted through Citadel.AI.Helpers
@@ -85,6 +86,49 @@ defmodule Citadel.Tasks.Task do
       validate Citadel.Tasks.Validations.NoCircularParent
     end
 
+    action :get_task_details, :string do
+      description "Gets full details for a specific task by its human-readable ID (e.g. P-42). Returns a formatted string with title, state, priority, description, assignees, dependencies, sub-tasks, and parent task."
+
+      argument :human_id, :string do
+        allow_nil? false
+        description "The human-readable task ID (e.g. P-42)"
+      end
+
+      run fn input, context ->
+        human_id = input.arguments.human_id
+        actor = context.actor
+        tenant = context.tenant
+
+        require Ash.Query
+
+        task =
+          Citadel.Tasks.Task
+          |> Ash.Query.for_read(:read, %{}, actor: actor, tenant: tenant)
+          |> Ash.Query.filter(human_id == ^human_id)
+          |> Ash.read_one!(
+            load: [
+              :task_state,
+              :assignees,
+              :parent_task,
+              sub_tasks: [:task_state],
+              dependencies: [:task_state]
+            ]
+          )
+
+        case task do
+          nil ->
+            {:error,
+             NotFound.exception(
+               resource: Citadel.Tasks.Task,
+               primary_key: %{human_id: human_id}
+             )}
+
+          task ->
+            {:ok, format_task(task)}
+        end
+      end
+    end
+
     action :parse_task_from_text, :map do
       description """
       Parses natural language text into task attributes.
@@ -114,6 +158,10 @@ defmodule Citadel.Tasks.Task do
 
     policy action_type(:create) do
       authorize_if Citadel.Accounts.Checks.TenantWorkspaceMember
+    end
+
+    policy action_type(:action) do
+      authorize_if always()
     end
 
     policy action_type([:update, :destroy]) do
@@ -299,5 +347,55 @@ defmodule Citadel.Tasks.Task do
 
   identities do
     identity :unique_human_id, [:workspace_id, :human_id]
+  end
+
+  defp format_task(task) do
+    sections = [
+      "# #{task.human_id}: #{task.title}",
+      "State: #{task.task_state.name} | Priority: #{task.priority} | Due: #{task.due_date || "None"}",
+      format_description(task.description),
+      format_parent(task.parent_task),
+      format_assignees(task.assignees),
+      format_dependencies(task.dependencies),
+      format_sub_tasks(task.sub_tasks)
+    ]
+
+    sections
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\n")
+  end
+
+  defp format_description(nil), do: nil
+  defp format_description(""), do: nil
+  defp format_description(desc), do: "\n## Description\n#{desc}"
+
+  defp format_parent(nil), do: nil
+  defp format_parent(%Ash.NotLoaded{}), do: nil
+  defp format_parent(parent), do: "\nParent: #{parent.human_id} - #{parent.title}"
+
+  defp format_assignees([]), do: nil
+  defp format_assignees(%Ash.NotLoaded{}), do: nil
+
+  defp format_assignees(assignees) do
+    list = Enum.map_join(assignees, ", ", &"#{&1.name || &1.email}")
+    "\nAssignees: #{list}"
+  end
+
+  defp format_dependencies([]), do: nil
+  defp format_dependencies(%Ash.NotLoaded{}), do: nil
+
+  defp format_dependencies(deps) do
+    list = Enum.map_join(deps, "\n", &"  - #{&1.human_id}: #{&1.title} [#{&1.task_state.name}]")
+    "\n## Dependencies\n#{list}"
+  end
+
+  defp format_sub_tasks([]), do: nil
+  defp format_sub_tasks(%Ash.NotLoaded{}), do: nil
+
+  defp format_sub_tasks(sub_tasks) do
+    list =
+      Enum.map_join(sub_tasks, "\n", &"  - #{&1.human_id}: #{&1.title} [#{&1.task_state.name}]")
+
+    "\n## Sub-tasks\n#{list}"
   end
 end

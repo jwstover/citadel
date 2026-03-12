@@ -24,6 +24,10 @@ defmodule Citadel.Tasks do
       description "Lists all available task states (e.g., 'To Do', 'In Progress', 'Done')"
     end
 
+    tool :get_task_details, Citadel.Tasks.Task, :get_task_details do
+      description "Gets full details for a specific task by its human-readable ID (e.g. P-42). Returns a formatted string with title, state, priority, description, assignees, dependencies, sub-tasks, and parent task."
+    end
+
     tool :delete_task, Citadel.Tasks.Task, :destroy do
       description "Deletes an existing task by ID. Sub-tasks will also be deleted."
     end
@@ -98,6 +102,7 @@ defmodule Citadel.Tasks do
       define :get_task, action: :read, get_by: [:id]
       define :get_task_by_human_id, action: :read, get_by: [:human_id]
       define :update_task, action: :update, get_by: [:id]
+      define :get_task_details, action: :get_task_details, args: [:human_id]
       define :parse_task_from_text, action: :parse_task_from_text, args: [:text]
       define :destroy_task, action: :destroy
     end
