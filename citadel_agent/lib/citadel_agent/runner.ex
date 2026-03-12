@@ -17,12 +17,14 @@ defmodule CitadelAgent.Runner do
     human_id = task["human_id"]
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
+    base_branch = base_branch_for(task)
 
-    with :ok <- create_worktree(worktree_path, branch_name, project_path) do
+    with :ok <- maybe_ensure_feature_branch(task, project_path),
+         :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
       try do
         with {:ok, claude_result} <- run_claude(task, worktree_path),
              :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
-             {:ok, diff} <- capture_diff(worktree_path, branch_name) do
+             {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
           {:ok,
            %{
              status: determine_status(claude_result),
@@ -36,12 +38,91 @@ defmodule CitadelAgent.Runner do
             {:error, reason}
         end
       after
-        cleanup_worktree(worktree_path, branch_name, project_path)
+        cleanup_worktree(worktree_path, branch_name, base_branch, project_path)
       end
     end
   end
 
-  defp create_worktree(worktree_path, branch_name, project_path) do
+  defp base_branch_for(%{"parent_human_id" => parent_id}) when is_binary(parent_id) do
+    "citadel/feature/#{parent_id}"
+  end
+
+  defp base_branch_for(_task), do: "main"
+
+  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id}, project_path)
+       when is_binary(parent_id) do
+    ensure_feature_branch("citadel/feature/#{parent_id}", project_path)
+  end
+
+  defp maybe_ensure_feature_branch(_task, _project_path), do: :ok
+
+  defp ensure_feature_branch(feature_branch, project_path) do
+    local_exists? = branch_exists_locally?(feature_branch, project_path)
+    remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
+
+    cond do
+      local_exists? and remote_exists? ->
+        fetch_and_update_branch(feature_branch, project_path)
+
+      local_exists? ->
+        :ok
+
+      remote_exists? ->
+        System.cmd(
+          "git",
+          ["branch", feature_branch, "origin/#{feature_branch}"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+        :ok
+
+      true ->
+        case System.cmd(
+               "git",
+               ["branch", feature_branch, "main"],
+               cd: project_path,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Created feature branch #{feature_branch} from main")
+            :ok
+
+          {output, _code} ->
+            {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
+        end
+    end
+  end
+
+  defp branch_exists_locally?(branch, project_path) do
+    case System.cmd("git", ["branch", "--list", branch], cd: project_path, stderr_to_stdout: true) do
+      {output, 0} -> String.trim(output) != ""
+      _ -> false
+    end
+  end
+
+  defp branch_exists_on_remote?(branch, project_path) do
+    case System.cmd("git", ["ls-remote", "--heads", "origin", branch],
+           cd: project_path,
+           stderr_to_stdout: true
+         ) do
+      {output, 0} -> String.trim(output) != ""
+      _ -> false
+    end
+  end
+
+  defp fetch_and_update_branch(branch, project_path) do
+    System.cmd("git", ["fetch", "origin", branch], cd: project_path, stderr_to_stdout: true)
+
+    System.cmd("git", ["update-ref", "refs/heads/#{branch}", "origin/#{branch}"],
+      cd: project_path,
+      stderr_to_stdout: true
+    )
+
+    :ok
+  end
+
+  defp create_worktree(worktree_path, branch_name, base_branch, project_path) do
     if File.dir?(worktree_path) do
       Logger.warning("Worktree already exists at #{worktree_path}, removing stale worktree")
       remove_worktree(worktree_path, project_path)
@@ -49,12 +130,12 @@ defmodule CitadelAgent.Runner do
 
     case System.cmd(
            "git",
-           ["worktree", "add", worktree_path, "-b", branch_name],
+           ["worktree", "add", worktree_path, "-b", branch_name, base_branch],
            cd: project_path,
            stderr_to_stdout: true
          ) do
       {_output, 0} ->
-        Logger.info("Created worktree at #{worktree_path} on branch #{branch_name}")
+        Logger.info("Created worktree at #{worktree_path} on branch #{branch_name} from #{base_branch}")
         :ok
 
       {_output, _code} ->
@@ -77,8 +158,8 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp cleanup_worktree(worktree_path, branch_name, project_path) do
-    has_commits = has_commits_on_branch?(branch_name, project_path)
+  defp cleanup_worktree(worktree_path, branch_name, base_branch, project_path) do
+    has_commits = has_commits_on_branch?(branch_name, base_branch, project_path)
     remove_worktree(worktree_path, project_path)
 
     unless has_commits do
@@ -92,10 +173,10 @@ defmodule CitadelAgent.Runner do
       )
   end
 
-  defp has_commits_on_branch?(branch_name, project_path) do
+  defp has_commits_on_branch?(branch_name, base_branch, project_path) do
     case System.cmd(
            "git",
-           ["log", "HEAD..#{branch_name}", "--oneline"],
+           ["log", "#{base_branch}..#{branch_name}", "--oneline"],
            cd: project_path,
            stderr_to_stdout: true
          ) do
@@ -266,8 +347,8 @@ defmodule CitadelAgent.Runner do
     |> String.trim()
   end
 
-  defp capture_diff(worktree_path, branch_name) do
-    case System.cmd("git", ["diff", "main..#{branch_name}"],
+  defp capture_diff(worktree_path, base_branch, branch_name) do
+    case System.cmd("git", ["diff", "#{base_branch}..#{branch_name}"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
