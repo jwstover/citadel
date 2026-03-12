@@ -226,7 +226,7 @@ defmodule CitadelWeb.Api.AgentControllerTest do
 
       assert %{"data" => states} = json_response(conn, 200)
       assert is_list(states)
-      assert length(states) >= 1
+      assert states != []
 
       state = List.first(states)
       assert Map.has_key?(state, "id")
