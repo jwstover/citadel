@@ -1,6 +1,9 @@
 defmodule CitadelAgent.Worker do
   @moduledoc """
   GenServer that polls Citadel for agent-eligible tasks and executes them.
+
+  Tracks the active AgentRun in state so that `terminate/2` can mark it as
+  failed if the process crashes unexpectedly.
   """
 
   use GenServer
@@ -18,43 +21,63 @@ defmodule CitadelAgent.Worker do
 
     Logger.info("CitadelAgent.Worker started, polling every #{poll_interval}ms")
 
-    {:ok, %{poll_interval: poll_interval}}
+    {:ok, %{poll_interval: poll_interval, active_run: nil}}
   end
 
   @impl true
   def handle_info(:poll, state) do
-    process_next_task()
+    state = process_next_task(state)
     schedule_poll(state.poll_interval)
     {:noreply, state}
   end
+
+  @impl true
+  def terminate(reason, %{active_run: %{"id" => run_id}}) do
+    Logger.error("Worker terminating with active run #{run_id}, marking as failed")
+
+    CitadelAgent.Client.update_run(run_id, %{
+      "status" => "failed",
+      "error_message" => "Worker process terminated: #{inspect(reason)}",
+      "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+    })
+  end
+
+  def terminate(_reason, _state), do: :ok
 
   defp schedule_poll(interval) do
     Process.send_after(self(), :poll, interval)
   end
 
-  defp process_next_task do
+  defp process_next_task(state) do
     case CitadelAgent.Client.fetch_next_task() do
       {:ok, nil} ->
         Logger.debug("No agent-eligible tasks available")
+        state
 
       {:ok, task} ->
         Logger.info("Picked up task #{task["human_id"]}: #{task["title"]}")
-        execute_task(task)
+        execute_task(task, state)
 
       {:error, reason} ->
         Logger.error("Failed to fetch next task: #{inspect(reason)}")
+        state
     end
   end
 
-  defp execute_task(task) do
+  defp execute_task(task, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
         Logger.error("No project_path configured, skipping task #{task["human_id"]}")
+        state
 
       project_path ->
         with {:ok, run} <- create_run(task),
              {:ok, run} <- mark_running(run) do
+          state = %{state | active_run: run}
           run_task(task, run, project_path)
+          %{state | active_run: nil}
+        else
+          _ -> state
         end
     end
   end
@@ -111,6 +134,17 @@ defmodule CitadelAgent.Worker do
 
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
     end
+  rescue
+    exception ->
+      Logger.error(
+        "Task #{task["human_id"]} crashed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+      )
+
+      CitadelAgent.Client.update_run(run["id"], %{
+        "status" => "failed",
+        "error_message" => Exception.message(exception),
+        "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+      })
   end
 
   defp transition_task_to_in_review(task) do
