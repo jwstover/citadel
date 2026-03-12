@@ -7,8 +7,8 @@ defmodule Citadel.Tasks do
     extensions: [AshAi, AshPhoenix]
 
   tools do
-    tool :list_tasks, Citadel.Tasks.Task, :read do
-      description "Lists all tasks for the current user"
+    tool :list_tasks, Citadel.Tasks.TaskSummary, :read do
+      description "Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. Use get_task_details with a human_id to see full task details."
       load [:task_state]
     end
 
