@@ -48,12 +48,19 @@ defmodule CitadelWeb.TaskLive.Show do
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
     can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
+    agent_runs =
+      Tasks.list_agent_runs_by_task!(task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
     if connected?(socket) do
       CitadelWeb.Endpoint.subscribe("tasks:task:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
+      CitadelWeb.Endpoint.subscribe("tasks:agent_runs:#{task.id}")
     end
 
     socket =
@@ -64,6 +71,7 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:task_dependencies, task_dependencies)
       |> assign(:can_edit, can_edit)
       |> assign(:can_delete, can_delete)
+      |> assign(:agent_runs, agent_runs)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
 
@@ -120,6 +128,28 @@ defmodule CitadelWeb.TaskLive.Show do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to remove dependency")}
+    end
+  end
+
+  def handle_event("toggle_agent_eligible", _params, socket) do
+    new_value = !socket.assigns.task.agent_eligible
+
+    case Tasks.update_task(socket.assigns.task.id, %{agent_eligible: new_value},
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.current_workspace.id
+         ) do
+      {:ok, task} ->
+        task =
+          Ash.load!(
+            task,
+            [:task_state, :user, :parent_task, :ancestors, :assignees, :overdue?],
+            tenant: socket.assigns.current_workspace.id
+          )
+
+        {:noreply, assign(socket, :task, task)}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to update agent eligibility")}
     end
   end
 
@@ -405,6 +435,19 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info(
+        %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id},
+        socket
+      ) do
+    agent_runs =
+      Tasks.list_agent_runs_by_task!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
+
+    {:noreply, assign(socket, :agent_runs, agent_runs)}
+  end
+
+  def handle_info(
         %Phoenix.Socket.Broadcast{topic: "tasks:task_activities:" <> _task_id} = broadcast,
         socket
       ) do
@@ -489,6 +532,18 @@ defmodule CitadelWeb.TaskLive.Show do
       )
     end
   end
+
+  defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
+  defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
+  defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
+  defp agent_run_status_classes(:failed), do: "bg-red-500/15 text-red-400"
+  defp agent_run_status_classes(_), do: "bg-base-300/50 text-base-content/60"
+
+  defp agent_run_dot_class(:pending), do: "bg-base-content/40"
+  defp agent_run_dot_class(:running), do: "bg-yellow-400 animate-pulse"
+  defp agent_run_dot_class(:completed), do: "bg-emerald-400"
+  defp agent_run_dot_class(:failed), do: "bg-red-400"
+  defp agent_run_dot_class(_), do: "bg-base-content/40"
 
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
     unless Enum.empty?(sub_tasks) do
@@ -648,6 +703,39 @@ defmodule CitadelWeb.TaskLive.Show do
                     </span>
                   <% end %>
                 </div>
+
+                <div class="flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    Agent
+                  </label>
+                  <%= if @can_edit do %>
+                    <button
+                      phx-click="toggle_agent_eligible"
+                      class={[
+                        "flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-full transition-colors cursor-pointer",
+                        if(@task.agent_eligible,
+                          do: "bg-emerald-500/15 text-emerald-400",
+                          else: "bg-base-300/50 text-base-content/40 hover:text-base-content/60"
+                        )
+                      ]}
+                    >
+                      <.icon
+                        name={
+                          if(@task.agent_eligible, do: "hero-cpu-chip-solid", else: "hero-cpu-chip")
+                        }
+                        class="size-3.5"
+                      />
+                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
+                    </button>
+                  <% else %>
+                    <span class={[
+                      "text-sm",
+                      if(@task.agent_eligible, do: "text-emerald-400", else: "text-base-content/40")
+                    ]}>
+                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
+                    </span>
+                  <% end %>
+                </div>
               </div>
             </div>
           </div>
@@ -682,6 +770,73 @@ defmodule CitadelWeb.TaskLive.Show do
                 current_user={@current_user}
                 current_workspace={@current_workspace}
               />
+            <% end %>
+          </div>
+
+          <div
+            :if={@task.agent_eligible == true or @agent_runs != []}
+            class="py-4 border-t border-base-300"
+          >
+            <h2 class="text-sm font-semibold text-base-content/70 mb-3">
+              Agent Runs ({length(@agent_runs)})
+            </h2>
+
+            <%= if @agent_runs == [] do %>
+              <p class="text-base-content/50 italic text-sm">No agent runs yet</p>
+            <% else %>
+              <div class="space-y-3">
+                <div
+                  :for={run <- Enum.reverse(@agent_runs)}
+                  class="border border-base-300 rounded-lg p-3"
+                >
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      <span class={[
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                        agent_run_status_classes(run.status)
+                      ]}>
+                        <span class={[
+                          "size-1.5 rounded-full",
+                          agent_run_dot_class(run.status)
+                        ]} />
+                        {run.status}
+                      </span>
+                      <span :if={run.error_message} class="text-xs text-error">
+                        {run.error_message}
+                      </span>
+                    </div>
+                    <div class="text-xs text-base-content/50 flex gap-3">
+                      <span :if={run.started_at}>
+                        Started: {Calendar.strftime(run.started_at, "%b %d %H:%M:%S")}
+                      </span>
+                      <span :if={run.completed_at}>
+                        Completed: {Calendar.strftime(run.completed_at, "%b %d %H:%M:%S")}
+                      </span>
+                    </div>
+                  </div>
+
+                  <details :if={run.diff && run.diff != ""} class="group">
+                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+                      Diff
+                    </summary>
+                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.diff}</code></pre>
+                  </details>
+
+                  <details :if={run.test_output && run.test_output != ""} class="group mt-2">
+                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+                      Test Output
+                    </summary>
+                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.test_output}</code></pre>
+                  </details>
+
+                  <details :if={run.logs && run.logs != ""} class="group mt-2">
+                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+                      Logs
+                    </summary>
+                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.logs}</code></pre>
+                  </details>
+                </div>
+              </div>
             <% end %>
           </div>
 

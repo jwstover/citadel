@@ -1099,6 +1099,125 @@ defmodule CitadelWeb.TaskLive.ShowTest do
     end
   end
 
+  describe "agent runs section" do
+    setup :register_and_log_in_user
+
+    setup %{user: user, workspace: workspace} do
+      task_state = create_task_state("Todo", 1)
+
+      task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Agent Task",
+              agent_eligible: true
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, task_state: task_state}
+    end
+
+    test "shows agent runs section when task is agent eligible", %{conn: conn, task: task} do
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Agent Runs"
+      assert html =~ "No agent runs yet"
+    end
+
+    test "does not show agent runs section when not eligible and no runs", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Non-Agent Task",
+              agent_eligible: false
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      refute html =~ "Agent Runs"
+    end
+
+    test "displays agent run with status badge", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Agent Runs (1)"
+      assert html =~ "completed"
+    end
+
+    test "displays expandable diff section", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(run.id, %{diff: "--- a/file.ex\n+++ b/file.ex"},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Diff"
+      assert html =~ "--- a/file.ex"
+    end
+
+    test "displays error message for failed runs", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id, status: :failed},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(run.id, %{error_message: "Tests failed"},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "failed"
+      assert html =~ "Tests failed"
+    end
+  end
+
   defp create_task_state(name, order, opts \\ []) do
     is_complete = Keyword.get(opts, :is_complete, false)
 

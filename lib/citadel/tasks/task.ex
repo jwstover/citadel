@@ -45,7 +45,8 @@ defmodule Citadel.Tasks.Task do
         :workspace_id,
         :parent_task_id,
         :due_date,
-        :priority
+        :priority,
+        :agent_eligible
       ]
 
       argument :assignees, {:array, :uuid}
@@ -65,7 +66,16 @@ defmodule Citadel.Tasks.Task do
     update :update do
       primary? true
       require_atomic? false
-      accept [:title, :description, :task_state_id, :due_date, :priority, :parent_task_id]
+
+      accept [
+        :title,
+        :description,
+        :task_state_id,
+        :due_date,
+        :priority,
+        :parent_task_id,
+        :agent_eligible
+      ]
 
       argument :assignees, {:array, :uuid}
 
@@ -129,7 +139,8 @@ defmodule Citadel.Tasks.Task do
           priority: task.priority,
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id
+          workspace_id: task.workspace_id,
+          agent_eligible: task.agent_eligible
         }
       end
     end
@@ -145,7 +156,8 @@ defmodule Citadel.Tasks.Task do
           priority: task.priority,
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id
+          workspace_id: task.workspace_id,
+          agent_eligible: task.agent_eligible
         }
       end
     end
@@ -167,7 +179,8 @@ defmodule Citadel.Tasks.Task do
           priority: task.priority,
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id
+          workspace_id: task.workspace_id,
+          agent_eligible: task.agent_eligible
         }
       end
     end
@@ -183,7 +196,8 @@ defmodule Citadel.Tasks.Task do
           priority: task.priority,
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id
+          workspace_id: task.workspace_id,
+          agent_eligible: task.agent_eligible
         }
       end
     end
@@ -199,7 +213,8 @@ defmodule Citadel.Tasks.Task do
           priority: task.priority,
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id
+          workspace_id: task.workspace_id,
+          agent_eligible: task.agent_eligible
         }
       end
     end
@@ -234,6 +249,11 @@ defmodule Citadel.Tasks.Task do
       default :medium
     end
 
+    attribute :agent_eligible, :boolean do
+      public? true
+      default false
+    end
+
     timestamps()
   end
 
@@ -243,6 +263,7 @@ defmodule Citadel.Tasks.Task do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
+    has_many :agent_runs, Citadel.Tasks.AgentRun
 
     many_to_many :assignees, Citadel.Accounts.User do
       through Citadel.Tasks.TaskAssignment
