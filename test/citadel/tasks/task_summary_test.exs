@@ -88,6 +88,48 @@ defmodule Citadel.Tasks.TaskSummaryTest do
       assert summary.id == task.id
     end
 
+    test "enforces multitenancy - tasks from other workspaces not returned", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      other_user = generate(user())
+      other_workspace = generate(workspace([], actor: other_user))
+
+      Tasks.create_task!(
+        %{
+          title: "Other Workspace Task #{System.unique_integer([:positive])}",
+          task_state_id: task_state.id,
+          workspace_id: other_workspace.id
+        },
+        actor: other_user,
+        tenant: other_workspace.id
+      )
+
+      summaries =
+        Tasks.list_task_summaries!(
+          tenant: workspace.id,
+          actor: user,
+          authorize?: false
+        )
+
+      assert length(summaries) == 1
+      assert Enum.all?(summaries, &(&1.workspace_id == workspace.id))
+    end
+
+    test "allows workspace members to read", %{workspace: workspace, task: task} do
+      member = generate(user())
+      add_user_to_workspace(member.id, workspace.id, authorize?: false)
+
+      [summary] =
+        Tasks.list_task_summaries!(
+          tenant: workspace.id,
+          actor: member
+        )
+
+      assert summary.id == task.id
+    end
+
     test "only exposes expected public attributes", _context do
       public_attrs =
         TaskSummary
