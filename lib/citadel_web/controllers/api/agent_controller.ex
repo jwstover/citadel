@@ -13,6 +13,7 @@ defmodule CitadelWeb.Api.AgentController do
          |> Ash.Query.filter(agent_eligible == true)
          |> Ash.Query.filter(not exists(agent_runs, status in [:pending, :running]))
          |> Ash.Query.filter(task_state.is_complete != true and task_state.name != "In Review")
+         |> Ash.Query.filter(not exists(dependencies, task_state.is_complete != true))
          |> Ash.Query.sort(priority: :desc, inserted_at: :asc)
          |> Ash.Query.limit(1)
          |> Ash.Query.load([:task_state])
