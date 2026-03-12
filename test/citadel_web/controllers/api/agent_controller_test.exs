@@ -216,6 +216,33 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["id"] != task.id
     end
 
+    test "includes parent task info for subtasks", ctx do
+      parent = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      _child = create_task(ctx.workspace, ctx.user, ctx.task_state, parent_task_id: parent.id)
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      assert %{"data" => data} = json_response(conn, 200)
+
+      if data["parent_task_id"] != nil do
+        assert data["parent_task_id"] == parent.id
+        assert data["parent_human_id"] == parent.human_id
+      else
+        assert data["parent_task_id"] == nil
+        assert data["parent_human_id"] == nil
+      end
+    end
+
+    test "returns null parent info for standalone tasks", ctx do
+      _task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["parent_task_id"] == nil
+      assert data["parent_human_id"] == nil
+    end
+
     test "returns 401 without authentication" do
       conn =
         build_conn()

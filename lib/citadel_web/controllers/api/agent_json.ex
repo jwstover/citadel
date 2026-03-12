@@ -9,6 +9,8 @@ defmodule CitadelWeb.Api.AgentJSON do
         priority: task.priority,
         due_date: task.due_date,
         agent_eligible: task.agent_eligible,
+        parent_task_id: task.parent_task_id,
+        parent_human_id: if(task.parent_task, do: task.parent_task.human_id),
         task_state: %{
           id: task.task_state.id,
           name: task.task_state.name
