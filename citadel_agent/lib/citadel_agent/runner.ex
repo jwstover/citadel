@@ -139,25 +139,36 @@ defmodule CitadelAgent.Runner do
   end
 
   defp run_claude(task, worktree_path) do
-    prompt = build_prompt(task)
     human_id = task["human_id"]
-    timeout = stall_timeout()
 
-    Logger.info("Executing Claude Code CLI for task #{human_id} (stall timeout: #{timeout}ms)")
+    run_claude_cli(build_prompt(task),
+      working_dir: worktree_path,
+      label: human_id,
+      timeout: stall_timeout()
+    )
+  end
+
+  defp run_claude_cli(prompt, opts) do
+    working_dir = Keyword.fetch!(opts, :working_dir)
+    label = Keyword.get(opts, :label, "claude")
+    timeout = Keyword.get(opts, :timeout, stall_timeout())
+    model = Keyword.get(opts, :model)
+
+    Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
     claude_path = System.find_executable("claude")
 
     unless claude_path do
       {:error, "Claude Code CLI not found in PATH"}
     else
-      port =
-        Port.open(
-          {:spawn,
-           "#{claude_path} -p #{escape_shell(prompt)} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"},
-          [:binary, :exit_status, cd: worktree_path]
-        )
+      model_flag = if model, do: " --model #{model}", else: ""
 
-      collect_port_output(port, human_id, [], timeout)
+      cmd =
+        "#{claude_path} -p #{escape_shell(prompt)}#{model_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+
+      port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
+
+      collect_port_output(port, label, [], timeout)
     end
   end
 
