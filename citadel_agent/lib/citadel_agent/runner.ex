@@ -82,6 +82,11 @@ defmodule CitadelAgent.Runner do
       Logger.info("No commits on #{branch_name}, deleting branch")
       System.cmd("git", ["branch", "-D", branch_name], cd: project_path, stderr_to_stdout: true)
     end
+  rescue
+    exception ->
+      Logger.error(
+        "Worktree cleanup failed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+      )
   end
 
   defp has_commits_on_branch?(branch_name, project_path) do
@@ -110,9 +115,25 @@ defmodule CitadelAgent.Runner do
         Logger.warning("Failed to remove worktree at #{worktree_path}: #{output}")
 
         if File.dir?(worktree_path) do
-          File.rm_rf!(worktree_path)
-          System.cmd("git", ["worktree", "prune"], cd: project_path, stderr_to_stdout: true)
-          Logger.info("Force-cleaned worktree directory and pruned")
+          case File.rm_rf(worktree_path) do
+            {:ok, _} ->
+              System.cmd("git", ["worktree", "prune"],
+                cd: project_path,
+                stderr_to_stdout: true
+              )
+
+              Logger.info("Force-cleaned worktree directory and pruned")
+
+            {:error, reason, path} ->
+              Logger.error(
+                "Failed to force-clean worktree directory #{path}: #{inspect(reason)}, pruning anyway"
+              )
+
+              System.cmd("git", ["worktree", "prune"],
+                cd: project_path,
+                stderr_to_stdout: true
+              )
+          end
         end
     end
   end
