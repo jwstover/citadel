@@ -78,7 +78,7 @@ defmodule Citadel.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:ash_postgres, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},
-      {:ash, "~> 3.0"},
+      {:ash, "~> 3.19"},
       {:igniter, "~> 0.6", only: [:dev, :test]},
       {:phoenix, "~> 1.8.1"},
       {:phoenix_ecto, "~> 4.5"},

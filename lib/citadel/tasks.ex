@@ -7,8 +7,8 @@ defmodule Citadel.Tasks do
     extensions: [AshAi, AshPhoenix]
 
   tools do
-    tool :list_tasks, Citadel.Tasks.Task, :read do
-      description "Lists all tasks for the current user"
+    tool :list_tasks, Citadel.Tasks.TaskSummary, :read do
+      description "Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. Use get_task_details with a human_id to see full task details."
       load [:task_state]
     end
 
@@ -22,6 +22,10 @@ defmodule Citadel.Tasks do
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
       description "Lists all available task states (e.g., 'To Do', 'In Progress', 'Done')"
+    end
+
+    tool :get_task_details, Citadel.Tasks.Task, :get_task_details do
+      description "Gets full details for a specific task by its human-readable ID (e.g. P-42). Returns a formatted string with title, state, priority, description, assignees, dependencies, sub-tasks, and parent task."
     end
 
     tool :delete_task, Citadel.Tasks.Task, :destroy do
@@ -86,6 +90,10 @@ defmodule Citadel.Tasks do
       define :destroy_agent_run, action: :destroy
     end
 
+    resource Citadel.Tasks.TaskSummary do
+      define :list_task_summaries, action: :read
+    end
+
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read
@@ -94,6 +102,7 @@ defmodule Citadel.Tasks do
       define :get_task, action: :read, get_by: [:id]
       define :get_task_by_human_id, action: :read, get_by: [:human_id]
       define :update_task, action: :update, get_by: [:id]
+      define :get_task_details, action: :get_task_details, args: [:human_id]
       define :parse_task_from_text, action: :parse_task_from_text, args: [:text]
       define :destroy_task, action: :destroy
     end
