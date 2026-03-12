@@ -86,6 +86,10 @@ defmodule Citadel.Tasks do
       define :destroy_agent_run, action: :destroy
     end
 
+    resource Citadel.Tasks.TaskSummary do
+      define :list_task_summaries, action: :read
+    end
+
     resource Citadel.Tasks.Task do
       define :create_task, action: :create
       define :list_tasks, action: :read
