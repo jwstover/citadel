@@ -11,6 +11,8 @@ defmodule CitadelAgent.Runner do
 
   @default_stall_timeout 600_000
 
+  @commit_stall_timeout 120_000
+
   def execute(task, project_path) do
     human_id = task["human_id"]
     branch_name = "citadel/task-#{human_id}"
@@ -19,7 +21,8 @@ defmodule CitadelAgent.Runner do
     with :ok <- create_worktree(worktree_path, branch_name, project_path) do
       try do
         with {:ok, claude_result} <- run_claude(task, worktree_path),
-             {:ok, diff} <- capture_diff(worktree_path) do
+             :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
+             {:ok, diff} <- capture_diff(worktree_path, branch_name) do
           {:ok,
            %{
              status: determine_status(claude_result),
@@ -138,26 +141,74 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp run_claude(task, worktree_path) do
-    prompt = build_prompt(task)
-    human_id = task["human_id"]
-    timeout = stall_timeout()
+  defp maybe_commit_and_push(%{exit_code: 0}, task, worktree_path, branch_name) do
+    task_context = build_prompt(task)
 
-    Logger.info("Executing Claude Code CLI for task #{human_id} (stall timeout: #{timeout}ms)")
+    prompt = """
+    You are a git commit assistant. Review the uncommitted changes and create well-structured commits.
+
+    ## Task Context
+    #{task_context}
+
+    ## Instructions
+    1. Run `git diff` to review all changes
+    2. Stage and commit changes with clear, descriptive commit messages that explain the "why" not just the "what"
+    3. If changes span multiple logical concerns, split them into separate commits
+    4. Push the branch to remote: `git push -u origin #{branch_name}`
+    5. Do NOT modify any files. Only use git commands to stage, commit, and push.
+    6. If there are no uncommitted changes, just push any existing commits to the remote.
+    """
+
+    case run_claude_cli(prompt,
+           working_dir: worktree_path,
+           label: "commit:#{task["human_id"]}",
+           timeout: @commit_stall_timeout,
+           model: "sonnet"
+         ) do
+      {:ok, %{exit_code: 0}} ->
+        :ok
+
+      {:ok, %{exit_code: code, output: output}} ->
+        {:error, "Commit step failed (exit code #{code}): #{String.slice(output, 0, 500)}"}
+
+      {:error, reason} ->
+        {:error, "Commit step failed: #{reason}"}
+    end
+  end
+
+  defp maybe_commit_and_push(_claude_result, _task, _worktree_path, _branch_name), do: :ok
+
+  defp run_claude(task, worktree_path) do
+    human_id = task["human_id"]
+
+    run_claude_cli(build_prompt(task),
+      working_dir: worktree_path,
+      label: human_id,
+      timeout: stall_timeout()
+    )
+  end
+
+  defp run_claude_cli(prompt, opts) do
+    working_dir = Keyword.fetch!(opts, :working_dir)
+    label = Keyword.get(opts, :label, "claude")
+    timeout = Keyword.get(opts, :timeout, stall_timeout())
+    model = Keyword.get(opts, :model)
+
+    Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
     claude_path = System.find_executable("claude")
 
     unless claude_path do
       {:error, "Claude Code CLI not found in PATH"}
     else
-      port =
-        Port.open(
-          {:spawn,
-           "#{claude_path} -p #{escape_shell(prompt)} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"},
-          [:binary, :exit_status, cd: worktree_path]
-        )
+      model_flag = if model, do: " --model #{model}", else: ""
 
-      collect_port_output(port, human_id, [], timeout)
+      cmd =
+        "#{claude_path} -p #{escape_shell(prompt)}#{model_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+
+      port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
+
+      collect_port_output(port, label, [], timeout)
     end
   end
 
@@ -215,8 +266,11 @@ defmodule CitadelAgent.Runner do
     |> String.trim()
   end
 
-  defp capture_diff(worktree_path) do
-    case System.cmd("git", ["diff", "HEAD"], cd: worktree_path, stderr_to_stdout: true) do
+  defp capture_diff(worktree_path, branch_name) do
+    case System.cmd("git", ["diff", "main..#{branch_name}"],
+           cd: worktree_path,
+           stderr_to_stdout: true
+         ) do
       {diff, 0} ->
         {:ok, diff}
 
