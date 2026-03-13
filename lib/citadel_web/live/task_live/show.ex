@@ -270,7 +270,10 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?
+                :overdue?,
+                :project,
+                :execution_status,
+                :active_agent_run
               ],
               tenant: socket.assigns.current_workspace.id
             )
@@ -303,7 +306,10 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?
+                :overdue?,
+                :project,
+                :execution_status,
+                :active_agent_run
               ],
               tenant: socket.assigns.current_workspace.id
             )
