@@ -51,5 +51,19 @@ defmodule CitadelAgent.PreflightTest do
 
       Application.put_env(:citadel_agent, :project_path, original)
     end
+
+    test "raises when GitHub token is not configured", %{project_path: project_path} do
+      original_path = CitadelAgent.config(:project_path)
+      original_token = CitadelAgent.config(:github_token)
+      Application.put_env(:citadel_agent, :project_path, project_path)
+      Application.put_env(:citadel_agent, :github_token, nil)
+
+      assert_raise CitadelAgent.Preflight.CheckError, ~r/GITHUB_TOKEN is not configured/, fn ->
+        CitadelAgent.Preflight.run!()
+      end
+
+      Application.put_env(:citadel_agent, :project_path, original_path)
+      Application.put_env(:citadel_agent, :github_token, original_token)
+    end
   end
 end

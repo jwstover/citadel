@@ -22,7 +22,8 @@ defmodule CitadelAgent.MixProject do
     [
       {:req, "~> 0.5"},
       {:jason, "~> 1.4"},
-      {:slipstream, "~> 1.1"}
+      {:slipstream, "~> 1.1"},
+      {:plug, "~> 1.0", only: :test}
     ]
   end
 end

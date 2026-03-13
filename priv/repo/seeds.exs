@@ -12,6 +12,14 @@
 
 alias Citadel.Tasks
 
-Tasks.create_task_state!(%{name: "Todo", order: 1})
-Tasks.create_task_state!(%{name: "In Progress", order: 2})
-Tasks.create_task_state!(%{name: "Complete", order: 3})
+Tasks.create_task_state!(%{name: "Todo", order: 1}, upsert?: true, upsert_identity: :unique_name)
+
+Tasks.create_task_state!(%{name: "In Progress", order: 2},
+  upsert?: true,
+  upsert_identity: :unique_name
+)
+
+Tasks.create_task_state!(%{name: "Complete", order: 3},
+  upsert?: true,
+  upsert_identity: :unique_name
+)

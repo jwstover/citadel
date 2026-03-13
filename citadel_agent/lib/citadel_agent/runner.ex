@@ -67,48 +67,75 @@ defmodule CitadelAgent.Runner do
     merge_worktree = Path.join(project_path, ".worktrees/merge-#{merge_id}")
 
     try do
-      case System.cmd("git", ["worktree", "add", merge_worktree, feature_branch],
-             cd: project_path,
-             stderr_to_stdout: true
-           ) do
-        {_output, 0} ->
-          case System.cmd("git", ["merge", task_branch, "--no-edit"],
-                 cd: merge_worktree,
-                 stderr_to_stdout: true
-               ) do
-            {_output, 0} ->
-              case System.cmd("git", ["push", "origin", feature_branch],
-                     cd: merge_worktree,
-                     stderr_to_stdout: true
-                   ) do
-                {_output, 0} ->
-                  Logger.info("Merged #{task_branch} into #{feature_branch} and pushed")
-                  :ok
+      case create_merge_worktree(merge_worktree, feature_branch, project_path) do
+        {:ok, :checked_out} ->
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", feature_branch])
 
-                {output, _code} ->
-                  Logger.warning("Failed to push #{feature_branch} after merge: #{output}")
-                  :ok
-              end
+        {:ok, :detached} ->
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", "HEAD:refs/heads/#{feature_branch}"])
 
-            {output, _code} ->
-              System.cmd("git", ["merge", "--abort"],
-                cd: merge_worktree,
-                stderr_to_stdout: true
-              )
-
-              Logger.warning(
-                "Merge conflict merging #{task_branch} into #{feature_branch}: #{String.slice(output, 0, 500)}"
-              )
-
-              :ok
-          end
-
-        {output, _code} ->
-          Logger.warning("Failed to create merge worktree for #{feature_branch}: #{output}")
+        :error ->
           :ok
       end
     after
       remove_worktree(merge_worktree, project_path)
+    end
+  end
+
+  defp create_merge_worktree(merge_worktree, feature_branch, project_path) do
+    case System.cmd("git", ["worktree", "add", merge_worktree, feature_branch],
+           cd: project_path,
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        {:ok, :checked_out}
+
+      {_output, _code} ->
+        case System.cmd("git", ["worktree", "add", "--detach", merge_worktree, feature_branch],
+               cd: project_path,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Created detached merge worktree (#{feature_branch} is checked out elsewhere)")
+            {:ok, :detached}
+
+          {output, _code} ->
+            Logger.warning("Failed to create merge worktree for #{feature_branch}: #{output}")
+            :error
+        end
+    end
+  end
+
+  defp do_merge_and_push(task_branch, feature_branch, merge_worktree, push_args) do
+    case System.cmd("git", ["merge", task_branch, "--no-edit"],
+           cd: merge_worktree,
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        case System.cmd("git", push_args,
+               cd: merge_worktree,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Merged #{task_branch} into #{feature_branch} and pushed")
+            :ok
+
+          {output, _code} ->
+            Logger.warning("Failed to push #{feature_branch} after merge: #{output}")
+            :ok
+        end
+
+      {output, _code} ->
+        System.cmd("git", ["merge", "--abort"],
+          cd: merge_worktree,
+          stderr_to_stdout: true
+        )
+
+        Logger.warning(
+          "Merge conflict merging #{task_branch} into #{feature_branch}: #{String.slice(output, 0, 500)}"
+        )
+
+        :ok
     end
   end
 
@@ -132,14 +159,14 @@ defmodule CitadelAgent.Runner do
 
   defp base_branch_for(_task), do: "origin/main"
 
-  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id}, project_path)
+  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id} = task, project_path)
        when is_binary(parent_id) do
-    ensure_feature_branch("citadel/feature/#{parent_id}", project_path)
+    ensure_feature_branch("citadel/feature/#{parent_id}", task, project_path)
   end
 
   defp maybe_ensure_feature_branch(_task, _project_path), do: :ok
 
-  defp ensure_feature_branch(feature_branch, project_path) do
+  defp ensure_feature_branch(feature_branch, task, project_path) do
     local_exists? = branch_exists_locally?(feature_branch, project_path)
     remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
 
@@ -169,11 +196,39 @@ defmodule CitadelAgent.Runner do
              ) do
           {_output, 0} ->
             Logger.info("Created feature branch #{feature_branch} from origin/main")
+            create_draft_pr(feature_branch, task, project_path)
             :ok
 
           {output, _code} ->
             {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
         end
+    end
+  end
+
+  defp create_draft_pr(feature_branch, task, project_path) do
+    parent_id = task["parent_human_id"]
+
+    try do
+      {_, 0} =
+        System.cmd("git", ["push", "-u", "origin", feature_branch],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      Logger.info("Pushed #{feature_branch} to origin")
+
+      {:ok, pr_body} = generate_pr_description(task, project_path)
+      {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
+
+      case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+        {:ok, url} ->
+          Logger.info("Created draft PR: #{url}")
+
+        {:error, reason} ->
+          Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+      end
+    rescue
+      e -> Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
     end
   end
 
@@ -341,6 +396,83 @@ defmodule CitadelAgent.Runner do
   end
 
   defp maybe_commit_and_push(_claude_result, _task, _worktree_path, _branch_name), do: :ok
+
+  def generate_pr_description(task, project_path) do
+    title = task["title"] || ""
+    description = task["description"] || ""
+
+    prompt = """
+    Generate a concise GitHub pull request description in markdown for the following task. \
+    Output ONLY the description text, nothing else. Do not use any tools or make any code changes.
+
+    Task: #{title}
+
+    #{description}
+    """
+
+    case run_claude_cli(String.trim(prompt),
+           working_dir: project_path,
+           label: "pr-desc:#{task["human_id"]}",
+           timeout: @commit_stall_timeout,
+           model: "sonnet"
+         ) do
+      {:ok, %{exit_code: 0, output: output}} ->
+        case extract_text_from_stream_json(output) do
+          nil -> {:ok, fallback_pr_description(title)}
+          text -> {:ok, text}
+        end
+
+      {:ok, %{exit_code: _code}} ->
+        Logger.warning("PR description generation failed, using fallback")
+        {:ok, fallback_pr_description(title)}
+
+      {:error, reason} ->
+        Logger.warning("PR description generation failed: #{inspect(reason)}, using fallback")
+        {:ok, fallback_pr_description(title)}
+    end
+  end
+
+  @doc false
+  def extract_text_from_stream_json(output) do
+    output
+    |> String.split("\n", trim: true)
+    |> Enum.reduce([], fn line, acc ->
+      case Jason.decode(line) do
+        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} ->
+          text =
+            content
+            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.map_join("", & &1["text"])
+
+          [text | acc]
+
+        {:ok, %{"type" => "content_block_delta", "delta" => %{"text" => text}}} ->
+          [text | acc]
+
+        {:ok, %{"type" => "result", "result" => result}} ->
+          text =
+            (result["content"] || [])
+            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.map_join("", & &1["text"])
+
+          [text | acc]
+
+        _ ->
+          acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.join("")
+    |> String.trim()
+    |> case do
+      "" -> nil
+      text -> text
+    end
+  end
+
+  defp fallback_pr_description(title) do
+    "Citadel task: #{title}"
+  end
 
   defp run_claude(task, worktree_path) do
     human_id = task["human_id"]
