@@ -264,7 +264,12 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl">Workspace: {@workspace.name}</h1>
         <div class="flex gap-2">

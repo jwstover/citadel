@@ -122,7 +122,12 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="max-w-2xl mx-auto">
         <h1 class="text-2xl font-bold mb-6">{@page_title}</h1>
 

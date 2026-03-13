@@ -28,7 +28,12 @@ defmodule CitadelWeb.PreferencesLive.Index do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="relative h-full overflow-hidden">
         <div class="h-full overflow-auto p-6">
           <h1 class="text-2xl mb-4">Preferences</h1>

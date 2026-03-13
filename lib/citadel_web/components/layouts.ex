@@ -6,6 +6,7 @@ defmodule CitadelWeb.Layouts do
   use CitadelWeb, :html
 
   import CitadelWeb.Components.WorkspaceSwitcher
+  import CitadelWeb.Components.AgentStatus
 
   @doc """
   Renders your app layout.
@@ -29,6 +30,7 @@ defmodule CitadelWeb.Layouts do
 
   attr :current_workspace, :map, default: nil, doc: "the current workspace"
   attr :workspaces, :list, default: [], doc: "list of all user's workspaces"
+  attr :agents, :list, default: [], doc: "list of connected agents from Presence"
 
   slot :inner_block, required: true
 
@@ -99,6 +101,11 @@ defmodule CitadelWeb.Layouts do
                   </.link>
                 </li>
               </ul>
+
+              <%!-- Agent status --%>
+              <div class="mt-6 px-1">
+                <.agent_status_panel agents={@agents} />
+              </div>
 
               <%!-- Theme toggle --%>
               <div class="mt-auto pt-4 flex justify-center">

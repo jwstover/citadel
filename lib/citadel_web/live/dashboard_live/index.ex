@@ -69,9 +69,18 @@ defmodule CitadelWeb.DashboardLive.Index do
     {:noreply, socket}
   end
 
+  def handle_info(%Phoenix.Socket.Broadcast{topic: "agents:" <> _}, socket) do
+    {:noreply, CitadelWeb.AgentPresenceHook.handle_presence_diff(socket)}
+  end
+
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="relative h-full overflow-hidden card bg-base-200 border border-base-300">
         <.control_bar />
 
