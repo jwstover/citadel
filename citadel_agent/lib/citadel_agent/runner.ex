@@ -132,14 +132,14 @@ defmodule CitadelAgent.Runner do
 
   defp base_branch_for(_task), do: "origin/main"
 
-  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id}, project_path)
+  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id} = task, project_path)
        when is_binary(parent_id) do
-    ensure_feature_branch("citadel/feature/#{parent_id}", project_path)
+    ensure_feature_branch("citadel/feature/#{parent_id}", task, project_path)
   end
 
   defp maybe_ensure_feature_branch(_task, _project_path), do: :ok
 
-  defp ensure_feature_branch(feature_branch, project_path) do
+  defp ensure_feature_branch(feature_branch, task, project_path) do
     local_exists? = branch_exists_locally?(feature_branch, project_path)
     remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
 
@@ -169,11 +169,39 @@ defmodule CitadelAgent.Runner do
              ) do
           {_output, 0} ->
             Logger.info("Created feature branch #{feature_branch} from origin/main")
+            create_draft_pr(feature_branch, task, project_path)
             :ok
 
           {output, _code} ->
             {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
         end
+    end
+  end
+
+  defp create_draft_pr(feature_branch, task, project_path) do
+    parent_id = task["parent_human_id"]
+
+    try do
+      {_, 0} =
+        System.cmd("git", ["push", "-u", "origin", feature_branch],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      Logger.info("Pushed #{feature_branch} to origin")
+
+      {:ok, pr_body} = generate_pr_description(task, project_path)
+      {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
+
+      case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+        {:ok, url} ->
+          Logger.info("Created draft PR: #{url}")
+
+        {:error, reason} ->
+          Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+      end
+    rescue
+      e -> Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
     end
   end
 
