@@ -1,3 +1,21 @@
+# [0.26.0](https://github.com/jwstover/citadel/compare/v0.25.0...v0.26.0) (2026-03-13)
+
+
+### Bug Fixes
+
+* use detached worktree fallback when feature branch is already checked out ([91f2b29](https://github.com/jwstover/citadel/commit/91f2b294f8e44a9532e6c563b0a993ce03e0a2aa))
+
+
+### Features
+
+* add generate_pr_description/2 to Runner for AI-generated PR descriptions ([acd296d](https://github.com/jwstover/citadel/commit/acd296df1efb399af2fa3ab62b1e578bbde8fcae))
+* add GitHub token preflight check ([eeebb2d](https://github.com/jwstover/citadel/commit/eeebb2d11ac5e6cdaf74b30963e822dd36410be6))
+* add GITHUB_TOKEN to agent config ([b154b4e](https://github.com/jwstover/citadel/commit/b154b4e7db1b450c7801d87ec3f6d3e8c1b14897))
+* auto-create draft PR when new feature branch is created ([2a1bda6](https://github.com/jwstover/citadel/commit/2a1bda6413f27f9cd692e50aef07a38d0ad2b260))
+* make GitHub module testable via configurable Req options ([1a46a0f](https://github.com/jwstover/citadel/commit/1a46a0feda3c5eb3b6c113403ad221ee0b57d25a))
+
+
+
 # [0.25.0](https://github.com/jwstover/citadel/compare/v0.24.2...v0.25.0) (2026-03-13)
 
 
@@ -42,16 +60,6 @@
 ### Features
 
 * add CitadelAgent.GitHub module for creating draft pull requests ([fca4c4a](https://github.com/jwstover/citadel/commit/fca4c4ab57921d70613e81e2e966f0e0a6a64332))
-
-
-
-# [0.23.0](https://github.com/jwstover/citadel/compare/v0.22.0...v0.23.0) (2026-03-13)
-
-
-### Features
-
-* add claude auth check to preflight ([e781ba4](https://github.com/jwstover/citadel/commit/e781ba4f519331e0b3621ee90b33e4429a909747))
-* use feature branching approach for agent ([d551096](https://github.com/jwstover/citadel/commit/d55109625221b765675f86f1788dbb687e40d60f))
 
 
 
