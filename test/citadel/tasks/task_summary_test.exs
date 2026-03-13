@@ -137,7 +137,55 @@ defmodule Citadel.Tasks.TaskSummaryTest do
         |> Enum.map(& &1.name)
         |> Enum.sort()
 
-      assert public_attrs == [:due_date, :human_id, :id, :priority, :title]
+      assert public_attrs == [:description, :due_date, :human_id, :id, :priority, :title]
+    end
+
+    test "description is not selected by default", _context do
+      assert Info.attribute(TaskSummary, :description).select_by_default? == false
+    end
+
+    test "can filter by description", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      needle = "unique_filter_target_#{System.unique_integer([:positive])}"
+
+      Tasks.create_task!(
+        %{
+          title: "Another Task #{System.unique_integer([:positive])}",
+          description: needle,
+          task_state_id: task_state.id,
+          workspace_id: workspace.id
+        },
+        actor: user,
+        tenant: workspace.id
+      )
+
+      require Ash.Query
+
+      results =
+        TaskSummary
+        |> Ash.Query.filter(contains(description, "unique_filter_target"))
+        |> Ash.read!(tenant: workspace.id, actor: user, authorize?: false)
+
+      assert length(results) == 1
+    end
+
+    test "description filter returns no results when no match", %{
+      user: user,
+      workspace: workspace
+    } do
+      require Ash.Query
+
+      results =
+        TaskSummary
+        |> Ash.Query.filter(
+          contains(description, ^"nonexistent_text_#{System.unique_integer([:positive])}")
+        )
+        |> Ash.read!(tenant: workspace.id, actor: user, authorize?: false)
+
+      assert results == []
     end
   end
 end
