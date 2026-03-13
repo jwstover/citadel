@@ -137,11 +137,7 @@ defmodule Citadel.Tasks.TaskSummaryTest do
         |> Enum.map(& &1.name)
         |> Enum.sort()
 
-      assert public_attrs == [:description, :due_date, :human_id, :id, :priority, :title]
-    end
-
-    test "description is not selected by default", _context do
-      assert Info.attribute(TaskSummary, :description).select_by_default? == false
+      assert public_attrs == [:due_date, :human_id, :id, :priority, :title]
     end
 
     test "can filter by description", %{

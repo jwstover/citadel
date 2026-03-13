@@ -44,7 +44,7 @@ defmodule Citadel.Tasks.TaskSummary do
     attribute :title, :string, public?: true, allow_nil?: false
 
     attribute :description, :string do
-      public? true
+      public? false
       select_by_default? false
     end
 
