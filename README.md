@@ -273,3 +273,7 @@ Credits scale with AI model costs:
 ## License
 
 This project is private and proprietary.
+
+---
+
+*Last updated: March 12, 2026*
