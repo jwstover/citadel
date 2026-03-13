@@ -231,6 +231,7 @@ The `AshAi` extension exposes domain actions as tools for AI agents:
 - Defined in `tools` blocks in domain modules
 - Automatically available to AI agents via `Citadel.AI`
 - Used for task parsing, conversation responses, etc.
+- **When adding or removing tools in domain modules, update the tools list in `lib/citadel_web/router.ex` under the `/mcp` scope to keep the MCP endpoint in sync**
 
 Example from `Citadel.Tasks`:
 ```elixir
