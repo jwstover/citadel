@@ -17,31 +17,195 @@ defmodule CitadelAgent.Runner do
     human_id = task["human_id"]
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
+    base_branch = base_branch_for(task)
 
-    with :ok <- create_worktree(worktree_path, branch_name, project_path) do
-      try do
-        with {:ok, claude_result} <- run_claude(task, worktree_path),
-             :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
-             {:ok, diff} <- capture_diff(worktree_path, branch_name) do
-          {:ok,
-           %{
-             status: determine_status(claude_result),
-             diff: diff,
-             logs: claude_result.output,
-             test_output: nil,
-             error_message: nil
-           }}
-        else
-          {:error, reason} ->
-            {:error, reason}
+    with :ok <- fetch_origin(project_path),
+         :ok <- maybe_ensure_feature_branch(task, project_path),
+         :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
+      result =
+        try do
+          with {:ok, claude_result} <- run_claude(task, worktree_path),
+               :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
+               {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
+            {:ok,
+             %{
+               status: determine_status(claude_result),
+               diff: diff,
+               logs: claude_result.output,
+               test_output: nil,
+               error_message: nil
+             }}
+          else
+            {:error, reason} ->
+              {:error, reason}
+          end
+        after
+          cleanup_worktree(worktree_path, branch_name, base_branch, project_path)
         end
-      after
-        cleanup_worktree(worktree_path, branch_name, project_path)
+
+      case result do
+        {:ok, %{status: "completed"}} ->
+          maybe_merge_into_feature_branch(task, branch_name, project_path)
+          result
+
+        _ ->
+          result
       end
     end
   end
 
-  defp create_worktree(worktree_path, branch_name, project_path) do
+  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = _task, task_branch, project_path)
+       when is_binary(parent_id) do
+    feature_branch = "citadel/feature/#{parent_id}"
+    merge_into_feature_branch(task_branch, feature_branch, project_path)
+  end
+
+  defp maybe_merge_into_feature_branch(_task, _task_branch, _project_path), do: :ok
+
+  defp merge_into_feature_branch(task_branch, feature_branch, project_path) do
+    merge_id = System.unique_integer([:positive])
+    merge_worktree = Path.join(project_path, ".worktrees/merge-#{merge_id}")
+
+    try do
+      case System.cmd("git", ["worktree", "add", merge_worktree, feature_branch],
+             cd: project_path,
+             stderr_to_stdout: true
+           ) do
+        {_output, 0} ->
+          case System.cmd("git", ["merge", task_branch, "--no-edit"],
+                 cd: merge_worktree,
+                 stderr_to_stdout: true
+               ) do
+            {_output, 0} ->
+              case System.cmd("git", ["push", "origin", feature_branch],
+                     cd: merge_worktree,
+                     stderr_to_stdout: true
+                   ) do
+                {_output, 0} ->
+                  Logger.info("Merged #{task_branch} into #{feature_branch} and pushed")
+                  :ok
+
+                {output, _code} ->
+                  Logger.warning("Failed to push #{feature_branch} after merge: #{output}")
+                  :ok
+              end
+
+            {output, _code} ->
+              System.cmd("git", ["merge", "--abort"],
+                cd: merge_worktree,
+                stderr_to_stdout: true
+              )
+
+              Logger.warning(
+                "Merge conflict merging #{task_branch} into #{feature_branch}: #{String.slice(output, 0, 500)}"
+              )
+
+              :ok
+          end
+
+        {output, _code} ->
+          Logger.warning("Failed to create merge worktree for #{feature_branch}: #{output}")
+          :ok
+      end
+    after
+      remove_worktree(merge_worktree, project_path)
+    end
+  end
+
+  defp fetch_origin(project_path) do
+    case System.cmd("git", ["fetch", "origin"],
+           cd: project_path,
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        Logger.info("Fetched latest from origin")
+        :ok
+
+      {output, _code} ->
+        {:error, "Failed to fetch from origin: #{output}"}
+    end
+  end
+
+  defp base_branch_for(%{"parent_human_id" => parent_id}) when is_binary(parent_id) do
+    "citadel/feature/#{parent_id}"
+  end
+
+  defp base_branch_for(_task), do: "origin/main"
+
+  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id}, project_path)
+       when is_binary(parent_id) do
+    ensure_feature_branch("citadel/feature/#{parent_id}", project_path)
+  end
+
+  defp maybe_ensure_feature_branch(_task, _project_path), do: :ok
+
+  defp ensure_feature_branch(feature_branch, project_path) do
+    local_exists? = branch_exists_locally?(feature_branch, project_path)
+    remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
+
+    cond do
+      local_exists? and remote_exists? ->
+        fetch_and_update_branch(feature_branch, project_path)
+
+      local_exists? ->
+        :ok
+
+      remote_exists? ->
+        System.cmd(
+          "git",
+          ["branch", feature_branch, "origin/#{feature_branch}"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+        :ok
+
+      true ->
+        case System.cmd(
+               "git",
+               ["branch", feature_branch, "origin/main"],
+               cd: project_path,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Created feature branch #{feature_branch} from origin/main")
+            :ok
+
+          {output, _code} ->
+            {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
+        end
+    end
+  end
+
+  defp branch_exists_locally?(branch, project_path) do
+    case System.cmd("git", ["branch", "--list", branch], cd: project_path, stderr_to_stdout: true) do
+      {output, 0} -> String.trim(output) != ""
+      _ -> false
+    end
+  end
+
+  defp branch_exists_on_remote?(branch, project_path) do
+    case System.cmd("git", ["ls-remote", "--heads", "origin", branch],
+           cd: project_path,
+           stderr_to_stdout: true
+         ) do
+      {output, 0} -> String.trim(output) != ""
+      _ -> false
+    end
+  end
+
+  defp fetch_and_update_branch(branch, project_path) do
+    System.cmd("git", ["fetch", "origin", branch], cd: project_path, stderr_to_stdout: true)
+
+    System.cmd("git", ["update-ref", "refs/heads/#{branch}", "origin/#{branch}"],
+      cd: project_path,
+      stderr_to_stdout: true
+    )
+
+    :ok
+  end
+
+  defp create_worktree(worktree_path, branch_name, base_branch, project_path) do
     if File.dir?(worktree_path) do
       Logger.warning("Worktree already exists at #{worktree_path}, removing stale worktree")
       remove_worktree(worktree_path, project_path)
@@ -49,12 +213,12 @@ defmodule CitadelAgent.Runner do
 
     case System.cmd(
            "git",
-           ["worktree", "add", worktree_path, "-b", branch_name],
+           ["worktree", "add", worktree_path, "-b", branch_name, base_branch],
            cd: project_path,
            stderr_to_stdout: true
          ) do
       {_output, 0} ->
-        Logger.info("Created worktree at #{worktree_path} on branch #{branch_name}")
+        Logger.info("Created worktree at #{worktree_path} on branch #{branch_name} from #{base_branch}")
         :ok
 
       {_output, _code} ->
@@ -77,8 +241,8 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp cleanup_worktree(worktree_path, branch_name, project_path) do
-    has_commits = has_commits_on_branch?(branch_name, project_path)
+  defp cleanup_worktree(worktree_path, branch_name, base_branch, project_path) do
+    has_commits = has_commits_on_branch?(branch_name, base_branch, project_path)
     remove_worktree(worktree_path, project_path)
 
     unless has_commits do
@@ -92,10 +256,10 @@ defmodule CitadelAgent.Runner do
       )
   end
 
-  defp has_commits_on_branch?(branch_name, project_path) do
+  defp has_commits_on_branch?(branch_name, base_branch, project_path) do
     case System.cmd(
            "git",
-           ["log", "HEAD..#{branch_name}", "--oneline"],
+           ["log", "#{base_branch}..#{branch_name}", "--oneline"],
            cd: project_path,
            stderr_to_stdout: true
          ) do
@@ -266,8 +430,8 @@ defmodule CitadelAgent.Runner do
     |> String.trim()
   end
 
-  defp capture_diff(worktree_path, branch_name) do
-    case System.cmd("git", ["diff", "main..#{branch_name}"],
+  defp capture_diff(worktree_path, base_branch, branch_name) do
+    case System.cmd("git", ["diff", "#{base_branch}..#{branch_name}"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
@@ -277,6 +441,33 @@ defmodule CitadelAgent.Runner do
       {output, _code} ->
         {:ok, output}
     end
+  end
+
+  @stripped_env_vars ~w(ANTHROPIC_API_KEY OPENAI_API_KEY CLAUDECODE)
+
+  defp ensure_claude_auth(claude_path, working_dir, env, label) do
+    {auth_output, auth_code} =
+      System.cmd(claude_path, ["auth", "status"],
+        cd: working_dir,
+        stderr_to_stdout: true,
+        env: env
+      )
+
+    Logger.info("[claude:#{label}] Auth status in worktree (exit #{auth_code}): #{String.trim(auth_output)}")
+
+    has_sso? =
+      auth_code == 0 and not String.contains?(auth_output, "\"email\":null") and
+        not String.contains?(auth_output, "ANTHROPIC_API_KEY")
+
+    unless has_sso? do
+      Logger.warning("[claude:#{label}] SSO not active in worktree — CLI may fall back to API key auth")
+    end
+  end
+
+  defp clean_env do
+    System.get_env()
+    |> Map.drop(@stripped_env_vars)
+    |> Map.to_list()
   end
 
   defp escape_shell(str) do

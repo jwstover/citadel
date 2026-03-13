@@ -13,9 +13,10 @@ defmodule CitadelWeb.Api.AgentController do
          |> Ash.Query.filter(agent_eligible == true)
          |> Ash.Query.filter(not exists(agent_runs, status in [:pending, :running]))
          |> Ash.Query.filter(task_state.is_complete != true and task_state.name != "In Review")
+         |> Ash.Query.filter(not exists(dependencies, task_state.is_complete != true))
          |> Ash.Query.sort(priority: :desc, inserted_at: :asc)
          |> Ash.Query.limit(1)
-         |> Ash.Query.load([:task_state])
+         |> Ash.Query.load([:task_state, :parent_task])
          |> Ash.read(actor: actor, tenant: tenant) do
       {:ok, [task]} ->
         conn
@@ -147,7 +148,11 @@ defmodule CitadelWeb.Api.AgentController do
       |> Map.take(["task_state_id"])
       |> atomize_keys()
 
-    case Tasks.update_task(id, input, actor: actor, tenant: tenant, load: [:task_state]) do
+    case Tasks.update_task(id, input,
+           actor: actor,
+           tenant: tenant,
+           load: [:task_state, :parent_task]
+         ) do
       {:ok, updated} ->
         conn
         |> put_status(:ok)

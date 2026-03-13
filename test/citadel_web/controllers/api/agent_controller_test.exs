@@ -144,6 +144,105 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["id"] == task.id
     end
 
+    test "skips tasks with incomplete dependencies", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      dependency = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency.id},
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      # The blocked task should be skipped, but the dependency itself is eligible
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == dependency.id
+    end
+
+    test "returns tasks whose dependencies are all complete", ctx do
+      complete_state =
+        Tasks.create_task_state!(%{
+          name: "Done #{System.unique_integer([:positive])}",
+          order: 5,
+          is_complete: true
+        })
+
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      dependency = create_task(ctx.workspace, ctx.user, complete_state)
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: dependency.id},
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == task.id
+    end
+
+    test "skips task when any dependency is incomplete", ctx do
+      complete_state =
+        Tasks.create_task_state!(%{
+          name: "Done #{System.unique_integer([:positive])}",
+          order: 5,
+          is_complete: true
+        })
+
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      complete_dep = create_task(ctx.workspace, ctx.user, complete_state)
+      incomplete_dep = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: complete_dep.id},
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      Tasks.create_task_dependency!(
+        %{task_id: task.id, depends_on_task_id: incomplete_dep.id},
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      # Task is blocked, but its two dependencies are eligible
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] in [complete_dep.id, incomplete_dep.id]
+      assert data["id"] != task.id
+    end
+
+    test "includes parent task info for subtasks", ctx do
+      parent = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      _child = create_task(ctx.workspace, ctx.user, ctx.task_state, parent_task_id: parent.id)
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      assert %{"data" => data} = json_response(conn, 200)
+
+      if data["parent_task_id"] != nil do
+        assert data["parent_task_id"] == parent.id
+        assert data["parent_human_id"] == parent.human_id
+      else
+        assert data["parent_task_id"] == nil
+        assert data["parent_human_id"] == nil
+      end
+    end
+
+    test "returns null parent info for standalone tasks", ctx do
+      _task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      conn = get(ctx.conn, ~p"/api/agent/tasks/next")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["parent_task_id"] == nil
+      assert data["parent_human_id"] == nil
+    end
+
     test "returns 401 without authentication" do
       conn =
         build_conn()

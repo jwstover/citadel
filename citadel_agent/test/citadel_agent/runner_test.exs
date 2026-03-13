@@ -4,7 +4,7 @@ defmodule CitadelAgent.RunnerTest do
   @moduletag :tmp_dir
 
   setup %{tmp_dir: tmp_dir} do
-    System.cmd("git", ["init"], cd: tmp_dir)
+    System.cmd("git", ["init", "-b", "main"], cd: tmp_dir)
     System.cmd("git", ["config", "user.email", "test@test.com"], cd: tmp_dir)
     System.cmd("git", ["config", "user.name", "Test"], cd: tmp_dir)
 
