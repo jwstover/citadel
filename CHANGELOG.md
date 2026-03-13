@@ -1,3 +1,12 @@
+# [0.27.0](https://github.com/jwstover/citadel/compare/v0.26.0...v0.27.0) (2026-03-13)
+
+
+### Features
+
+* add Cancelled task state via data migration ([1168ef8](https://github.com/jwstover/citadel/commit/1168ef8b8e70185e52abcad9d9e330955363748c))
+
+
+
 # [0.26.0](https://github.com/jwstover/citadel/compare/v0.25.0...v0.26.0) (2026-03-13)
 
 
@@ -51,15 +60,6 @@
 ### Bug Fixes
 
 * allow filtering by task description ([5731f5c](https://github.com/jwstover/citadel/commit/5731f5cb22bc764b8e5762538876030ae41b9f76))
-
-
-
-# [0.24.0](https://github.com/jwstover/citadel/compare/v0.23.0...v0.24.0) (2026-03-13)
-
-
-### Features
-
-* add CitadelAgent.GitHub module for creating draft pull requests ([fca4c4a](https://github.com/jwstover/citadel/commit/fca4c4ab57921d70613e81e2e966f0e0a6a64332))
 
 
 
