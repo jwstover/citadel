@@ -74,6 +74,7 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:agent_runs, agent_runs)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
+      |> assign(:cancel_run_id, nil)
 
     {:ok, socket}
   end
@@ -180,6 +181,35 @@ defmodule CitadelWeb.TaskLive.Show do
          socket
          |> assign(:confirm_delete, false)
          |> put_flash(:error, "Failed to delete task")}
+    end
+  end
+
+  def handle_event("confirm_cancel_run", %{"run-id" => run_id}, socket) do
+    {:noreply, assign(socket, :cancel_run_id, run_id)}
+  end
+
+  def handle_event("cancel_cancel_run", _params, socket) do
+    {:noreply, assign(socket, :cancel_run_id, nil)}
+  end
+
+  def handle_event("do_cancel_run", _params, socket) do
+    run = Enum.find(socket.assigns.agent_runs, &(&1.id == socket.assigns.cancel_run_id))
+
+    case Tasks.cancel_agent_run(run,
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.current_workspace.id
+         ) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(:cancel_run_id, nil)
+         |> put_flash(:info, "Agent run cancelled")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> assign(:cancel_run_id, nil)
+         |> put_flash(:error, "Failed to cancel agent run")}
     end
   end
 
@@ -537,12 +567,14 @@ defmodule CitadelWeb.TaskLive.Show do
   defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
   defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
   defp agent_run_status_classes(:failed), do: "bg-red-500/15 text-red-400"
+  defp agent_run_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
   defp agent_run_status_classes(_), do: "bg-base-300/50 text-base-content/60"
 
   defp agent_run_dot_class(:pending), do: "bg-base-content/40"
   defp agent_run_dot_class(:running), do: "bg-yellow-400 animate-pulse"
   defp agent_run_dot_class(:completed), do: "bg-emerald-400"
   defp agent_run_dot_class(:failed), do: "bg-red-400"
+  defp agent_run_dot_class(:cancelled), do: "bg-orange-400"
   defp agent_run_dot_class(_), do: "bg-base-content/40"
 
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
@@ -804,6 +836,14 @@ defmodule CitadelWeb.TaskLive.Show do
                       <span :if={run.error_message} class="text-xs text-error">
                         {run.error_message}
                       </span>
+                      <button
+                        :if={@can_edit and run.status in [:pending, :running]}
+                        phx-click="confirm_cancel_run"
+                        phx-value-run-id={run.id}
+                        class="btn btn-xs btn-ghost text-error hover:bg-error/10"
+                      >
+                        <.icon name="hero-x-mark" class="size-3.5" /> Cancel
+                      </button>
                     </div>
                     <div class="text-xs text-base-content/50 flex gap-3">
                       <span :if={run.started_at}>
@@ -870,6 +910,18 @@ defmodule CitadelWeb.TaskLive.Show do
         cancel_label="Cancel"
         on_confirm="delete"
         on_cancel="cancel_delete"
+      />
+
+      <.live_component
+        :if={@cancel_run_id}
+        module={CitadelWeb.Components.ConfirmationModal}
+        id="cancel-run-modal"
+        title="Cancel Agent Run"
+        message="Are you sure you want to cancel this agent run? The run will be marked as cancelled."
+        confirm_label="Cancel Run"
+        cancel_label="Go Back"
+        on_confirm="do_cancel_run"
+        on_cancel="cancel_cancel_run"
       />
     </Layouts.app>
     """
