@@ -40,6 +40,13 @@ defmodule Citadel.Tasks.AgentRun do
       change set_attribute(:completed_at, &DateTime.utc_now/0)
     end
 
+    create :claim_next do
+      accept []
+
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.ClaimNextTask
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -73,6 +80,7 @@ defmodule Citadel.Tasks.AgentRun do
     prefix "tasks"
 
     publish :create, ["agent_runs", :task_id]
+    publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
     publish :cancel, ["agent_runs", :task_id]
   end
