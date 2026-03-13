@@ -11,13 +11,19 @@ defmodule CitadelAgent.GitHub do
     else
       url = "#{@github_api}/repos/#{owner}/#{repo}/pulls"
 
-      case Req.post(url,
-             json: %{title: title, body: body, head: head, base: base, draft: true},
-             headers: [
-               {"authorization", "Bearer #{token}"},
-               {"accept", "application/vnd.github+v3+json"}
-             ]
-           ) do
+      opts =
+        Keyword.merge(
+          [
+            json: %{title: title, body: body, head: head, base: base, draft: true},
+            headers: [
+              {"authorization", "Bearer #{token}"},
+              {"accept", "application/vnd.github+v3+json"}
+            ]
+          ],
+          req_options()
+        )
+
+      case Req.post(url, opts) do
         {:ok, %Req.Response{status: status, body: body}} when status in [201] ->
           {:ok, body["html_url"]}
 
@@ -34,7 +40,7 @@ defmodule CitadelAgent.GitHub do
   end
 
   def parse_remote_url(project_path) do
-    case System.cmd("git", ["remote", "get-url", "origin"],
+    case System.cmd("git", ["config", "--get", "remote.origin.url"],
            cd: project_path,
            stderr_to_stdout: true
          ) do
@@ -45,6 +51,10 @@ defmodule CitadelAgent.GitHub do
       {output, _code} ->
         {:error, "Failed to get remote URL: #{String.trim(output)}"}
     end
+  end
+
+  defp req_options do
+    Application.get_env(:citadel_agent, :github_req_options, [])
   end
 
   defp parse_url("git@github.com:" <> rest) do

@@ -21,7 +21,8 @@ defmodule CitadelAgent.MixProject do
   defp deps do
     [
       {:req, "~> 0.5"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:plug, "~> 1.0", only: :test}
     ]
   end
 end
