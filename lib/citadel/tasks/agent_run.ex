@@ -30,6 +30,16 @@ defmodule Citadel.Tasks.AgentRun do
       accept [:status, :diff, :test_output, :logs, :error_message, :started_at, :completed_at]
     end
 
+    update :cancel do
+      accept []
+
+      validate attribute_in(:status, [:pending, :running])
+
+      change set_attribute(:status, :cancelled)
+      change set_attribute(:error_message, "Manually cancelled by user")
+      change set_attribute(:completed_at, &DateTime.utc_now/0)
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -64,6 +74,7 @@ defmodule Citadel.Tasks.AgentRun do
 
     publish :create, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
+    publish :cancel, ["agent_runs", :task_id]
   end
 
   multitenancy do
@@ -75,7 +86,7 @@ defmodule Citadel.Tasks.AgentRun do
     uuid_v7_primary_key :id
 
     attribute :status, :atom do
-      constraints one_of: [:pending, :running, :completed, :failed]
+      constraints one_of: [:pending, :running, :completed, :failed, :cancelled]
       default :pending
       allow_nil? false
       public? true

@@ -85,6 +85,28 @@ defmodule CitadelWeb.Api.AgentController do
     end
   end
 
+  def cancel_run(conn, %{"id" => id}) do
+    tenant = Ash.PlugHelpers.get_tenant(conn)
+    actor = conn.assigns.current_user
+
+    with {:ok, agent_run} <- fetch_agent_run(id, actor, tenant),
+         {:ok, cancelled} <- Tasks.cancel_agent_run(agent_run, actor: actor, tenant: tenant) do
+      conn
+      |> put_status(:ok)
+      |> render(:agent_run, agent_run: cancelled)
+    else
+      :not_found ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{errors: %{detail: "Not Found"}})
+
+      {:error, %Ash.Error.Invalid{} = error} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(:error, error: error)
+    end
+  end
+
   def create_run_event(conn, %{"id" => run_id} = params) do
     tenant = Ash.PlugHelpers.get_tenant(conn)
     actor = conn.assigns.current_user
