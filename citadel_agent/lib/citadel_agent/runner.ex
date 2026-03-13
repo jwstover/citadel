@@ -342,6 +342,83 @@ defmodule CitadelAgent.Runner do
 
   defp maybe_commit_and_push(_claude_result, _task, _worktree_path, _branch_name), do: :ok
 
+  def generate_pr_description(task, project_path) do
+    title = task["title"] || ""
+    description = task["description"] || ""
+
+    prompt = """
+    Generate a concise GitHub pull request description in markdown for the following task. \
+    Output ONLY the description text, nothing else. Do not use any tools or make any code changes.
+
+    Task: #{title}
+
+    #{description}
+    """
+
+    case run_claude_cli(String.trim(prompt),
+           working_dir: project_path,
+           label: "pr-desc:#{task["human_id"]}",
+           timeout: @commit_stall_timeout,
+           model: "sonnet"
+         ) do
+      {:ok, %{exit_code: 0, output: output}} ->
+        case extract_text_from_stream_json(output) do
+          nil -> {:ok, fallback_pr_description(title)}
+          text -> {:ok, text}
+        end
+
+      {:ok, %{exit_code: _code}} ->
+        Logger.warning("PR description generation failed, using fallback")
+        {:ok, fallback_pr_description(title)}
+
+      {:error, reason} ->
+        Logger.warning("PR description generation failed: #{inspect(reason)}, using fallback")
+        {:ok, fallback_pr_description(title)}
+    end
+  end
+
+  @doc false
+  def extract_text_from_stream_json(output) do
+    output
+    |> String.split("\n", trim: true)
+    |> Enum.reduce([], fn line, acc ->
+      case Jason.decode(line) do
+        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} ->
+          text =
+            content
+            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.map_join("", & &1["text"])
+
+          [text | acc]
+
+        {:ok, %{"type" => "content_block_delta", "delta" => %{"text" => text}}} ->
+          [text | acc]
+
+        {:ok, %{"type" => "result", "result" => result}} ->
+          text =
+            (result["content"] || [])
+            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.map_join("", & &1["text"])
+
+          [text | acc]
+
+        _ ->
+          acc
+      end
+    end)
+    |> Enum.reverse()
+    |> Enum.join("")
+    |> String.trim()
+    |> case do
+      "" -> nil
+      text -> text
+    end
+  end
+
+  defp fallback_pr_description(title) do
+    "Citadel task: #{title}"
+  end
+
   defp run_claude(task, worktree_path) do
     human_id = task["human_id"]
 
