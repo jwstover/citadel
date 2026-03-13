@@ -5,7 +5,6 @@ defmodule CitadelWeb.DashboardLive.Index do
 
   import CitadelWeb.Components.TaskComponents, only: [control_bar: 1]
 
-
   def mount(_params, _session, socket) do
     if connected?(socket) do
       CitadelWeb.Endpoint.subscribe("tasks:tasks:#{socket.assigns.current_workspace.id}")

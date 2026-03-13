@@ -5,8 +5,6 @@ defmodule CitadelWeb.PreferencesLive.ApiKeyNew do
 
   alias Citadel.Accounts.ApiKey
 
-
-
   def mount(_params, _session, socket) do
     form =
       AshPhoenix.Form.for_create(ApiKey, :create,

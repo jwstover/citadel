@@ -10,7 +10,6 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias CitadelWeb.Components.TaskActivitySection
 
-
   def mount(%{"id" => id}, _session, socket) do
     task =
       Tasks.get_task_by_human_id!(id,
@@ -487,7 +486,6 @@ defmodule CitadelWeb.TaskLive.Show do
       {:noreply, socket}
     end
   end
-
 
   def handle_info(
         %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id},

@@ -6,8 +6,6 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
   alias Citadel.Accounts
   alias Citadel.Integrations
 
-
-
   def mount(_params, _session, socket) do
     {:ok,
      socket

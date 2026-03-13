@@ -9,8 +9,6 @@ defmodule CitadelWeb.BillingLive.Index do
   alias Citadel.Billing
   alias Citadel.Billing.Plan
 
-
-
   def mount(_params, _session, socket) do
     organization_id = socket.assigns.current_workspace.organization_id
     user = socket.assigns.current_user
