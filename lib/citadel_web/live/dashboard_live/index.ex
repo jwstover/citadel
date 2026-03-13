@@ -5,8 +5,6 @@ defmodule CitadelWeb.DashboardLive.Index do
 
   import CitadelWeb.Components.TaskComponents, only: [control_bar: 1]
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(_params, _session, socket) do
     if connected?(socket) do
@@ -67,10 +65,6 @@ defmodule CitadelWeb.DashboardLive.Index do
     end
 
     {:noreply, socket}
-  end
-
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "agents:" <> _}, socket) do
-    {:noreply, CitadelWeb.AgentPresenceHook.handle_presence_diff(socket)}
   end
 
   def render(assigns) do

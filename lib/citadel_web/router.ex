@@ -61,7 +61,11 @@ defmodule CitadelWeb.Router do
     end
 
     ash_authentication_live_session :authenticated_routes,
-      on_mount: [{CitadelWeb.AgentPresenceHook, :default}] do
+      on_mount: [
+        {CitadelWeb.LiveUserAuth, :live_user_required},
+        {CitadelWeb.LiveUserAuth, :load_workspace},
+        {CitadelWeb.AgentPresenceHook, :default}
+      ] do
       live "/chat", ChatLive
       live "/chat/:conversation_id", ChatLive
       live "/dashboard", DashboardLive.Index, :index

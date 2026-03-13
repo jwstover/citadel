@@ -18,7 +18,10 @@ defmodule CitadelWeb.AgentPresenceHook do
         Phoenix.PubSub.subscribe(Citadel.PubSub, topic)
 
         agents = presence_to_agents(AgentPresence.list(topic))
-        assign(socket, :agents, agents)
+
+        socket
+        |> assign(:agents, agents)
+        |> attach_hook(:agent_presence_diff, :handle_info, &handle_presence_info/2)
       else
         assign(socket, :agents, [])
       end
@@ -26,11 +29,13 @@ defmodule CitadelWeb.AgentPresenceHook do
     {:cont, socket}
   end
 
-  def handle_presence_diff(socket) do
+  defp handle_presence_info(%Phoenix.Socket.Broadcast{topic: "agents:" <> _}, socket) do
     topic = agent_topic(socket.assigns.current_workspace.id)
     agents = presence_to_agents(AgentPresence.list(topic))
-    assign(socket, :agents, agents)
+    {:halt, assign(socket, :agents, agents)}
   end
+
+  defp handle_presence_info(_message, socket), do: {:cont, socket}
 
   defp agent_topic(workspace_id), do: "agents:#{workspace_id}"
 

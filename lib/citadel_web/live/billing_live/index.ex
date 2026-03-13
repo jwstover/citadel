@@ -9,8 +9,7 @@ defmodule CitadelWeb.BillingLive.Index do
   alias Citadel.Billing
   alias Citadel.Billing.Plan
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+
 
   def mount(_params, _session, socket) do
     organization_id = socket.assigns.current_workspace.organization_id

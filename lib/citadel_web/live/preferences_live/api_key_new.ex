@@ -5,8 +5,7 @@ defmodule CitadelWeb.PreferencesLive.ApiKeyNew do
 
   alias Citadel.Accounts.ApiKey
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+
 
   def mount(_params, _session, socket) do
     form =

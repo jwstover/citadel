@@ -6,8 +6,7 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
   alias Citadel.Accounts
   alias Citadel.Accounts.Workspace
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+
 
   def mount(_params, _session, socket) do
     {:ok, socket}

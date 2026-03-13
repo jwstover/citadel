@@ -3,8 +3,7 @@ defmodule CitadelWeb.PreferencesLive.Index do
 
   use CitadelWeb, :live_view
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
+
 
   def mount(_params, _session, socket) do
     {:ok, socket}

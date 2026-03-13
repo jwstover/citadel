@@ -10,8 +10,6 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias CitadelWeb.Components.TaskActivitySection
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
 
   def mount(%{"id" => id}, _session, socket) do
     task =
@@ -490,9 +488,6 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
-  def handle_info(%Phoenix.Socket.Broadcast{topic: "agents:" <> _}, socket) do
-    {:noreply, CitadelWeb.AgentPresenceHook.handle_presence_diff(socket)}
-  end
 
   def handle_info(
         %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id},
