@@ -1,3 +1,13 @@
+# [0.23.0](https://github.com/jwstover/citadel/compare/v0.22.0...v0.23.0) (2026-03-13)
+
+
+### Features
+
+* add claude auth check to preflight ([e781ba4](https://github.com/jwstover/citadel/commit/e781ba4f519331e0b3621ee90b33e4429a909747))
+* use feature branching approach for agent ([d551096](https://github.com/jwstover/citadel/commit/d55109625221b765675f86f1788dbb687e40d60f))
+
+
+
 # [0.22.0](https://github.com/jwstover/citadel/compare/v0.21.0...v0.22.0) (2026-03-13)
 
 
@@ -48,15 +58,6 @@
 * **P-4:** add Billing link to sidebar navigation ([868b768](https://github.com/jwstover/citadel/commit/868b7680c82e58aa143fd3908c1147602d7dd2f4))
 * **P-5:** remove billing sections from OrganizationSection ([8b7ff2f](https://github.com/jwstover/citadel/commit/8b7ff2f4c0f43b11919d24a0d18ef6622a723609))
 * **P-6:** update BillingController redirects to /billing ([bae12e8](https://github.com/jwstover/citadel/commit/bae12e82b0b26e04ac4af76c89dbba4630f70e41))
-
-
-
-## [0.18.1](https://github.com/jwstover/citadel/compare/v0.18.0...v0.18.1) (2026-02-19)
-
-
-### Bug Fixes
-
-* priority badge disappears after task state change ([259b2e6](https://github.com/jwstover/citadel/commit/259b2e6e65fff999cc3989ee7de0ca8e77a9af03))
 
 
 
