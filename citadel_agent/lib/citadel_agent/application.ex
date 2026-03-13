@@ -8,7 +8,11 @@ defmodule CitadelAgent.Application do
     children =
       if CitadelAgent.config(:api_key) do
         CitadelAgent.Preflight.run!()
-        [{CitadelAgent.Worker, []}]
+
+        [
+          {CitadelAgent.Socket, []},
+          {CitadelAgent.Worker, []}
+        ]
       else
         []
       end

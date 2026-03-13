@@ -52,6 +52,7 @@ defmodule CitadelAgent.Worker do
     case CitadelAgent.Client.fetch_next_task() do
       {:ok, nil} ->
         Logger.debug("No agent-eligible tasks available")
+        CitadelAgent.Socket.update_status("idle")
         state
 
       {:ok, task} ->
@@ -74,7 +75,9 @@ defmodule CitadelAgent.Worker do
         with {:ok, run} <- create_run(task),
              {:ok, run} <- mark_running(run) do
           state = %{state | active_run: run}
+          CitadelAgent.Socket.update_status("working", task["id"])
           run_task(task, run, project_path)
+          CitadelAgent.Socket.update_status("idle")
           %{state | active_run: nil}
         else
           _ -> state
