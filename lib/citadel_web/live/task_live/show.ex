@@ -10,9 +10,6 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias CitadelWeb.Components.TaskActivitySection
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
-
   def mount(%{"id" => id}, _session, socket) do
     task =
       Tasks.get_task_by_human_id!(id,
@@ -27,6 +24,9 @@ defmodule CitadelWeb.TaskLive.Show do
           :overdue?,
           :blocked?,
           :blocking_count,
+          :project,
+          :execution_status,
+          :active_agent_run,
           dependencies: [:task_state],
           dependents: [:task_state]
         ]
@@ -143,7 +143,17 @@ defmodule CitadelWeb.TaskLive.Show do
         task =
           Ash.load!(
             task,
-            [:task_state, :user, :parent_task, :ancestors, :assignees, :overdue?],
+            [
+              :task_state,
+              :user,
+              :parent_task,
+              :ancestors,
+              :assignees,
+              :overdue?,
+              :project,
+              :execution_status,
+              :active_agent_run
+            ],
             tenant: socket.assigns.current_workspace.id
           )
 
@@ -260,7 +270,10 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?
+                :overdue?,
+                :project,
+                :execution_status,
+                :active_agent_run
               ],
               tenant: socket.assigns.current_workspace.id
             )
@@ -293,7 +306,10 @@ defmodule CitadelWeb.TaskLive.Show do
                 :parent_task,
                 :ancestors,
                 :assignees,
-                :overdue?
+                :overdue?,
+                :project,
+                :execution_status,
+                :active_agent_run
               ],
               tenant: socket.assigns.current_workspace.id
             )
@@ -387,7 +403,10 @@ defmodule CitadelWeb.TaskLive.Show do
           :parent_task,
           :ancestors,
           :assignees,
-          :overdue?
+          :overdue?,
+          :project,
+          :execution_status,
+          :active_agent_run
         ],
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
@@ -444,7 +463,17 @@ defmodule CitadelWeb.TaskLive.Show do
         Tasks.get_task!(task_id,
           actor: socket.assigns.current_user,
           tenant: socket.assigns.current_workspace.id,
-          load: [:task_state, :user, :parent_task, :ancestors, :assignees, :overdue?]
+          load: [
+            :task_state,
+            :user,
+            :parent_task,
+            :ancestors,
+            :assignees,
+            :overdue?,
+            :project,
+            :execution_status,
+            :active_agent_run
+          ]
         )
 
       {:noreply, assign(socket, :task, task)}
@@ -503,6 +532,9 @@ defmodule CitadelWeb.TaskLive.Show do
           :overdue?,
           :blocked?,
           :blocking_count,
+          :project,
+          :execution_status,
+          :active_agent_run,
           dependencies: [:task_state],
           dependents: [:task_state]
         ]
@@ -563,6 +595,20 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
+  defp execution_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
+  defp execution_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
+  defp execution_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
+  defp execution_status_classes(:failed), do: "bg-red-500/15 text-red-400"
+  defp execution_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
+  defp execution_status_classes(_), do: "bg-base-300/50 text-base-content/60"
+
+  defp execution_status_dot_class(:pending), do: "bg-base-content/40"
+  defp execution_status_dot_class(:running), do: "bg-yellow-400 animate-pulse"
+  defp execution_status_dot_class(:completed), do: "bg-emerald-400"
+  defp execution_status_dot_class(:failed), do: "bg-red-400"
+  defp execution_status_dot_class(:cancelled), do: "bg-orange-400"
+  defp execution_status_dot_class(_), do: "bg-base-content/40"
+
   defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
   defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
   defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
@@ -588,7 +634,12 @@ defmodule CitadelWeb.TaskLive.Show do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="relative h-full p-4 bg-base-200 border border-base-300">
         <div class="h-full overflow-auto ">
           <div class="breadcrumbs text-sm mb-4">
@@ -734,6 +785,36 @@ defmodule CitadelWeb.TaskLive.Show do
                         else: "Not set"}
                     </span>
                   <% end %>
+                </div>
+
+                <div class="flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    Project
+                  </label>
+                  <%= if @task.project do %>
+                    <span class="text-sm text-base-content/80">{@task.project.name}</span>
+                  <% else %>
+                    <span class="text-sm text-base-content/40">None</span>
+                  <% end %>
+                </div>
+
+                <div
+                  :if={@task.execution_status != :none}
+                  class="flex items-center justify-between gap-4"
+                >
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    Execution
+                  </label>
+                  <span class={[
+                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                    execution_status_classes(@task.execution_status)
+                  ]}>
+                    <span class={[
+                      "size-1.5 rounded-full",
+                      execution_status_dot_class(@task.execution_status)
+                    ]} />
+                    {@task.execution_status}
+                  </span>
                 </div>
 
                 <div class="flex items-center justify-between gap-4">

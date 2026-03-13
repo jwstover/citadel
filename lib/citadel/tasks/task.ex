@@ -23,6 +23,8 @@ defmodule Citadel.Tasks.Task do
 
     references do
       reference :parent_task, index?: true, on_delete: :delete
+      reference :project, index?: true, on_delete: :nilify
+      reference :active_agent_run, index?: true, on_delete: :nilify
     end
   end
 
@@ -45,6 +47,7 @@ defmodule Citadel.Tasks.Task do
         :task_state_id,
         :workspace_id,
         :parent_task_id,
+        :project_id,
         :due_date,
         :priority,
         :agent_eligible
@@ -75,6 +78,8 @@ defmodule Citadel.Tasks.Task do
         :due_date,
         :priority,
         :parent_task_id,
+        :project_id,
+        :active_agent_run_id,
         :agent_eligible
       ]
 
@@ -309,6 +314,8 @@ defmodule Citadel.Tasks.Task do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task_state, Citadel.Tasks.TaskState, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
+    belongs_to :project, Citadel.Projects.Project, public?: true, allow_nil?: true
+    belongs_to :active_agent_run, Citadel.Tasks.AgentRun, public?: true, allow_nil?: true
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
     has_many :agent_runs, Citadel.Tasks.AgentRun
@@ -343,6 +350,10 @@ defmodule Citadel.Tasks.Task do
     calculate :days_until_due, :integer, Citadel.Tasks.Calculations.DaysUntilDue
     calculate :blocked?, :boolean, Citadel.Tasks.Calculations.Blocked
     calculate :blocking_count, :integer, Citadel.Tasks.Calculations.BlockingCount
+
+    calculate :execution_status, :atom, Citadel.Tasks.Calculations.ExecutionStatus do
+      constraints one_of: [:none, :pending, :running, :completed, :failed, :cancelled]
+    end
   end
 
   identities do

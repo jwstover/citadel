@@ -6,9 +6,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
   alias Citadel.Accounts
   alias Citadel.Accounts.Workspace
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
-
   def mount(_params, _session, socket) do
     {:ok, socket}
   end
@@ -122,7 +119,12 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="max-w-2xl mx-auto">
         <h1 class="text-2xl font-bold mb-6">{@page_title}</h1>
 

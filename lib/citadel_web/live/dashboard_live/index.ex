@@ -5,9 +5,6 @@ defmodule CitadelWeb.DashboardLive.Index do
 
   import CitadelWeb.Components.TaskComponents, only: [control_bar: 1]
 
-  on_mount {CitadelWeb.LiveUserAuth, :live_user_required}
-  on_mount {CitadelWeb.LiveUserAuth, :load_workspace}
-
   def mount(_params, _session, socket) do
     if connected?(socket) do
       CitadelWeb.Endpoint.subscribe("tasks:tasks:#{socket.assigns.current_workspace.id}")
@@ -71,7 +68,12 @@ defmodule CitadelWeb.DashboardLive.Index do
 
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_workspace={@current_workspace} workspaces={@workspaces}>
+    <Layouts.app
+      flash={@flash}
+      current_workspace={@current_workspace}
+      workspaces={@workspaces}
+      agents={@agents}
+    >
       <div class="relative h-full overflow-hidden card bg-base-200 border border-base-300">
         <.control_bar />
 
