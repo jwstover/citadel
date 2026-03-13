@@ -42,6 +42,12 @@ defmodule Citadel.Tasks.TaskSummary do
     end
 
     attribute :title, :string, public?: true, allow_nil?: false
+
+    attribute :description, :string do
+      public? true
+      select_by_default? false
+    end
+
     attribute :due_date, :date, public?: true
 
     attribute :priority, Citadel.Tasks.Task.Types.Priority do

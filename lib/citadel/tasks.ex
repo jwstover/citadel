@@ -8,7 +8,7 @@ defmodule Citadel.Tasks do
 
   tools do
     tool :list_tasks, Citadel.Tasks.TaskSummary, :read do
-      description "Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. Use get_task_details with a human_id to see full task details."
+      description "Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. You MUST use get_task_details with a human_id to see full task details including the task descripion."
       load [:task_state]
     end
 
