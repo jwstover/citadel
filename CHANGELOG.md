@@ -1,3 +1,12 @@
+# [0.24.0](https://github.com/jwstover/citadel/compare/v0.23.0...v0.24.0) (2026-03-13)
+
+
+### Features
+
+* add CitadelAgent.GitHub module for creating draft pull requests ([fca4c4a](https://github.com/jwstover/citadel/commit/fca4c4ab57921d70613e81e2e966f0e0a6a64332))
+
+
+
 # [0.23.0](https://github.com/jwstover/citadel/compare/v0.22.0...v0.23.0) (2026-03-13)
 
 
@@ -46,18 +55,6 @@
 
 * **P-13:** filter out empty task states from rendering ([20c0e91](https://github.com/jwstover/citadel/commit/20c0e9120607bd9bdacb59a0cf20856d325b31cf))
 * **P-14:** add empty state UI when no tasks exist ([ba23bb7](https://github.com/jwstover/citadel/commit/ba23bb7198bf0a518c682193ee87f1571fac238a))
-
-
-
-# [0.19.0](https://github.com/jwstover/citadel/compare/v0.18.1...v0.19.0) (2026-02-19)
-
-
-### Features
-
-* **P-2:** create BillingLive.Index LiveView ([6258460](https://github.com/jwstover/citadel/commit/6258460de359a7cdeb32b111232d25ca38425500))
-* **P-4:** add Billing link to sidebar navigation ([868b768](https://github.com/jwstover/citadel/commit/868b7680c82e58aa143fd3908c1147602d7dd2f4))
-* **P-5:** remove billing sections from OrganizationSection ([8b7ff2f](https://github.com/jwstover/citadel/commit/8b7ff2f4c0f43b11919d24a0d18ef6622a723609))
-* **P-6:** update BillingController redirects to /billing ([bae12e8](https://github.com/jwstover/citadel/commit/bae12e82b0b26e04ac4af76c89dbba4630f70e41))
 
 
 
