@@ -1,3 +1,17 @@
+# [0.22.0](https://github.com/jwstover/citadel/compare/v0.21.0...v0.22.0) (2026-03-13)
+
+
+### Bug Fixes
+
+* add missing tools to router ([688a8c7](https://github.com/jwstover/citadel/commit/688a8c72dc6ececf341b08185ff8c8a52459adfd))
+
+
+### Features
+
+* add tests for cancel run button ([5ece9eb](https://github.com/jwstover/citadel/commit/5ece9eb5a8f4f69926c2e27178de92b61c78e5a4))
+
+
+
 # [0.21.0](https://github.com/jwstover/citadel/compare/v0.20.0...v0.21.0) (2026-03-10)
 
 
@@ -43,16 +57,6 @@
 ### Bug Fixes
 
 * priority badge disappears after task state change ([259b2e6](https://github.com/jwstover/citadel/commit/259b2e6e65fff999cc3989ee7de0ca8e77a9af03))
-
-
-
-# [0.18.0](https://github.com/jwstover/citadel/compare/v0.17.1...v0.18.0) (2026-02-18)
-
-
-### Features
-
-* add In Review task state ([6c7c03f](https://github.com/jwstover/citadel/commit/6c7c03f86787588461d1c78cad7e193f1edb485c))
-* expose TaskDependency via MCP tools ([4a47f49](https://github.com/jwstover/citadel/commit/4a47f4976ec2a85053459b6d768647e46a0584f9))
 
 
 
