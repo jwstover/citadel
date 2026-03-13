@@ -180,7 +180,9 @@ defmodule Citadel.Tasks.TaskSummaryTest do
 
       results =
         TaskSummary
-        |> Ash.Query.filter(contains(description, ^"nonexistent_text_#{System.unique_integer([:positive])}"))
+        |> Ash.Query.filter(
+          contains(description, ^"nonexistent_text_#{System.unique_integer([:positive])}")
+        )
         |> Ash.read!(tenant: workspace.id, actor: user, authorize?: false)
 
       assert results == []
