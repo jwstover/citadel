@@ -1,3 +1,12 @@
+## [0.24.2](https://github.com/jwstover/citadel/compare/v0.24.1...v0.24.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* make TaskSummary description attribute non-public ([278d771](https://github.com/jwstover/citadel/commit/278d7719653d3961833e2aa46308fd638bf88a07))
+
+
+
 ## [0.24.1](https://github.com/jwstover/citadel/compare/v0.24.0...v0.24.1) (2026-03-13)
 
 
@@ -37,17 +46,6 @@
 ### Features
 
 * add tests for cancel run button ([5ece9eb](https://github.com/jwstover/citadel/commit/5ece9eb5a8f4f69926c2e27178de92b61c78e5a4))
-
-
-
-# [0.21.0](https://github.com/jwstover/citadel/compare/v0.20.0...v0.21.0) (2026-03-10)
-
-
-### Features
-
-* add TaskActivity resource with polymorphic actor support ([617b409](https://github.com/jwstover/citadel/commit/617b409cdfce8af9e8370b550991bfe5f78a7059))
-* **P-10:** add activity section UI with comments to TaskLive.Show ([ff899d7](https://github.com/jwstover/citadel/commit/ff899d7f3391d959f151f7705eb69e1e9c56764a))
-* **P-9:** add code interfaces, policies, and PubSub for task activities ([8f04358](https://github.com/jwstover/citadel/commit/8f0435854dcd44a96e9c3e577fb520910bc278e8))
 
 
 
