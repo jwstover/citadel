@@ -38,8 +38,8 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       git push -u origin HEAD 2>&1
       exit 0
     else
-      # Main run
-      echo "subtask content" > task_output.txt
+      # Main run - produce unique content per invocation
+      echo "subtask content $$" > "task_output_$$.txt"
       exit 0
     fi
     """)
@@ -115,10 +115,16 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       {branches, 0} = System.cmd("git", ["branch"], cd: project_path)
       assert branches =~ "citadel/feature/P-20"
 
-      # Feature branch should point to same commit as main
-      {main_sha, 0} = System.cmd("git", ["rev-parse", "main"], cd: project_path)
-      {feature_sha, 0} = System.cmd("git", ["rev-parse", "citadel/feature/P-20"], cd: project_path)
-      assert String.trim(main_sha) == String.trim(feature_sha)
+      # Feature branch should be rooted from main (main is an ancestor)
+      {_, exit_code} =
+        System.cmd(
+          "git",
+          ["merge-base", "--is-ancestor", "main", "citadel/feature/P-20"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      assert exit_code == 0
     end
 
     test "feature branch is reused across subtasks", %{project_path: project_path} do
@@ -139,11 +145,11 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       assert {:ok, _} = CitadelAgent.Runner.execute(task1, project_path)
       assert {:ok, _} = CitadelAgent.Runner.execute(task2, project_path)
 
-      # Both subtask branches should be based on the same feature branch
+      # Both subtask branches should have been merged into the feature branch
       {_, exit1} =
         System.cmd(
           "git",
-          ["merge-base", "--is-ancestor", "citadel/feature/P-30", "citadel/task-P-31"],
+          ["merge-base", "--is-ancestor", "citadel/task-P-31", "citadel/feature/P-30"],
           cd: project_path,
           stderr_to_stdout: true
         )
@@ -151,7 +157,7 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       {_, exit2} =
         System.cmd(
           "git",
-          ["merge-base", "--is-ancestor", "citadel/feature/P-30", "citadel/task-P-32"],
+          ["merge-base", "--is-ancestor", "citadel/task-P-32", "citadel/feature/P-30"],
           cd: project_path,
           stderr_to_stdout: true
         )
@@ -187,7 +193,98 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       }
 
       assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
-      assert result.diff =~ "+subtask content"
+      assert result.diff =~ "subtask content"
+    end
+  end
+
+  describe "auto-merge into feature branch" do
+    test "subtask branch is merged into feature branch on completion", %{
+      project_path: project_path,
+      bare_path: bare_path
+    } do
+      task = %{
+        "human_id" => "P-61",
+        "title" => "Subtask to merge",
+        "description" => "Should auto-merge",
+        "parent_human_id" => "P-60"
+      }
+
+      assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
+      assert result.status == "completed"
+
+      # Feature branch should contain the subtask's changes
+      {log, 0} =
+        System.cmd("git", ["log", "--oneline", "citadel/feature/P-60"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      assert log =~ "automated commit"
+
+      # Feature branch on remote should also have the merge
+      {remote_log, 0} =
+        System.cmd("git", ["log", "--oneline", "citadel/feature/P-60"],
+          cd: bare_path,
+          stderr_to_stdout: true
+        )
+
+      assert remote_log =~ "automated commit"
+    end
+
+    test "standalone task does not attempt merge", %{project_path: project_path} do
+      task = %{
+        "human_id" => "P-70",
+        "title" => "Standalone task",
+        "description" => "No parent, no merge"
+      }
+
+      assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
+      assert result.status == "completed"
+
+      # No feature branch should exist
+      {branches, 0} = System.cmd("git", ["branch"], cd: project_path)
+      refute branches =~ "citadel/feature/"
+    end
+
+    test "second subtask merge includes changes from both subtasks", %{
+      project_path: project_path
+    } do
+      task1 = %{
+        "human_id" => "P-81",
+        "title" => "First subtask",
+        "description" => "First",
+        "parent_human_id" => "P-80"
+      }
+
+      task2 = %{
+        "human_id" => "P-82",
+        "title" => "Second subtask",
+        "description" => "Second",
+        "parent_human_id" => "P-80"
+      }
+
+      assert {:ok, _} = CitadelAgent.Runner.execute(task1, project_path)
+      assert {:ok, _} = CitadelAgent.Runner.execute(task2, project_path)
+
+      # Both subtask branches should be merged into the feature branch
+      {_, exit1} =
+        System.cmd(
+          "git",
+          ["merge-base", "--is-ancestor", "citadel/task-P-81", "citadel/feature/P-80"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      {_, exit2} =
+        System.cmd(
+          "git",
+          ["merge-base", "--is-ancestor", "citadel/task-P-82", "citadel/feature/P-80"],
+          cd: project_path,
+          stderr_to_stdout: true
+        )
+
+      assert exit1 == 0
+      assert exit2 == 0
     end
   end
 end

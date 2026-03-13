@@ -14,6 +14,7 @@ defmodule CitadelAgent.Preflight do
     checks = [
       {"git CLI", &check_git/0},
       {"claude CLI", &check_claude/0},
+      {"claude auth", &check_claude_auth/0},
       {"project path", &check_project_path/0},
       {"Citadel API", &check_api/0}
     ]
@@ -40,6 +41,26 @@ defmodule CitadelAgent.Preflight do
     end
   end
 
+  defp check_claude_auth do
+    claude_path = System.find_executable("claude")
+
+    case System.cmd(claude_path, ["auth", "status"], stderr_to_stdout: true) do
+      {output, 0} ->
+        output
+        |> Jason.decode()
+        |> case do
+          {:ok, %{"loggedIn" => true}} ->
+            :ok
+
+          _ ->
+            {:error, "claude is not authenticated — run `claude auth login` first"}
+        end
+
+      {_output, _code} ->
+        {:error, "claude is not authenticated — run `claude auth login` first"}
+    end
+  end
+
   defp check_git do
     if System.find_executable("git") do
       :ok
@@ -60,8 +81,11 @@ defmodule CitadelAgent.Preflight do
 
       true ->
         case System.cmd("git", ["rev-parse", "--git-dir"], cd: path, stderr_to_stdout: true) do
-          {_output, 0} -> :ok
-          {output, _code} -> {:error, "project path is not a git repository: #{String.trim(output)}"}
+          {_output, 0} ->
+            :ok
+
+          {output, _code} ->
+            {:error, "project path is not a git repository: #{String.trim(output)}"}
         end
     end
   end
