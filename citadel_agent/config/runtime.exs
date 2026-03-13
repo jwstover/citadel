@@ -19,3 +19,7 @@ end
 if stall_timeout = System.get_env("CITADEL_STALL_TIMEOUT") do
   config :citadel_agent, stall_timeout_ms: String.to_integer(stall_timeout)
 end
+
+if token = System.get_env("GITHUB_TOKEN") do
+  config :citadel_agent, github_token: token
+end
