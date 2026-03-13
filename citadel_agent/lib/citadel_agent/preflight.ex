@@ -16,6 +16,7 @@ defmodule CitadelAgent.Preflight do
       {"claude CLI", &check_claude/0},
       {"claude auth", &check_claude_auth/0},
       {"project path", &check_project_path/0},
+      {"GitHub token", &check_github_token/0},
       {"Citadel API", &check_api/0}
     ]
 
@@ -86,6 +87,25 @@ defmodule CitadelAgent.Preflight do
 
           {output, _code} ->
             {:error, "project path is not a git repository: #{String.trim(output)}"}
+        end
+    end
+  end
+
+  defp check_github_token do
+    case CitadelAgent.config(:github_token) do
+      nil ->
+        {:error, "GITHUB_TOKEN is not configured"}
+
+      token ->
+        case Req.get("https://api.github.com/user",
+               headers: [
+                 {"authorization", "Bearer #{token}"},
+                 {"accept", "application/vnd.github+v3+json"}
+               ]
+             ) do
+          {:ok, %{status: 200}} -> :ok
+          {:ok, %{status: status}} -> {:error, "GITHUB_TOKEN is invalid — received HTTP #{status}"}
+          {:error, reason} -> {:error, "GitHub API request failed: #{inspect(reason)}"}
         end
     end
   end
