@@ -324,6 +324,76 @@ defmodule CitadelWeb.Api.AgentControllerTest do
     end
   end
 
+  describe "POST /api/agent/runs/:id/cancel" do
+    test "cancels a pending run", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      conn = post(ctx.conn, ~p"/api/agent/runs/#{run.id}/cancel")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "cancelled"
+      assert data["error_message"] == "Manually cancelled by user"
+      assert data["completed_at"] != nil
+    end
+
+    test "cancels a running run", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id, status: :running],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      conn = post(ctx.conn, ~p"/api/agent/runs/#{run.id}/cancel")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["status"] == "cancelled"
+    end
+
+    test "returns 422 for already completed run", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: ctx.user,
+            tenant: ctx.workspace.id
+          )
+        )
+
+      Tasks.update_agent_run!(run, %{status: :completed},
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      conn = post(ctx.conn, ~p"/api/agent/runs/#{run.id}/cancel")
+
+      assert json_response(conn, 422)
+    end
+
+    test "returns 404 for non-existent run", ctx do
+      fake_id = Ash.UUID.generate()
+
+      conn = post(ctx.conn, ~p"/api/agent/runs/#{fake_id}/cancel")
+
+      assert json_response(conn, 404)
+    end
+  end
+
   describe "PATCH /api/agent/runs/:id" do
     test "updates an agent run status", ctx do
       task = create_task(ctx.workspace, ctx.user, ctx.task_state)

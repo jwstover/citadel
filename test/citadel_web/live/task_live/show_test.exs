@@ -1218,6 +1218,197 @@ defmodule CitadelWeb.TaskLive.ShowTest do
     end
   end
 
+  describe "agent run cancellation" do
+    setup :register_and_log_in_user
+
+    setup %{user: user, workspace: workspace} do
+      task_state = create_task_state("Todo", 1)
+
+      task =
+        generate(
+          task(
+            [
+              workspace_id: workspace.id,
+              task_state_id: task_state.id,
+              title: "Cancel Test Task",
+              agent_eligible: true
+            ],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      %{task: task, task_state: task_state}
+    end
+
+    test "shows cancel button on pending run", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      Tasks.create_agent_run!(%{task_id: task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+    end
+
+    test "shows cancel button on running run", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(run, %{status: :running, started_at: DateTime.utc_now()},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+    end
+
+    test "does not show cancel button on completed run", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(run, %{status: :completed, completed_at: DateTime.utc_now()},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+    end
+
+    test "does not show cancel button on failed run", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(run, %{status: :failed, error_message: "broke"},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+    end
+
+    test "clicking cancel button shows confirmation modal", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      html =
+        view
+        |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+        |> render_click()
+
+      assert html =~ "Cancel Agent Run"
+      assert html =~ "Are you sure you want to cancel this agent run?"
+    end
+
+    test "confirming cancel updates the run to cancelled", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      view
+      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> render_click()
+
+      html =
+        view
+        |> element("#cancel-run-modal button", "Cancel Run")
+        |> render_click()
+
+      assert html =~ "Agent run cancelled"
+
+      updated_run =
+        Tasks.get_agent_run!(run.id, actor: user, tenant: workspace.id)
+
+      assert updated_run.status == :cancelled
+    end
+
+    test "dismissing cancel modal does not cancel the run", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      view
+      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> render_click()
+
+      html =
+        view
+        |> element("#cancel-run-modal button", "Go Back")
+        |> render_click()
+
+      refute html =~ "Cancel Agent Run"
+
+      unchanged_run =
+        Tasks.get_agent_run!(run.id, actor: user, tenant: workspace.id)
+
+      assert unchanged_run.status == :pending
+    end
+  end
+
   defp create_task_state(name, order, opts \\ []) do
     is_complete = Keyword.get(opts, :is_complete, false)
 

@@ -282,6 +282,112 @@ defmodule Citadel.Tasks.AgentRunTest do
     end
   end
 
+  describe "cancel_agent_run/2" do
+    test "cancels a pending run", %{user: user, workspace: workspace, task: task} do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      cancelled =
+        Tasks.cancel_agent_run!(agent_run, actor: user, tenant: workspace.id)
+
+      assert cancelled.status == :cancelled
+      assert cancelled.completed_at != nil
+      assert cancelled.error_message == "Manually cancelled by user"
+    end
+
+    test "cancels a running run", %{user: user, workspace: workspace, task: task} do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      running =
+        Tasks.update_agent_run!(
+          agent_run,
+          %{status: :running, started_at: DateTime.utc_now()},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      cancelled =
+        Tasks.cancel_agent_run!(running, actor: user, tenant: workspace.id)
+
+      assert cancelled.status == :cancelled
+      assert cancelled.completed_at != nil
+      assert cancelled.error_message == "Manually cancelled by user"
+    end
+
+    test "cannot cancel a completed run", %{user: user, workspace: workspace, task: task} do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      completed =
+        Tasks.update_agent_run!(
+          agent_run,
+          %{status: :completed, completed_at: DateTime.utc_now()},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.cancel_agent_run!(completed, actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "cannot cancel a failed run", %{user: user, workspace: workspace, task: task} do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      failed =
+        Tasks.update_agent_run!(
+          agent_run,
+          %{status: :failed, error_message: "Something broke"},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert_raise Ash.Error.Invalid, fn ->
+        Tasks.cancel_agent_run!(failed, actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "broadcasts PubSub message on cancel", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      CitadelWeb.Endpoint.subscribe("tasks:agent_runs:#{task.id}")
+
+      Tasks.cancel_agent_run!(agent_run, actor: user, tenant: workspace.id)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "tasks:agent_runs:" <> _,
+        event: "cancel"
+      }
+    end
+  end
+
   describe "multitenancy" do
     test "agent runs are scoped to workspace", %{user: user, workspace: workspace, task: task} do
       agent_run =

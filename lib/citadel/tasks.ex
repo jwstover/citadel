@@ -85,6 +85,7 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.AgentRun do
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update
+      define :cancel_agent_run, action: :cancel
       define :list_agent_runs_by_task, action: :list_by_task, args: [:task_id]
       define :get_agent_run, action: :read, get_by: [:id]
       define :destroy_agent_run, action: :destroy
