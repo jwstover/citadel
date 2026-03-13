@@ -67,48 +67,75 @@ defmodule CitadelAgent.Runner do
     merge_worktree = Path.join(project_path, ".worktrees/merge-#{merge_id}")
 
     try do
-      case System.cmd("git", ["worktree", "add", merge_worktree, feature_branch],
-             cd: project_path,
-             stderr_to_stdout: true
-           ) do
-        {_output, 0} ->
-          case System.cmd("git", ["merge", task_branch, "--no-edit"],
-                 cd: merge_worktree,
-                 stderr_to_stdout: true
-               ) do
-            {_output, 0} ->
-              case System.cmd("git", ["push", "origin", feature_branch],
-                     cd: merge_worktree,
-                     stderr_to_stdout: true
-                   ) do
-                {_output, 0} ->
-                  Logger.info("Merged #{task_branch} into #{feature_branch} and pushed")
-                  :ok
+      case create_merge_worktree(merge_worktree, feature_branch, project_path) do
+        {:ok, :checked_out} ->
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", feature_branch])
 
-                {output, _code} ->
-                  Logger.warning("Failed to push #{feature_branch} after merge: #{output}")
-                  :ok
-              end
+        {:ok, :detached} ->
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", "HEAD:refs/heads/#{feature_branch}"])
 
-            {output, _code} ->
-              System.cmd("git", ["merge", "--abort"],
-                cd: merge_worktree,
-                stderr_to_stdout: true
-              )
-
-              Logger.warning(
-                "Merge conflict merging #{task_branch} into #{feature_branch}: #{String.slice(output, 0, 500)}"
-              )
-
-              :ok
-          end
-
-        {output, _code} ->
-          Logger.warning("Failed to create merge worktree for #{feature_branch}: #{output}")
+        :error ->
           :ok
       end
     after
       remove_worktree(merge_worktree, project_path)
+    end
+  end
+
+  defp create_merge_worktree(merge_worktree, feature_branch, project_path) do
+    case System.cmd("git", ["worktree", "add", merge_worktree, feature_branch],
+           cd: project_path,
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        {:ok, :checked_out}
+
+      {_output, _code} ->
+        case System.cmd("git", ["worktree", "add", "--detach", merge_worktree, feature_branch],
+               cd: project_path,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Created detached merge worktree (#{feature_branch} is checked out elsewhere)")
+            {:ok, :detached}
+
+          {output, _code} ->
+            Logger.warning("Failed to create merge worktree for #{feature_branch}: #{output}")
+            :error
+        end
+    end
+  end
+
+  defp do_merge_and_push(task_branch, feature_branch, merge_worktree, push_args) do
+    case System.cmd("git", ["merge", task_branch, "--no-edit"],
+           cd: merge_worktree,
+           stderr_to_stdout: true
+         ) do
+      {_output, 0} ->
+        case System.cmd("git", push_args,
+               cd: merge_worktree,
+               stderr_to_stdout: true
+             ) do
+          {_output, 0} ->
+            Logger.info("Merged #{task_branch} into #{feature_branch} and pushed")
+            :ok
+
+          {output, _code} ->
+            Logger.warning("Failed to push #{feature_branch} after merge: #{output}")
+            :ok
+        end
+
+      {output, _code} ->
+        System.cmd("git", ["merge", "--abort"],
+          cd: merge_worktree,
+          stderr_to_stdout: true
+        )
+
+        Logger.warning(
+          "Merge conflict merging #{task_branch} into #{feature_branch}: #{String.slice(output, 0, 500)}"
+        )
+
+        :ok
     end
   end
 

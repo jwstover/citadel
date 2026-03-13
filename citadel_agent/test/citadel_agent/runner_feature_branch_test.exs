@@ -246,6 +246,47 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       refute branches =~ "citadel/feature/"
     end
 
+    test "merge succeeds when feature branch is already checked out in main repo", %{
+      project_path: project_path,
+      bare_path: bare_path
+    } do
+      task = %{
+        "human_id" => "P-91",
+        "title" => "Subtask while on feature branch",
+        "description" => "Should use detached worktree fallback",
+        "parent_human_id" => "P-90"
+      }
+
+      # Run task once to create and populate the feature branch
+      assert {:ok, _} = CitadelAgent.Runner.execute(task, project_path)
+
+      # Now check out the feature branch in the main repo (simulates user working on it)
+      System.cmd("git", ["checkout", "citadel/feature/P-90"], cd: project_path)
+
+      # Run a second subtask — merge should still succeed via detached worktree
+      task2 = %{
+        "human_id" => "P-92",
+        "title" => "Second subtask while checked out",
+        "description" => "Detached merge",
+        "parent_human_id" => "P-90"
+      }
+
+      assert {:ok, result} = CitadelAgent.Runner.execute(task2, project_path)
+      assert result.status == "completed"
+
+      # Feature branch on remote should have both subtasks' commits
+      {remote_log, 0} =
+        System.cmd("git", ["log", "--oneline", "citadel/feature/P-90"],
+          cd: bare_path,
+          stderr_to_stdout: true
+        )
+
+      assert remote_log =~ "automated commit"
+
+      # Switch back to main to not interfere with other tests
+      System.cmd("git", ["checkout", "main"], cd: project_path)
+    end
+
     test "second subtask merge includes changes from both subtasks", %{
       project_path: project_path
     } do
