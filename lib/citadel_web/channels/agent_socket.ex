@@ -35,7 +35,7 @@ defmodule CitadelWeb.AgentSocket do
 
   defp sign_in_with_api_key(token) do
     case Citadel.Accounts.User
-         |> Ash.ActionInput.for_action(:sign_in_with_api_key, %{api_key: token})
+         |> Ash.Query.for_read(:sign_in_with_api_key, %{api_key: token})
          |> Ash.read(authorize?: false) do
       {:ok, [user | _]} -> {:ok, user}
       _ -> :error

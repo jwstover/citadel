@@ -32,45 +32,51 @@ defmodule CitadelAgent.Socket do
 
   @impl true
   def handle_connect(socket) do
-    topic = "agents:#{socket.assigns.workspace_id}"
-    Logger.info("Connected to Citadel WebSocket, joining #{topic}")
+    Logger.info("Connected to Citadel WebSocket, joining agent channel")
 
-    {:ok, join(socket, topic, %{"agent_name" => socket.assigns.agent_name})}
+    {:ok, join(socket, "agents:lobby", %{"agent_name" => socket.assigns.agent_name})}
   end
 
   @impl true
-  def handle_join(_topic, _reply, socket) do
-    Logger.info("Joined agent channel successfully")
-    {:ok, socket}
+  def handle_join(_topic, reply, socket) do
+    workspace_id = reply["workspace_id"]
+    Logger.info("Joined agent channel for workspace #{workspace_id}")
+    {:ok, assign(socket, :workspace_id, workspace_id)}
   end
 
   @impl true
   def handle_disconnect(_reason, socket) do
     Logger.warning("Disconnected from Citadel WebSocket, will reconnect...")
-    {:ok, reconnect(socket)}
+    reconnect_or_keep(socket)
   end
 
   @impl true
   def handle_topic_close(_topic, _reason, socket) do
     Logger.warning("Agent channel closed, will rejoin on reconnect...")
-    {:ok, reconnect(socket)}
+    reconnect_or_keep(socket)
   end
 
   @impl true
   def handle_cast({:update_status, status, current_task_id}, socket) do
-    topic = "agents:#{socket.assigns.workspace_id}"
-
     payload = %{
       "status" => status,
       "current_task_id" => current_task_id
     }
 
-    {:noreply, push(socket, topic, "update_status", payload)}
+    push(socket, "agents:lobby", "update_status", payload)
+    {:noreply, socket}
   end
 
   @impl true
   def handle_message(_topic, _event, _payload, socket) do
     {:ok, socket}
+  end
+
+  defp reconnect_or_keep(socket) do
+    case reconnect(socket) do
+      {:ok, socket} -> {:ok, socket}
+      {:error, _reason} -> {:ok, socket}
+    end
   end
 
   defp ws_uri do
