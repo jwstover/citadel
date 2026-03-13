@@ -91,7 +91,8 @@ config :citadel,
     Citadel.Accounts,
     Citadel.Integrations,
     Citadel.Billing,
-    Citadel.Settings
+    Citadel.Settings,
+    Citadel.Projects
   ],
   feature_flag_adapter: Citadel.Settings.FeatureFlagAdapters.CacheAdapter
 
