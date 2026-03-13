@@ -12,6 +12,10 @@ defmodule Citadel.Tasks.TaskSummary do
   postgres do
     table "tasks"
     repo Citadel.Repo
+
+    references do
+      reference :parent_task, index?: true, on_delete: :delete
+    end
   end
 
   actions do
