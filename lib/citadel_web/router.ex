@@ -100,6 +100,8 @@ defmodule CitadelWeb.Router do
         :list_tasks,
         :create_task,
         :update_task,
+        :delete_task,
+        :get_task_details,
         :list_task_states,
         :create_task_dependency,
         :delete_task_dependency
