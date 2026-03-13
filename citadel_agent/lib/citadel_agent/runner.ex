@@ -170,65 +170,83 @@ defmodule CitadelAgent.Runner do
     local_exists? = branch_exists_locally?(feature_branch, project_path)
     remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
 
-    cond do
-      local_exists? and remote_exists? ->
-        fetch_and_update_branch(feature_branch, project_path)
+    result =
+      cond do
+        local_exists? and remote_exists? ->
+          fetch_and_update_branch(feature_branch, project_path)
 
-      local_exists? ->
-        :ok
+        local_exists? ->
+          :ok
 
-      remote_exists? ->
-        System.cmd(
-          "git",
-          ["branch", feature_branch, "origin/#{feature_branch}"],
-          cd: project_path,
-          stderr_to_stdout: true
-        )
+        remote_exists? ->
+          System.cmd(
+            "git",
+            ["branch", feature_branch, "origin/#{feature_branch}"],
+            cd: project_path,
+            stderr_to_stdout: true
+          )
 
-        :ok
+          :ok
 
-      true ->
-        case System.cmd(
-               "git",
-               ["branch", feature_branch, "origin/main"],
-               cd: project_path,
-               stderr_to_stdout: true
-             ) do
-          {_output, 0} ->
-            Logger.info("Created feature branch #{feature_branch} from origin/main")
-            create_draft_pr(feature_branch, task, project_path)
-            :ok
+        true ->
+          case System.cmd(
+                 "git",
+                 ["branch", feature_branch, "origin/main"],
+                 cd: project_path,
+                 stderr_to_stdout: true
+               ) do
+            {_output, 0} ->
+              Logger.info("Created feature branch #{feature_branch} from origin/main")
+              :ok
 
-          {output, _code} ->
-            {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
-        end
+            {output, _code} ->
+              {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
+          end
+      end
+
+    if result == :ok do
+      ensure_draft_pr(feature_branch, task, project_path)
     end
+
+    result
   end
 
-  defp create_draft_pr(feature_branch, task, project_path) do
+  defp ensure_draft_pr(feature_branch, task, project_path) do
     parent_id = task["parent_human_id"]
 
     try do
-      {_, 0} =
-        System.cmd("git", ["push", "-u", "origin", feature_branch],
-          cd: project_path,
-          stderr_to_stdout: true
-        )
-
-      Logger.info("Pushed #{feature_branch} to origin")
-
-      {:ok, pr_body} = generate_pr_description(task, project_path)
       {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
 
-      case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
-        {:ok, url} ->
-          Logger.info("Created draft PR: #{url}")
+      case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
+        {:ok, url} when is_binary(url) ->
+          Logger.info("PR already exists for #{feature_branch}: #{url}")
 
-        {:error, reason} ->
-          Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+        _ ->
+          {_, 0} =
+            System.cmd("git", ["push", "-u", "origin", feature_branch],
+              cd: project_path,
+              stderr_to_stdout: true
+            )
+
+          Logger.info("Pushed #{feature_branch} to origin")
+
+          {:ok, pr_body} = generate_pr_description(task, project_path)
+
+          case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+            {:ok, :already_exists} ->
+              Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+
+            {:ok, url} ->
+              Logger.info("Created draft PR: #{url}")
+
+            {:error, reason} ->
+              Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+          end
       end
     rescue
-      e -> Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
+      e ->
+        Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
+        Logger.warning("Stacktrace: #{Exception.format(:error, e, __STACKTRACE__)}")
     end
   end
 
@@ -438,10 +456,10 @@ defmodule CitadelAgent.Runner do
     |> String.split("\n", trim: true)
     |> Enum.reduce([], fn line, acc ->
       case Jason.decode(line) do
-        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} ->
+        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} when is_list(content) ->
           text =
             content
-            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.filter(&(is_map(&1) and &1["type"] == "text"))
             |> Enum.map_join("", & &1["text"])
 
           [text | acc]
@@ -449,10 +467,10 @@ defmodule CitadelAgent.Runner do
         {:ok, %{"type" => "content_block_delta", "delta" => %{"text" => text}}} ->
           [text | acc]
 
-        {:ok, %{"type" => "result", "result" => result}} ->
+        {:ok, %{"type" => "result", "result" => result}} when is_map(result) ->
           text =
             (result["content"] || [])
-            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.filter(&(is_map(&1) and &1["type"] == "text"))
             |> Enum.map_join("", & &1["text"])
 
           [text | acc]

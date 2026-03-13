@@ -116,14 +116,37 @@ defmodule CitadelAgent.GitHubTest do
                GitHub.create_pull_request("o", "r", "head", "base", "Title", "Body")
     end
 
-    test "returns error on API failure with message" do
+    test "returns :already_exists when PR already exists" do
       Req.Test.stub(:github_api, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(422, Jason.encode!(%{"message" => "Validation Failed"}))
+        |> Plug.Conn.send_resp(
+          422,
+          Jason.encode!(%{
+            "message" => "Validation Failed",
+            "errors" => [%{"message" => "A pull request already exists for owner:head."}]
+          })
+        )
       end)
 
-      assert {:error, "Validation Failed"} =
+      assert {:ok, :already_exists} =
+               GitHub.create_pull_request("o", "r", "head", "base", "Title", "Body")
+    end
+
+    test "returns error on 422 with non-duplicate error" do
+      Req.Test.stub(:github_api, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(
+          422,
+          Jason.encode!(%{
+            "message" => "Validation Failed",
+            "errors" => [%{"message" => "No commits between main and head"}]
+          })
+        )
+      end)
+
+      assert {:error, "Validation Failed: No commits between main and head"} =
                GitHub.create_pull_request("o", "r", "head", "base", "Title", "Body")
     end
 
@@ -143,6 +166,88 @@ defmodule CitadelAgent.GitHubTest do
 
       assert {:error, "GITHUB_TOKEN not configured"} =
                GitHub.create_pull_request("owner", "repo", "feature", "main", "Title", "Body")
+    end
+  end
+
+  describe "find_pull_request/4" do
+    setup do
+      original_token = Application.get_env(:citadel_agent, :github_token)
+      original_req_opts = Application.get_env(:citadel_agent, :github_req_options)
+
+      Application.put_env(:citadel_agent, :github_token, "test-token-123")
+      Application.put_env(:citadel_agent, :github_req_options, plug: {Req.Test, :github_api})
+
+      on_exit(fn ->
+        if original_token,
+          do: Application.put_env(:citadel_agent, :github_token, original_token),
+          else: Application.delete_env(:citadel_agent, :github_token)
+
+        if original_req_opts,
+          do: Application.put_env(:citadel_agent, :github_req_options, original_req_opts),
+          else: Application.delete_env(:citadel_agent, :github_req_options)
+      end)
+
+      :ok
+    end
+
+    test "returns PR URL when PR exists" do
+      Req.Test.stub(:github_api, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(200, Jason.encode!([%{"html_url" => "https://github.com/o/r/pull/5"}]))
+      end)
+
+      assert {:ok, "https://github.com/o/r/pull/5"} =
+               GitHub.find_pull_request("o", "r", "feature-branch", "main")
+    end
+
+    test "returns nil when no PR exists" do
+      Req.Test.stub(:github_api, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(200, Jason.encode!([]))
+      end)
+
+      assert {:ok, nil} = GitHub.find_pull_request("o", "r", "feature-branch", "main")
+    end
+
+    test "sends correct query parameters" do
+      test_pid = self()
+
+      Req.Test.stub(:github_api, fn conn ->
+        send(test_pid, {:find_pr_request, conn})
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(200, Jason.encode!([]))
+      end)
+
+      GitHub.find_pull_request("owner", "repo", "my-branch", "main")
+
+      assert_received {:find_pr_request, conn}
+      assert conn.method == "GET"
+      assert conn.request_path == "/repos/owner/repo/pulls"
+      params = URI.decode_query(conn.query_string)
+      assert params["head"] == "owner:my-branch"
+      assert params["base"] == "main"
+      assert params["state"] == "open"
+    end
+
+    test "returns nil on API error" do
+      Req.Test.stub(:github_api, fn conn ->
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(500, Jason.encode!(%{"message" => "Internal Server Error"}))
+      end)
+
+      assert {:ok, nil} = GitHub.find_pull_request("o", "r", "feature-branch", "main")
+    end
+
+    test "returns error when token is not configured" do
+      Application.delete_env(:citadel_agent, :github_token)
+
+      assert {:error, "GITHUB_TOKEN not configured"} =
+               GitHub.find_pull_request("owner", "repo", "feature", "main")
     end
   end
 end
