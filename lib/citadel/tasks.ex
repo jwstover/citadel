@@ -82,6 +82,14 @@ defmodule Citadel.Tasks do
       define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
     end
 
+    resource Citadel.Tasks.AgentWorkItem do
+      define :create_agent_work_item, action: :create
+      define :claim_agent_work_item, action: :claim
+      define :complete_agent_work_item, action: :complete
+      define :cancel_agent_work_item, action: :cancel
+      define :list_agent_work_items, action: :read
+    end
+
     resource Citadel.Tasks.AgentRun do
       define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
