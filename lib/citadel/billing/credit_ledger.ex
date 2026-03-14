@@ -100,20 +100,8 @@ defmodule Citadel.Billing.CreditLedger do
           :transaction_type,
           Ash.Changeset.get_argument(changeset, :transaction_type)
         )
-        |> then(fn cs ->
-          if reference_type do
-            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
-          else
-            cs
-          end
-        end)
-        |> then(fn cs ->
-          if reference_id do
-            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
-          else
-            cs
-          end
-        end)
+        |> maybe_set_attribute(:reference_type, reference_type)
+        |> maybe_set_attribute(:reference_id, reference_id)
       end
 
       change Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance
@@ -146,20 +134,8 @@ defmodule Citadel.Billing.CreditLedger do
           Ash.Changeset.get_argument(changeset, :description)
         )
         |> Ash.Changeset.force_change_attribute(:transaction_type, :usage)
-        |> then(fn cs ->
-          if reference_type do
-            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
-          else
-            cs
-          end
-        end)
-        |> then(fn cs ->
-          if reference_id do
-            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
-          else
-            cs
-          end
-        end)
+        |> maybe_set_attribute(:reference_type, reference_type)
+        |> maybe_set_attribute(:reference_id, reference_id)
       end
 
       change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
@@ -200,20 +176,8 @@ defmodule Citadel.Billing.CreditLedger do
           Ash.Changeset.get_argument(changeset, :description)
         )
         |> Ash.Changeset.force_change_attribute(:transaction_type, :reservation)
-        |> then(fn cs ->
-          if reference_type do
-            Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
-          else
-            cs
-          end
-        end)
-        |> then(fn cs ->
-          if reference_id do
-            Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
-          else
-            cs
-          end
-        end)
+        |> maybe_set_attribute(:reference_type, reference_type)
+        |> maybe_set_attribute(:reference_id, reference_id)
       end
 
       change {Citadel.Billing.CreditLedger.Changes.CalculateRunningBalance,
@@ -348,5 +312,11 @@ defmodule Citadel.Billing.CreditLedger do
       attribute_writable? true
       public? true
     end
+  end
+
+  defp maybe_set_attribute(changeset, _attribute, nil), do: changeset
+
+  defp maybe_set_attribute(changeset, attribute, value) do
+    Ash.Changeset.force_change_attribute(changeset, attribute, value)
   end
 end
