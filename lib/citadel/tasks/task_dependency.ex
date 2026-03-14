@@ -113,43 +113,19 @@ defmodule Citadel.Tasks.TaskDependency do
     prefix "tasks"
 
     publish_all :create, ["task_dependencies", :task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :create
-        }
-      end
+      transform &dependency_payload(:create, &1)
     end
 
     publish_all :create, ["task_dependents", :depends_on_task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :create
-        }
-      end
+      transform &dependency_payload(:create, &1)
     end
 
     publish_all :destroy, ["task_dependencies", :task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :destroy
-        }
-      end
+      transform &dependency_payload(:destroy, &1)
     end
 
     publish_all :destroy, ["task_dependents", :depends_on_task_id] do
-      transform fn %{data: dep} ->
-        %{
-          task_id: dep.task_id,
-          depends_on_task_id: dep.depends_on_task_id,
-          action: :destroy
-        }
-      end
+      transform &dependency_payload(:destroy, &1)
     end
   end
 
@@ -169,5 +145,13 @@ defmodule Citadel.Tasks.TaskDependency do
 
   identities do
     identity :unique_dependency, [:task_id, :depends_on_task_id]
+  end
+
+  defp dependency_payload(action, %{data: dep}) do
+    %{
+      task_id: dep.task_id,
+      depends_on_task_id: dep.depends_on_task_id,
+      action: action
+    }
   end
 end

@@ -182,100 +182,31 @@ defmodule Citadel.Tasks.Task do
     prefix "tasks"
 
     publish_all :create, ["tasks", :workspace_id] do
-      transform fn %{data: task} ->
-        %{
-          id: task.id,
-          human_id: task.human_id,
-          title: task.title,
-          description: task.description,
-          task_state_id: task.task_state_id,
-          priority: task.priority,
-          due_date: task.due_date,
-          parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
-        }
-      end
+      transform &task_pubsub_payload/1
     end
 
     publish_all :update, ["tasks", :workspace_id] do
-      transform fn %{data: task} ->
-        %{
-          id: task.id,
-          human_id: task.human_id,
-          title: task.title,
-          description: task.description,
-          task_state_id: task.task_state_id,
-          priority: task.priority,
-          due_date: task.due_date,
-          parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
-        }
-      end
+      transform &task_pubsub_payload/1
     end
 
     publish_all :destroy, ["tasks", :workspace_id] do
-      transform fn %{data: task} ->
-        %{id: task.id, task_state_id: task.task_state_id, action: :destroy}
-      end
+      transform &task_destroy_payload/1
     end
 
     publish :update, ["task", :id] do
-      transform fn %{data: task} ->
-        %{
-          id: task.id,
-          human_id: task.human_id,
-          title: task.title,
-          description: task.description,
-          task_state_id: task.task_state_id,
-          priority: task.priority,
-          due_date: task.due_date,
-          parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
-        }
-      end
+      transform &task_pubsub_payload/1
     end
 
     publish :create, ["task_children", :parent_task_id] do
-      transform fn %{data: task} ->
-        %{
-          id: task.id,
-          human_id: task.human_id,
-          title: task.title,
-          description: task.description,
-          task_state_id: task.task_state_id,
-          priority: task.priority,
-          due_date: task.due_date,
-          parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
-        }
-      end
+      transform &task_pubsub_payload/1
     end
 
     publish :update, ["task_children", :parent_task_id] do
-      transform fn %{data: task} ->
-        %{
-          id: task.id,
-          human_id: task.human_id,
-          title: task.title,
-          description: task.description,
-          task_state_id: task.task_state_id,
-          priority: task.priority,
-          due_date: task.due_date,
-          parent_task_id: task.parent_task_id,
-          workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
-        }
-      end
+      transform &task_pubsub_payload/1
     end
 
     publish :destroy, ["task_children", :parent_task_id] do
-      transform fn %{data: task} ->
-        %{id: task.id, task_state_id: task.task_state_id, action: :destroy}
-      end
+      transform &task_destroy_payload/1
     end
   end
 
@@ -392,21 +323,34 @@ defmodule Citadel.Tasks.Task do
     "\nAssignees: #{list}"
   end
 
-  defp format_dependencies([]), do: nil
-  defp format_dependencies(%Ash.NotLoaded{}), do: nil
+  defp format_dependencies(deps), do: format_task_list("Dependencies", deps)
 
-  defp format_dependencies(deps) do
-    list = Enum.map_join(deps, "\n", &"  - #{&1.human_id}: #{&1.title} [#{&1.task_state.name}]")
-    "\n## Dependencies\n#{list}"
+  defp format_sub_tasks(sub_tasks), do: format_task_list("Sub-tasks", sub_tasks)
+
+  defp format_task_list(_heading, []), do: nil
+  defp format_task_list(_heading, %Ash.NotLoaded{}), do: nil
+
+  defp format_task_list(heading, tasks) do
+    list = Enum.map_join(tasks, "\n", &"  - #{&1.human_id}: #{&1.title} [#{&1.task_state.name}]")
+    "\n## #{heading}\n#{list}"
   end
 
-  defp format_sub_tasks([]), do: nil
-  defp format_sub_tasks(%Ash.NotLoaded{}), do: nil
+  defp task_pubsub_payload(%{data: task}) do
+    %{
+      id: task.id,
+      human_id: task.human_id,
+      title: task.title,
+      description: task.description,
+      task_state_id: task.task_state_id,
+      priority: task.priority,
+      due_date: task.due_date,
+      parent_task_id: task.parent_task_id,
+      workspace_id: task.workspace_id,
+      agent_eligible: task.agent_eligible
+    }
+  end
 
-  defp format_sub_tasks(sub_tasks) do
-    list =
-      Enum.map_join(sub_tasks, "\n", &"  - #{&1.human_id}: #{&1.title} [#{&1.task_state.name}]")
-
-    "\n## Sub-tasks\n#{list}"
+  defp task_destroy_payload(%{data: task}) do
+    %{id: task.id, task_state_id: task.task_state_id, action: :destroy}
   end
 end
