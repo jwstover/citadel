@@ -64,6 +64,31 @@ defmodule Citadel.Chat.Message.Changes.Respond do
   end
 
   defp run_with_credit_tracking(message, context, reservation) do
+    case execute_chain(message, context) do
+      {:ok, updated_chain} ->
+        token_usage = TokenUsage.get(updated_chain.last_message)
+        ConsumeCredits.adjust(reservation, token_usage, message.id)
+        :ok
+
+      {:error, :skipped} ->
+        ConsumeCredits.refund(reservation, message.id)
+        :skipped
+
+      {:error, _reason} ->
+        ConsumeCredits.refund(reservation, message.id)
+        :error
+    end
+  end
+
+  defp run_without_credit_tracking(message, context) do
+    case execute_chain(message, context) do
+      {:ok, _chain} -> :ok
+      {:error, :skipped} -> :skipped
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp execute_chain(message, context) do
     messages = fetch_conversation_messages(message, context)
     new_message_id = Ash.UUIDv7.generate()
     workspace_id = get_workspace_id(message, context)
@@ -73,67 +98,27 @@ defmodule Citadel.Chat.Message.Changes.Respond do
       {:ok, chain} ->
         case LLMChain.run(chain, mode: :while_needs_response) do
           {:ok, updated_chain} ->
-            token_usage = TokenUsage.get(updated_chain.last_message)
-            ConsumeCredits.adjust(reservation, token_usage, message.id)
-            :ok
+            {:ok, updated_chain}
 
           {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
             Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
-            ConsumeCredits.refund(reservation, message.id)
-            :error
+            {:error, :chain_error}
 
           {:error, %LLMChain{} = _chain} ->
             Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
-            ConsumeCredits.refund(reservation, message.id)
-            :error
+            {:error, :chain_error}
 
           other ->
             Logger.error(
               "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
             )
 
-            ConsumeCredits.refund(reservation, message.id)
-            :error
+            {:error, :unexpected}
         end
 
       {:error, reason} ->
         Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
-        ConsumeCredits.refund(reservation, message.id)
-        :skipped
-    end
-  end
-
-  defp run_without_credit_tracking(message, context) do
-    messages = fetch_conversation_messages(message, context)
-    new_message_id = Ash.UUIDv7.generate()
-    workspace_id = get_workspace_id(message, context)
-    github_tools = get_github_tools(workspace_id)
-
-    case setup_llm_chain(messages, context, message, new_message_id, github_tools) do
-      {:ok, chain} ->
-        case LLMChain.run(chain, mode: :while_needs_response) do
-          {:ok, _updated_chain} ->
-            :ok
-
-          {:error, %LLMChain{}, %LangChain.LangChainError{} = error} ->
-            Logger.error("LLMChain.run failed for message #{message.id}: #{error.message}")
-            :error
-
-          {:error, %LLMChain{} = _chain} ->
-            Logger.error("LLMChain.run failed for message #{message.id}: unknown error")
-            :error
-
-          other ->
-            Logger.error(
-              "Unexpected response from LLMChain.run for message #{message.id}: #{inspect(other)}"
-            )
-
-            :error
-        end
-
-      {:error, reason} ->
-        Logger.warning("Skipping AI response for message #{message.id}: #{inspect(reason)}")
-        :skipped
+        {:error, :skipped}
     end
   end
 

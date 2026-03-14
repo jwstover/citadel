@@ -595,33 +595,19 @@ defmodule CitadelWeb.TaskLive.Show do
     end
   end
 
-  defp execution_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
-  defp execution_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
-  defp execution_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
-  defp execution_status_classes(:failed), do: "bg-red-500/15 text-red-400"
-  defp execution_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
-  defp execution_status_classes(_), do: "bg-base-300/50 text-base-content/60"
+  defp status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
+  defp status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
+  defp status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
+  defp status_classes(:failed), do: "bg-red-500/15 text-red-400"
+  defp status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
+  defp status_classes(_), do: "bg-base-300/50 text-base-content/60"
 
-  defp execution_status_dot_class(:pending), do: "bg-base-content/40"
-  defp execution_status_dot_class(:running), do: "bg-yellow-400 animate-pulse"
-  defp execution_status_dot_class(:completed), do: "bg-emerald-400"
-  defp execution_status_dot_class(:failed), do: "bg-red-400"
-  defp execution_status_dot_class(:cancelled), do: "bg-orange-400"
-  defp execution_status_dot_class(_), do: "bg-base-content/40"
-
-  defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
-  defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
-  defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
-  defp agent_run_status_classes(:failed), do: "bg-red-500/15 text-red-400"
-  defp agent_run_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
-  defp agent_run_status_classes(_), do: "bg-base-300/50 text-base-content/60"
-
-  defp agent_run_dot_class(:pending), do: "bg-base-content/40"
-  defp agent_run_dot_class(:running), do: "bg-yellow-400 animate-pulse"
-  defp agent_run_dot_class(:completed), do: "bg-emerald-400"
-  defp agent_run_dot_class(:failed), do: "bg-red-400"
-  defp agent_run_dot_class(:cancelled), do: "bg-orange-400"
-  defp agent_run_dot_class(_), do: "bg-base-content/40"
+  defp status_dot_class(:pending), do: "bg-base-content/40"
+  defp status_dot_class(:running), do: "bg-yellow-400 animate-pulse"
+  defp status_dot_class(:completed), do: "bg-emerald-400"
+  defp status_dot_class(:failed), do: "bg-red-400"
+  defp status_dot_class(:cancelled), do: "bg-orange-400"
+  defp status_dot_class(_), do: "bg-base-content/40"
 
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
     unless Enum.empty?(sub_tasks) do
@@ -807,11 +793,11 @@ defmodule CitadelWeb.TaskLive.Show do
                   </label>
                   <span class={[
                     "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                    execution_status_classes(@task.execution_status)
+                    status_classes(@task.execution_status)
                   ]}>
                     <span class={[
                       "size-1.5 rounded-full",
-                      execution_status_dot_class(@task.execution_status)
+                      status_dot_class(@task.execution_status)
                     ]} />
                     {@task.execution_status}
                   </span>
@@ -906,11 +892,11 @@ defmodule CitadelWeb.TaskLive.Show do
                     <div class="flex items-center gap-2">
                       <span class={[
                         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                        agent_run_status_classes(run.status)
+                        status_classes(run.status)
                       ]}>
                         <span class={[
                           "size-1.5 rounded-full",
-                          agent_run_dot_class(run.status)
+                          status_dot_class(run.status)
                         ]} />
                         {run.status}
                       </span>
