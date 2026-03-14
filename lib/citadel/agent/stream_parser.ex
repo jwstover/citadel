@@ -26,7 +26,8 @@ defmodule Citadel.Agent.StreamParser do
       subtype: event["subtype"],
       session_id: event["session_id"],
       tools: event["tools"],
-      model: event["model"]
+      model: event["model"],
+      tasks: event["tasks"]
     }
   end
 
@@ -81,6 +82,10 @@ defmodule Citadel.Agent.StreamParser do
 
   defp parse_content_block(%{"type" => "text", "text" => text}) do
     %{type: :text, text: text}
+  end
+
+  defp parse_content_block(%{"type" => "thinking", "thinking" => thinking}) do
+    %{type: :thinking, text: thinking}
   end
 
   defp parse_content_block(%{"type" => "tool_use", "name" => name, "input" => input, "id" => id}) do
