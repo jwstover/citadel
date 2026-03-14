@@ -13,8 +13,9 @@ defmodule CitadelAgent.Runner do
 
   @commit_stall_timeout 120_000
 
-  def execute(task, project_path) do
+  def execute(task, project_path, opts \\ []) do
     human_id = task["human_id"]
+    run_id = Keyword.get(opts, :run_id)
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
     base_branch = base_branch_for(task)
@@ -24,7 +25,7 @@ defmodule CitadelAgent.Runner do
          :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
       result =
         try do
-          with {:ok, claude_result} <- run_claude(task, worktree_path),
+          with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
                {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
             {:ok,
@@ -492,13 +493,15 @@ defmodule CitadelAgent.Runner do
     "Citadel task: #{title}"
   end
 
-  defp run_claude(task, worktree_path) do
+  defp run_claude(task, worktree_path, opts) do
     human_id = task["human_id"]
+    run_id = Keyword.get(opts, :run_id)
 
     run_claude_cli(build_prompt(task),
       working_dir: worktree_path,
       label: human_id,
-      timeout: stall_timeout()
+      timeout: stall_timeout(),
+      run_id: run_id
     )
   end
 
@@ -507,6 +510,7 @@ defmodule CitadelAgent.Runner do
     label = Keyword.get(opts, :label, "claude")
     timeout = Keyword.get(opts, :timeout, stall_timeout())
     model = Keyword.get(opts, :model)
+    run_id = Keyword.get(opts, :run_id)
 
     Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
@@ -522,18 +526,22 @@ defmodule CitadelAgent.Runner do
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
-      collect_port_output(port, label, [], timeout)
+      collect_port_output(port, label, [], timeout, run_id)
     end
   end
 
-  defp collect_port_output(port, human_id, acc, timeout) do
+  defp collect_port_output(port, human_id, acc, timeout, run_id) do
     receive do
       {^port, {:data, data}} ->
-        for line <- String.split(data, "\n", trim: true) do
+        lines = String.split(data, "\n", trim: true)
+
+        for line <- lines do
           Logger.info("[claude:#{human_id}] #{line}")
         end
 
-        collect_port_output(port, human_id, [data | acc], timeout)
+        push_lines_to_stream(run_id, lines)
+
+        collect_port_output(port, human_id, [data | acc], timeout, run_id)
 
       {^port, {:exit_status, code}} ->
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
@@ -548,6 +556,24 @@ defmodule CitadelAgent.Runner do
          "Claude Code process stalled after #{div(timeout, 1_000)}s of inactivity. " <>
            "Partial output (#{byte_size(output)} bytes) captured before kill."}
     end
+  end
+
+  defp push_lines_to_stream(nil, _lines), do: :ok
+
+  defp push_lines_to_stream(run_id, lines) do
+    for line <- lines do
+      trimmed = String.trim(line)
+
+      if trimmed != "" do
+        try do
+          CitadelAgent.Socket.push_stream_event(run_id, trimmed)
+        rescue
+          e -> Logger.debug("Failed to push stream event: #{Exception.message(e)}")
+        end
+      end
+    end
+
+    :ok
   end
 
   defp kill_port(port) do

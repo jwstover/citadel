@@ -81,9 +81,11 @@ defmodule CitadelAgent.Worker do
   end
 
   defp run_task(task, run, project_path) do
-    case CitadelAgent.Runner.execute(task, project_path) do
+    run_id = run["id"]
+
+    case CitadelAgent.Runner.execute(task, project_path, run_id: run_id) do
       {:ok, result} ->
-        CitadelAgent.Client.update_run(run["id"], %{
+        CitadelAgent.Client.update_run(run_id, %{
           "status" => result.status,
           "diff" => result.diff,
           "logs" => result.logs,
@@ -92,19 +94,21 @@ defmodule CitadelAgent.Worker do
         })
 
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
+        push_stream_complete(run_id)
 
         if result.status == "completed" do
           transition_task_to_in_review(task)
         end
 
       {:error, reason} ->
-        CitadelAgent.Client.update_run(run["id"], %{
+        CitadelAgent.Client.update_run(run_id, %{
           "status" => "failed",
           "error_message" => inspect(reason),
           "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
         })
 
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
+        push_stream_complete(run_id)
     end
   rescue
     exception ->
@@ -117,6 +121,16 @@ defmodule CitadelAgent.Worker do
         "error_message" => Exception.message(exception),
         "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
       })
+
+      push_stream_complete(run["id"])
+  end
+
+  defp push_stream_complete(run_id) do
+    try do
+      CitadelAgent.Socket.push_stream_complete(run_id)
+    rescue
+      e -> Logger.debug("Failed to push stream_complete: #{Exception.message(e)}")
+    end
   end
 
   defp transition_task_to_in_review(task) do

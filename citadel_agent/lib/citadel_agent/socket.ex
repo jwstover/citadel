@@ -16,6 +16,14 @@ defmodule CitadelAgent.Socket do
     GenServer.cast(__MODULE__, {:update_status, status, current_task_id})
   end
 
+  def push_stream_event(run_id, line) do
+    GenServer.cast(__MODULE__, {:push_stream_event, run_id, line})
+  end
+
+  def push_stream_complete(run_id) do
+    GenServer.cast(__MODULE__, {:push_stream_complete, run_id})
+  end
+
   @impl true
   def init(_opts) do
     agent_name = CitadelAgent.config(:agent_name) || "citadel-agent"
@@ -64,6 +72,16 @@ defmodule CitadelAgent.Socket do
     }
 
     push(socket, "agents:lobby", "update_status", payload)
+    {:noreply, socket}
+  end
+
+  def handle_cast({:push_stream_event, run_id, line}, socket) do
+    push(socket, "agents:lobby", "stream_output", %{"run_id" => run_id, "event" => line})
+    {:noreply, socket}
+  end
+
+  def handle_cast({:push_stream_complete, run_id}, socket) do
+    push(socket, "agents:lobby", "stream_complete", %{"run_id" => run_id})
     {:noreply, socket}
   end
 
