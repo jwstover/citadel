@@ -1,3 +1,24 @@
+# [0.31.0](https://github.com/jwstover/citadel/compare/v0.30.0...v0.31.0) (2026-03-14)
+
+
+### Bug Fixes
+
+* **agent:** filter sub-agent events from AgentRunLive stream ([7980c53](https://github.com/jwstover/citadel/commit/7980c536d85ea790a273541cd3c76f9777de7c07))
+* resolve Credo warnings in agent run components ([3bca753](https://github.com/jwstover/citadel/commit/3bca7534a1a45b3c5606375fa6272c7e1455dbce))
+
+
+### Features
+
+* **agent:** add AgentRunComponents for rendering stream events ([462b190](https://github.com/jwstover/citadel/commit/462b190a75dc8d3f16794aa723f4294c5e6bc523))
+* **agent:** add AgentRunLive page for real-time stream output ([a8430f3](https://github.com/jwstover/citadel/commit/a8430f3ec2720ae53b6df72aaae282a7007baebf))
+* **agent:** add StreamParser module for Claude stream-json output ([bd8c2e1](https://github.com/jwstover/citadel/commit/bd8c2e174076bbcc993c05565a5743ef8518af49))
+* **agent:** add Watch link to active agent runs on task show page ([3271daf](https://github.com/jwstover/citadel/commit/3271daf099d6a605347579fb6d01d2671fd9acce))
+* **agent:** improve AgentRunLive stream rendering ([710bf62](https://github.com/jwstover/citadel/commit/710bf62f0922165f473f725f45ad280acaf13748))
+* **agent:** push stream events to channel as Claude CLI output arrives ([f518f1f](https://github.com/jwstover/citadel/commit/f518f1f401c51fee7057fbf482476ad4409acc0c))
+* **agent:** relay stream events from runner to PubSub via AgentChannel ([b316910](https://github.com/jwstover/citadel/commit/b31691019a44cc20664fa6d84e6105de99423dfe))
+
+
+
 # [0.30.0](https://github.com/jwstover/citadel/compare/v0.29.0...v0.30.0) (2026-03-14)
 
 
@@ -33,24 +54,6 @@
 ### Features
 
 * add Cancelled task state via data migration ([1168ef8](https://github.com/jwstover/citadel/commit/1168ef8b8e70185e52abcad9d9e330955363748c))
-
-
-
-# [0.26.0](https://github.com/jwstover/citadel/compare/v0.25.0...v0.26.0) (2026-03-13)
-
-
-### Bug Fixes
-
-* use detached worktree fallback when feature branch is already checked out ([91f2b29](https://github.com/jwstover/citadel/commit/91f2b294f8e44a9532e6c563b0a993ce03e0a2aa))
-
-
-### Features
-
-* add generate_pr_description/2 to Runner for AI-generated PR descriptions ([acd296d](https://github.com/jwstover/citadel/commit/acd296df1efb399af2fa3ab62b1e578bbde8fcae))
-* add GitHub token preflight check ([eeebb2d](https://github.com/jwstover/citadel/commit/eeebb2d11ac5e6cdaf74b30963e822dd36410be6))
-* add GITHUB_TOKEN to agent config ([b154b4e](https://github.com/jwstover/citadel/commit/b154b4e7db1b450c7801d87ec3f6d3e8c1b14897))
-* auto-create draft PR when new feature branch is created ([2a1bda6](https://github.com/jwstover/citadel/commit/2a1bda6413f27f9cd692e50aef07a38d0ad2b260))
-* make GitHub module testable via configurable Req options ([1a46a0f](https://github.com/jwstover/citadel/commit/1a46a0feda3c5eb3b6c113403ad221ee0b57d25a))
 
 
 
