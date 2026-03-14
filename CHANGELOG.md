@@ -1,3 +1,12 @@
+# [0.29.0](https://github.com/jwstover/citadel/compare/v0.28.0...v0.29.0) (2026-03-14)
+
+
+### Features
+
+* show task human_id with link in sidebar agent list ([da274d8](https://github.com/jwstover/citadel/commit/da274d8e67185029690d9d4a69cdc5b61dcf6694))
+
+
+
 # [0.28.0](https://github.com/jwstover/citadel/compare/v0.27.0...v0.28.0) (2026-03-14)
 
 
@@ -51,15 +60,6 @@
 * **P-28:** show project, execution status, and active agent run in task detail UI ([9547beb](https://github.com/jwstover/citadel/commit/9547beb808147a8725e429031b34e43e52e923a2))
 * **P-29:** add agent presence tracking via Phoenix Channels ([5db6385](https://github.com/jwstover/citadel/commit/5db638523ccbde5ea23f2b3fe346fc44bab81b42))
 * **P-29:** connect agent to Citadel via WebSocket for presence updates ([3da6f63](https://github.com/jwstover/citadel/commit/3da6f63fabe9182b37db1191e7eaecae1cb0172a))
-
-
-
-## [0.24.2](https://github.com/jwstover/citadel/compare/v0.24.1...v0.24.2) (2026-03-13)
-
-
-### Bug Fixes
-
-* make TaskSummary description attribute non-public ([278d771](https://github.com/jwstover/citadel/commit/278d7719653d3961833e2aa46308fd638bf88a07))
 
 
 
