@@ -219,5 +219,85 @@ defmodule Citadel.Agent.StreamParserTest do
     test "returns error for empty string" do
       assert %{type: :error, raw: ""} = StreamParser.parse("")
     end
+
+    test "extracts parent_tool_use_id for assistant events" do
+      json =
+        Jason.encode!(%{
+          "type" => "assistant",
+          "parent_tool_use_id" => "toolu_parent_abc",
+          "message" => %{
+            "model" => "claude-opus-4-6",
+            "content" => [
+              %{"type" => "text", "text" => "Sub-agent working..."}
+            ]
+          },
+          "session_id" => "sub-session"
+        })
+
+      result = StreamParser.parse(json)
+      assert result.type == :assistant
+      assert result.parent_tool_use_id == "toolu_parent_abc"
+    end
+
+    test "extracts parent_tool_use_id for tool_result events" do
+      json =
+        Jason.encode!(%{
+          "type" => "user",
+          "parent_tool_use_id" => "toolu_parent_xyz",
+          "message" => %{
+            "role" => "user",
+            "content" => [
+              %{
+                "tool_use_id" => "toolu_sub_123",
+                "type" => "tool_result",
+                "content" => "result data"
+              }
+            ]
+          },
+          "session_id" => "sub-session"
+        })
+
+      result = StreamParser.parse(json)
+      assert result.type == :tool_result
+      assert result.parent_tool_use_id == "toolu_parent_xyz"
+    end
+
+    test "parent_tool_use_id is nil for top-level events" do
+      json =
+        Jason.encode!(%{
+          "type" => "assistant",
+          "message" => %{
+            "model" => "claude-opus-4-6",
+            "content" => [
+              %{"type" => "text", "text" => "Hello"}
+            ]
+          },
+          "session_id" => "abc-123"
+        })
+
+      result = StreamParser.parse(json)
+      assert result.parent_tool_use_id == nil
+    end
+
+    test "tool_result block without content field preserves tool_use_id" do
+      json =
+        Jason.encode!(%{
+          "type" => "user",
+          "message" => %{
+            "role" => "user",
+            "content" => [
+              %{
+                "tool_use_id" => "toolu_no_content",
+                "type" => "tool_result"
+              }
+            ]
+          },
+          "session_id" => "abc-123"
+        })
+
+      result = StreamParser.parse(json)
+      assert result.type == :tool_result
+      assert [%{tool_use_id: "toolu_no_content", content: nil}] = result.results
+    end
   end
 end

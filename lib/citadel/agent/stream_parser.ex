@@ -27,7 +27,8 @@ defmodule Citadel.Agent.StreamParser do
       session_id: event["session_id"],
       tools: event["tools"],
       model: event["model"],
-      tasks: event["tasks"]
+      tasks: event["tasks"],
+      parent_tool_use_id: event["parent_tool_use_id"]
     }
   end
 
@@ -38,7 +39,8 @@ defmodule Citadel.Agent.StreamParser do
       type: :assistant,
       blocks: blocks,
       model: get_in(event, ["message", "model"]),
-      session_id: event["session_id"]
+      session_id: event["session_id"],
+      parent_tool_use_id: event["parent_tool_use_id"]
     }
   end
 
@@ -49,7 +51,8 @@ defmodule Citadel.Agent.StreamParser do
       type: :tool_result,
       results: results,
       session_id: event["session_id"],
-      tool_use_result: event["tool_use_result"]
+      tool_use_result: event["tool_use_result"],
+      parent_tool_use_id: event["parent_tool_use_id"]
     }
   end
 
@@ -64,7 +67,8 @@ defmodule Citadel.Agent.StreamParser do
       num_turns: event["num_turns"],
       total_cost_usd: event["total_cost_usd"],
       usage: event["usage"],
-      session_id: event["session_id"]
+      session_id: event["session_id"],
+      parent_tool_use_id: event["parent_tool_use_id"]
     }
   end
 
@@ -103,6 +107,15 @@ defmodule Citadel.Agent.StreamParser do
       type: :tool_result,
       tool_use_id: id,
       content: content,
+      is_error: Map.get(block, "is_error", false)
+    }
+  end
+
+  defp parse_tool_result_block(%{"type" => "tool_result", "tool_use_id" => id} = block) do
+    %{
+      type: :tool_result,
+      tool_use_id: id,
+      content: nil,
       is_error: Map.get(block, "is_error", false)
     }
   end

@@ -74,6 +74,10 @@ defmodule CitadelWeb.AgentRunLive do
     {:noreply, assign(socket, :run, run)}
   end
 
+  defp process_event(%{parent_tool_use_id: parent_id}, socket)
+       when is_binary(parent_id),
+       do: socket
+
   defp process_event(%{type: :assistant, blocks: blocks} = event, socket) do
     {text_blocks, tool_blocks} = Enum.split_with(blocks, &(&1.type != :tool_use))
     {todo_blocks, visible_tool_blocks} = Enum.split_with(tool_blocks, &todo_tool?/1)
@@ -309,22 +313,40 @@ defmodule CitadelWeb.AgentRunLive do
             "shrink-0 mt-0.5 size-3.5 rounded border flex items-center justify-center",
             todo_status_classes(todo["status"])
           ]}>
-            <span :if={todo["status"] == "in_progress"} class="size-1.5 rounded-full bg-yellow-400 animate-pulse" />
+            <span
+              :if={todo["status"] == "in_progress"}
+              class="size-1.5 rounded-full bg-yellow-400 animate-pulse"
+            />
           </span>
           <span class={[
             "flex-1",
-            if(todo["status"] == "in_progress", do: "text-base-content/80", else: "text-base-content/50")
+            if(todo["status"] == "in_progress",
+              do: "text-base-content/80",
+              else: "text-base-content/50"
+            )
           ]}>
             {todo["content"]}
           </span>
-          <span :if={todo["priority"] == "high"} class="text-[9px] text-orange-400/70 uppercase shrink-0">
+          <span
+            :if={todo["priority"] == "high"}
+            class="text-[9px] text-orange-400/70 uppercase shrink-0"
+          >
             high
           </span>
         </li>
         <li :for={todo <- @completed} class="flex items-start gap-2 text-base-content/30">
           <span class="shrink-0 mt-0.5 size-3.5 rounded border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-2.5">
-              <path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              fill="currentColor"
+              class="size-2.5"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
+                clip-rule="evenodd"
+              />
             </svg>
           </span>
           <span class="flex-1 line-through">{todo["content"]}</span>
@@ -344,7 +366,9 @@ defmodule CitadelWeb.AgentRunLive do
     ~H"""
     <div class="rounded-lg bg-blue-500/5 border border-blue-500/20 px-3 py-2">
       <div class="flex items-center gap-2 text-blue-400/70">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-blue-400/50">system</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-blue-400/50">
+          system
+        </span>
         <span>{@subtype}</span>
         <span :if={@model} class="text-base-content/40 ml-auto">model={@model}</span>
       </div>
@@ -365,7 +389,9 @@ defmodule CitadelWeb.AgentRunLive do
         <div :for={block <- @blocks}>
           <%= case block.type do %>
             <% :text -> %>
-              <div class="prose prose-sm prose-invert max-w-none text-base-content/80">{to_markdown(block.text)}</div>
+              <div class="prose prose-sm prose-invert max-w-none text-base-content/80">
+                {to_markdown(block.text)}
+              </div>
             <% :thinking -> %>
               <div class="text-base-content/40 italic whitespace-pre-wrap">{block.text}</div>
             <% _ -> %>
@@ -463,7 +489,9 @@ defmodule CitadelWeb.AgentRunLive do
       <div class="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/50 mb-1.5">
         tool result
       </div>
-      <div class={if(Map.get(@result, :is_error), do: "text-red-400/70", else: "text-base-content/50")}>
+      <div class={
+        if(Map.get(@result, :is_error), do: "text-red-400/70", else: "text-base-content/50")
+      }>
         {truncate_content(Map.get(@result, :content, @result[:raw] || @result))}
       </div>
     </div>
@@ -476,7 +504,9 @@ defmodule CitadelWeb.AgentRunLive do
     ~H"""
     <div class="rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-3 py-2">
       <div class="flex items-center gap-2 text-cyan-400/70">
-        <span class="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/50">result</span>
+        <span class="text-[10px] font-semibold uppercase tracking-wider text-cyan-400/50">
+          result
+        </span>
         <span>{if @is_error, do: "error", else: @subtype}</span>
         <div class="ml-auto flex items-center gap-3 text-base-content/40">
           <span :if={@duration_ms}>
@@ -496,7 +526,9 @@ defmodule CitadelWeb.AgentRunLive do
 
     ~H"""
     <div class="rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2">
-      <div class="text-[10px] font-semibold uppercase tracking-wider text-red-400/50 mb-1">parse error</div>
+      <div class="text-[10px] font-semibold uppercase tracking-wider text-red-400/50 mb-1">
+        parse error
+      </div>
       <div class="text-base-content/40 break-all">{@raw}</div>
     </div>
     """
@@ -561,6 +593,8 @@ defmodule CitadelWeb.AgentRunLive do
   defp format_tool_detail(_tool, input) do
     Jason.encode!(input, pretty: true)
   end
+
+  defp truncate_content(nil), do: ""
 
   defp truncate_content(content) when is_binary(content) do
     if String.length(content) > 300 do

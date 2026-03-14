@@ -34,7 +34,10 @@ defmodule CitadelWeb.AgentRunComponents do
           {result_label(@event)}
         </span>
       </div>
-      <div :if={@event[:duration_ms]} class="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/50">
+      <div
+        :if={@event[:duration_ms]}
+        class="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-base-content/50"
+      >
         <span>{format_duration(@event.duration_ms)}</span>
         <span :if={@event[:num_turns]}>{@event.num_turns} turns</span>
         <span :if={@event[:total_cost_usd]}>{"$#{Float.round(@event.total_cost_usd, 4)}"}</span>
@@ -56,7 +59,10 @@ defmodule CitadelWeb.AgentRunComponents do
   def stream_event(%{event: %{type: type}} = assigns) when type in [:error, :unknown] do
     ~H"""
     <div class="rounded-lg bg-base-300/50 p-3">
-      <pre class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono" phx-no-curly-interpolation><%= format_raw(@event) %></pre>
+      <pre
+        class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono"
+        phx-no-curly-interpolation
+      ><%= format_raw(@event) %></pre>
     </div>
     """
   end
@@ -64,7 +70,10 @@ defmodule CitadelWeb.AgentRunComponents do
   def stream_event(assigns) do
     ~H"""
     <div class="rounded-lg bg-base-300/50 p-3">
-      <pre class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono" phx-no-curly-interpolation><%= format_raw(@event) %></pre>
+      <pre
+        class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono"
+        phx-no-curly-interpolation
+      ><%= format_raw(@event) %></pre>
     </div>
     """
   end
@@ -91,7 +100,10 @@ defmodule CitadelWeb.AgentRunComponents do
         <span class="text-xs text-base-content/40">calling tool</span>
       </div>
       <div :if={@block[:input] && @block.input != %{}} class="mt-2">
-        <pre class="text-xs text-base-content/50 whitespace-pre-wrap break-all font-mono bg-base-300/50 rounded p-2 overflow-x-auto" phx-no-curly-interpolation><%= format_json(@block.input) %></pre>
+        <pre
+          class="text-xs text-base-content/50 whitespace-pre-wrap break-all font-mono bg-base-300/50 rounded p-2 overflow-x-auto"
+          phx-no-curly-interpolation
+        ><%= format_json(@block.input) %></pre>
       </div>
     </div>
     """
@@ -100,7 +112,10 @@ defmodule CitadelWeb.AgentRunComponents do
   defp assistant_block(assigns) do
     ~H"""
     <div class="rounded-lg bg-base-300/50 p-2">
-      <pre class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono" phx-no-curly-interpolation><%= format_raw(@block) %></pre>
+      <pre
+        class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono"
+        phx-no-curly-interpolation
+      ><%= format_raw(@block) %></pre>
     </div>
     """
   end
@@ -111,17 +126,27 @@ defmodule CitadelWeb.AgentRunComponents do
     ~H"""
     <details class="rounded-lg border border-base-300 bg-base-200 group">
       <summary class="flex items-center gap-2 p-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
-        <.icon name="hero-chevron-right" class="size-3.5 shrink-0 text-base-content/40 transition-transform group-open:rotate-90" />
+        <.icon
+          name="hero-chevron-right"
+          class="size-3.5 shrink-0 text-base-content/40 transition-transform group-open:rotate-90"
+        />
         <.icon
           name="hero-document-check"
-          class={if @result[:is_error], do: "size-4 shrink-0 text-error", else: "size-4 shrink-0 text-success"}
+          class={
+            if @result[:is_error],
+              do: "size-4 shrink-0 text-error",
+              else: "size-4 shrink-0 text-success"
+          }
         />
         <span class="text-sm font-medium text-base-content/70">
           {if @result[:is_error], do: "Error", else: "Result"}
         </span>
       </summary>
       <div class="border-t border-base-300 p-3">
-        <pre class="text-xs text-base-content/60 whitespace-pre-wrap break-all font-mono max-h-96 overflow-y-auto" phx-no-curly-interpolation><%= format_tool_content(@result[:content]) %></pre>
+        <pre
+          class="text-xs text-base-content/60 whitespace-pre-wrap break-all font-mono max-h-96 overflow-y-auto"
+          phx-no-curly-interpolation
+        ><%= format_tool_content(@result[:content]) %></pre>
       </div>
     </details>
     """
@@ -130,7 +155,10 @@ defmodule CitadelWeb.AgentRunComponents do
   defp tool_result_block(assigns) do
     ~H"""
     <div class="rounded-lg bg-base-300/50 p-2">
-      <pre class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono" phx-no-curly-interpolation><%= format_raw(@result) %></pre>
+      <pre
+        class="text-xs text-base-content/40 whitespace-pre-wrap break-all font-mono"
+        phx-no-curly-interpolation
+      ><%= format_raw(@result) %></pre>
     </div>
     """
   end
