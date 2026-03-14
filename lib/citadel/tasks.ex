@@ -17,7 +17,7 @@ defmodule Citadel.Tasks do
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
-      description "Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id"
+      description "Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id. To add or remove dependencies, use the create_task_dependency and delete_task_dependency tools instead."
     end
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
