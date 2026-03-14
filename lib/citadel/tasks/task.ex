@@ -80,7 +80,8 @@ defmodule Citadel.Tasks.Task do
         :parent_task_id,
         :project_id,
         :active_agent_run_id,
-        :agent_eligible
+        :agent_eligible,
+        :forge_pr
       ]
 
       argument :assignees, {:array, :uuid}
@@ -193,7 +194,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -210,7 +212,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -233,7 +236,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -250,7 +254,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -267,7 +272,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -306,6 +312,8 @@ defmodule Citadel.Tasks.Task do
       public? true
       default false
     end
+
+    attribute :forge_pr, :string, public?: true
 
     timestamps()
   end
