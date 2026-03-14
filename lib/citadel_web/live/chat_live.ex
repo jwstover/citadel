@@ -172,7 +172,6 @@ defmodule CitadelWeb.ChatLive do
           tenant: socket.assigns.current_workspace.id
         )
       )
-      |> assign(:messages, [])
 
     {:ok, socket}
   end
