@@ -83,6 +83,7 @@ defmodule Citadel.Tasks do
     end
 
     resource Citadel.Tasks.AgentRun do
+      define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update
       define :cancel_agent_run, action: :cancel

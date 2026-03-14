@@ -3,51 +3,22 @@ defmodule CitadelWeb.Api.AgentController do
 
   alias Citadel.Tasks
 
-  def next_task(conn, _params) do
-    require Ash.Query
-
+  def claim_task(conn, _params) do
     tenant = Ash.PlugHelpers.get_tenant(conn)
     actor = conn.assigns.current_user
 
-    case Citadel.Tasks.Task
-         |> Ash.Query.filter(agent_eligible == true)
-         |> Ash.Query.filter(not exists(agent_runs, status in [:pending, :running]))
-         |> Ash.Query.filter(task_state.is_complete != true and task_state.name != "In Review")
-         |> Ash.Query.filter(not exists(dependencies, task_state.is_complete != true))
-         |> Ash.Query.sort(priority: :desc, inserted_at: :asc)
-         |> Ash.Query.limit(1)
-         |> Ash.Query.load([:task_state, :parent_task])
-         |> Ash.read(actor: actor, tenant: tenant) do
-      {:ok, [task]} ->
-        conn
-        |> put_status(:ok)
-        |> render(:task, task: task)
-
-      {:ok, []} ->
-        send_resp(conn, :no_content, "")
-    end
-  end
-
-  def create_run(conn, %{"task_id" => task_id} = params) do
-    tenant = Ash.PlugHelpers.get_tenant(conn)
-    actor = conn.assigns.current_user
-
-    input =
-      params
-      |> Map.take(["status"])
-      |> Map.put("task_id", task_id)
-      |> atomize_keys()
-
-    case Tasks.create_agent_run(input, actor: actor, tenant: tenant) do
+    case Tasks.claim_next_task(
+           actor: actor,
+           tenant: tenant,
+           load: [task: [:task_state, :parent_task]]
+         ) do
       {:ok, agent_run} ->
         conn
-        |> put_status(:created)
-        |> render(:agent_run, agent_run: agent_run)
+        |> put_status(:ok)
+        |> render(:claim, agent_run: agent_run)
 
-      {:error, %Ash.Error.Invalid{} = error} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> render(:error, error: error)
+      {:error, %Ash.Error.Invalid{}} ->
+        send_resp(conn, :no_content, "")
     end
   end
 
