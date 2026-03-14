@@ -1,4 +1,5 @@
 defmodule CitadelWeb.AgentRunComponents do
+  @moduledoc false
   use Phoenix.Component
 
   import CitadelWeb.CoreComponents

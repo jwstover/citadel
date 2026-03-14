@@ -126,17 +126,7 @@ defmodule CitadelWeb.AgentRunLive do
       pending = sock.assigns.pending_tools
 
       if tool_use_id && Map.has_key?(pending, tool_use_id) do
-        tool = pending[tool_use_id]
-        sock = assign(sock, :pending_tools, Map.delete(pending, tool_use_id))
-
-        if todo_tool?(tool) do
-          sock
-        else
-          stream_insert(sock, :events, %{
-            id: tool_use_id,
-            parsed: %{type: :tool_call, tool: tool.tool, input: tool.input, result: result}
-          })
-        end
+        process_matched_tool_result(sock, pending, tool_use_id, result)
       else
         id = "event-#{System.unique_integer([:positive])}"
 
@@ -159,6 +149,20 @@ defmodule CitadelWeb.AgentRunLive do
   defp process_event(parsed, socket) do
     id = "event-#{System.unique_integer([:positive])}"
     stream_insert(socket, :events, %{id: id, parsed: parsed})
+  end
+
+  defp process_matched_tool_result(sock, pending, tool_use_id, result) do
+    tool = pending[tool_use_id]
+    sock = assign(sock, :pending_tools, Map.delete(pending, tool_use_id))
+
+    if todo_tool?(tool) do
+      sock
+    else
+      stream_insert(sock, :events, %{
+        id: tool_use_id,
+        parsed: %{type: :tool_call, tool: tool.tool, input: tool.input, result: result}
+      })
+    end
   end
 
   defp todo_tool?(%{tool: "TodoWrite"}), do: true
