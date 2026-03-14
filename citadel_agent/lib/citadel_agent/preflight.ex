@@ -111,7 +111,7 @@ defmodule CitadelAgent.Preflight do
   end
 
   defp check_api do
-    case CitadelAgent.Client.fetch_next_task() do
+    case CitadelAgent.Client.claim_task() do
       {:ok, _} -> :ok
       {:error, reason} -> {:error, "Citadel API unreachable: #{inspect(reason)}"}
     end

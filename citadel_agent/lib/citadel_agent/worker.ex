@@ -49,65 +49,34 @@ defmodule CitadelAgent.Worker do
   end
 
   defp process_next_task(state) do
-    case CitadelAgent.Client.fetch_next_task() do
+    case CitadelAgent.Client.claim_task() do
       {:ok, nil} ->
         Logger.debug("No agent-eligible tasks available")
         CitadelAgent.Socket.update_status("idle")
         state
 
-      {:ok, task} ->
-        Logger.info("Picked up task #{task["human_id"]}: #{task["title"]}")
-        execute_task(task, state)
+      {:ok, %{"task" => task, "agent_run" => run}} ->
+        Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
+        execute_task(task, run, state)
 
       {:error, reason} ->
-        Logger.error("Failed to fetch next task: #{inspect(reason)}")
+        Logger.error("Failed to claim task: #{inspect(reason)}")
         state
     end
   end
 
-  defp execute_task(task, state) do
+  defp execute_task(task, run, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
         Logger.error("No project_path configured, skipping task #{task["human_id"]}")
         state
 
       project_path ->
-        with {:ok, run} <- create_run(task),
-             {:ok, run} <- mark_running(run) do
-          state = %{state | active_run: run}
-          CitadelAgent.Socket.update_status("working", task["id"])
-          run_task(task, run, project_path)
-          CitadelAgent.Socket.update_status("idle")
-          %{state | active_run: nil}
-        else
-          _ -> state
-        end
-    end
-  end
-
-  defp create_run(task) do
-    case CitadelAgent.Client.create_run(task["id"]) do
-      {:ok, run} ->
-        Logger.info("Created AgentRun #{run["id"]} for task #{task["human_id"]}")
-        {:ok, run}
-
-      {:error, reason} ->
-        Logger.error("Failed to create AgentRun: #{inspect(reason)}")
-        {:error, reason}
-    end
-  end
-
-  defp mark_running(run) do
-    case CitadelAgent.Client.update_run(run["id"], %{
-           "status" => "running",
-           "started_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-         }) do
-      {:ok, run} ->
-        {:ok, run}
-
-      {:error, reason} ->
-        Logger.error("Failed to mark run as running: #{inspect(reason)}")
-        {:error, reason}
+        state = %{state | active_run: run}
+        CitadelAgent.Socket.update_status("working", task["id"])
+        run_task(task, run, project_path)
+        CitadelAgent.Socket.update_status("idle")
+        %{state | active_run: nil}
     end
   end
 

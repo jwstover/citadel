@@ -5,28 +5,13 @@ defmodule CitadelAgent.Client do
 
   require Logger
 
-  def fetch_next_task do
-    case req_get("/api/agent/tasks/next") do
-      {:ok, %Req.Response{status: 200, body: %{"data" => task}}} ->
-        {:ok, task}
+  def claim_task do
+    case req_post("/api/agent/tasks/claim", %{}) do
+      {:ok, %Req.Response{status: 200, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Req.Response{status: 204}} ->
         {:ok, nil}
-
-      {:ok, %Req.Response{status: status, body: body}} ->
-        {:error, {status, body}}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  def create_run(task_id, attrs \\ %{}) do
-    body = Map.put(attrs, "task_id", task_id)
-
-    case req_post("/api/agent/tasks/#{task_id}/runs", body) do
-      {:ok, %Req.Response{status: 201, body: %{"data" => run}}} ->
-        {:ok, run}
 
       {:ok, %Req.Response{status: status, body: body}} ->
         {:error, {status, body}}
