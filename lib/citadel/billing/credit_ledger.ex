@@ -227,20 +227,8 @@ defmodule Citadel.Billing.CreditLedger do
             Ash.Changeset.get_argument(changeset, :description)
           )
           |> Ash.Changeset.force_change_attribute(:transaction_type, :reservation_adjustment)
-          |> then(fn cs ->
-            if reference_type do
-              Ash.Changeset.force_change_attribute(cs, :reference_type, reference_type)
-            else
-              cs
-            end
-          end)
-          |> then(fn cs ->
-            if reference_id do
-              Ash.Changeset.force_change_attribute(cs, :reference_id, reference_id)
-            else
-              cs
-            end
-          end)
+          |> maybe_set_attribute(:reference_type, reference_type)
+          |> maybe_set_attribute(:reference_id, reference_id)
         end
       end
 
