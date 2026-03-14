@@ -76,6 +76,7 @@ defmodule CitadelWeb.Router do
       live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
       live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
       live "/preferences/api-keys/new", PreferencesLive.ApiKeyNew, :new
+      live "/agent-runs/:id", AgentRunLive
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
