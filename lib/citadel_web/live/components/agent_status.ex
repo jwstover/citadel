@@ -40,7 +40,19 @@ defmodule CitadelWeb.Components.AgentStatus do
         <div class="flex flex-col min-w-0 flex-1">
           <span class="text-sm font-medium text-base-content truncate">{agent.name}</span>
           <span
-            :if={agent.status == "working" && agent.current_task_id}
+            :if={agent.status == "working" && agent.current_task_id && agent.current_task_human_id}
+            class="text-xs text-base-content/50 truncate"
+          >
+            Working on
+            <.link
+              navigate={~p"/tasks/#{agent.current_task_human_id}"}
+              class="underline hover:text-base-content/70"
+            >
+              {agent.current_task_human_id}
+            </.link>
+          </span>
+          <span
+            :if={agent.status == "working" && agent.current_task_id && !agent.current_task_human_id}
             class="text-xs text-base-content/50 truncate"
           >
             Working on task
