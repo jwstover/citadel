@@ -43,7 +43,13 @@ defmodule CitadelWeb.Components.AgentStatus do
             :if={agent.status == "working" && agent.current_task_id && agent.current_task_human_id}
             class="text-xs text-base-content/50 truncate"
           >
-            Working on <.link navigate={~p"/tasks/#{agent.current_task_human_id}"} class="underline hover:text-base-content/70">{agent.current_task_human_id}</.link>
+            Working on
+            <.link
+              navigate={~p"/tasks/#{agent.current_task_human_id}"}
+              class="underline hover:text-base-content/70"
+            >
+              {agent.current_task_human_id}
+            </.link>
           </span>
           <span
             :if={agent.status == "working" && agent.current_task_id && !agent.current_task_human_id}
