@@ -35,8 +35,10 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
 
     incomplete_deps_subquery =
       from td in "task_dependencies",
-        join: dep in "tasks", on: dep.id == td.depends_on_task_id,
-        join: dep_ts in "task_states", on: dep_ts.id == dep.task_state_id,
+        join: dep in "tasks",
+        on: dep.id == td.depends_on_task_id,
+        join: dep_ts in "task_states",
+        on: dep_ts.id == dep.task_state_id,
         where: td.task_id == parent_as(:task).id,
         where: dep_ts.is_complete != true,
         select: 1
