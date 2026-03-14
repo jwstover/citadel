@@ -1,3 +1,14 @@
+# [0.30.0](https://github.com/jwstover/citadel/compare/v0.29.0...v0.30.0) (2026-03-14)
+
+
+### Features
+
+* **agent:** replace multi-step task pickup with atomic claim_task ([258d3d0](https://github.com/jwstover/citadel/commit/258d3d088dd7683814bf9378e9c269e3871760e4))
+* **api:** replace next_task/create_run endpoints with atomic claim_task ([d594292](https://github.com/jwstover/citadel/commit/d594292100c03aad2ba730284675aac92866cef5))
+* **tasks:** add claim_next action to AgentRun for atomic task claiming ([b60b4e8](https://github.com/jwstover/citadel/commit/b60b4e895db52c85ab4ad8bbacc4c9bc48aa018f))
+
+
+
 # [0.29.0](https://github.com/jwstover/citadel/compare/v0.28.0...v0.29.0) (2026-03-14)
 
 
@@ -40,26 +51,6 @@
 * add GITHUB_TOKEN to agent config ([b154b4e](https://github.com/jwstover/citadel/commit/b154b4e7db1b450c7801d87ec3f6d3e8c1b14897))
 * auto-create draft PR when new feature branch is created ([2a1bda6](https://github.com/jwstover/citadel/commit/2a1bda6413f27f9cd692e50aef07a38d0ad2b260))
 * make GitHub module testable via configurable Req options ([1a46a0f](https://github.com/jwstover/citadel/commit/1a46a0feda3c5eb3b6c113403ad221ee0b57d25a))
-
-
-
-# [0.25.0](https://github.com/jwstover/citadel/compare/v0.24.2...v0.25.0) (2026-03-13)
-
-
-### Bug Fixes
-
-* load project, execution_status, and active_agent_run after inline edits ([e27a3e0](https://github.com/jwstover/citadel/commit/e27a3e08749c9c03de4a1dc5578fd2a182968f88))
-* **P-29:** fix agent channel joining and presence tracking ([2b07b08](https://github.com/jwstover/citadel/commit/2b07b08eac1060a31e04a5914cfc869b59366336))
-* **P-29:** fix agent presence not showing in sidebar ([39873a6](https://github.com/jwstover/citadel/commit/39873a6f3dbe6c988dd0dae7eb6824c5b4ae82be))
-
-
-### Features
-
-* **P-27:** add Projects domain with Project resource ([30dcf11](https://github.com/jwstover/citadel/commit/30dcf1119904ba33e2fb2159f3cc4f71c05f0293))
-* **P-28:** add project, active_agent_run, and execution_status to Task ([e740c33](https://github.com/jwstover/citadel/commit/e740c33de6bb47e3b8fe8400cb12eae8a3fecdd8))
-* **P-28:** show project, execution status, and active agent run in task detail UI ([9547beb](https://github.com/jwstover/citadel/commit/9547beb808147a8725e429031b34e43e52e923a2))
-* **P-29:** add agent presence tracking via Phoenix Channels ([5db6385](https://github.com/jwstover/citadel/commit/5db638523ccbde5ea23f2b3fe346fc44bab81b42))
-* **P-29:** connect agent to Citadel via WebSocket for presence updates ([3da6f63](https://github.com/jwstover/citadel/commit/3da6f63fabe9182b37db1191e7eaecae1cb0172a))
 
 
 
