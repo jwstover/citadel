@@ -1,3 +1,12 @@
+# [0.28.0](https://github.com/jwstover/citadel/compare/v0.27.0...v0.28.0) (2026-03-14)
+
+
+### Features
+
+* make PR creation idempotent with find-before-create logic ([b5f4917](https://github.com/jwstover/citadel/commit/b5f4917a5792de21b04cb6dc391d73c8c75c22d1))
+
+
+
 # [0.27.0](https://github.com/jwstover/citadel/compare/v0.26.0...v0.27.0) (2026-03-13)
 
 
@@ -51,15 +60,6 @@
 ### Bug Fixes
 
 * make TaskSummary description attribute non-public ([278d771](https://github.com/jwstover/citadel/commit/278d7719653d3961833e2aa46308fd638bf88a07))
-
-
-
-## [0.24.1](https://github.com/jwstover/citadel/compare/v0.24.0...v0.24.1) (2026-03-13)
-
-
-### Bug Fixes
-
-* allow filtering by task description ([5731f5c](https://github.com/jwstover/citadel/commit/5731f5cb22bc764b8e5762538876030ae41b9f76))
 
 
 
