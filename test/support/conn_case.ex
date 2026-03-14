@@ -77,25 +77,6 @@ defmodule CitadelWeb.ConnCase do
   end
 
   @doc """
-  Creates user + organization + workspace in a single setup.
-  Use for tests that need the full setup but want minimal DB roundtrips.
-
-  ## Usage
-
-      setup do
-        %{user: user, organization: org, workspace: workspace} = create_user_with_workspace()
-        %{user: user, organization: org, workspace: workspace}
-      end
-  """
-  def create_user_with_workspace(attrs \\ %{}) do
-    user = Citadel.DataCase.create_user(attrs)
-    organization = generate(organization([], actor: user))
-    workspace = generate(workspace([organization_id: organization.id], actor: user))
-
-    %{user: user, organization: organization, workspace: workspace}
-  end
-
-  @doc """
   Logs in the given user without going through authentication.
   """
   def log_in_user(conn, user) do
