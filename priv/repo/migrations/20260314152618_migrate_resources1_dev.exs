@@ -27,7 +27,8 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
             name: "agent_work_items_workspace_id_fkey",
             type: :uuid,
             prefix: "public"
-          ), null: false
+          ),
+          null: false
 
       add :task_id,
           references(:tasks,
@@ -36,7 +37,8 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
             type: :uuid,
             prefix: "public",
             on_delete: :delete_all
-          ), null: false
+          ),
+          null: false
 
       add :comment_id,
           references(:task_activities,
