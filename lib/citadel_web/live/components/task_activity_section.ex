@@ -29,15 +29,17 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         |> stream(:activities, activities)
         |> assign(:activities_loaded, true)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
+        |> assign(:request_changes, false)
       end
 
     {:ok, socket}
   end
 
   defp handle_broadcast(
-         %Phoenix.Socket.Broadcast{event: "create_comment", payload: %{data: activity}},
+         %Phoenix.Socket.Broadcast{event: event, payload: %{data: activity}},
          socket
-       ) do
+       )
+       when event in ["create_comment", "create_request_changes_comment"] do
     activity =
       Ash.load!(activity, [:user],
         tenant: socket.assigns.current_workspace.id,
@@ -54,18 +56,25 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     stream_delete(socket, :activities, activity)
   end
 
+  def handle_event("toggle-request-changes", _params, socket) do
+    {:noreply, assign(socket, :request_changes, !socket.assigns.request_changes)}
+  end
+
   def handle_event("submit-comment", %{"comment" => %{"body" => body}}, socket) do
     body = String.trim(body)
 
     if body == "" do
       {:noreply, socket}
     else
+      params = %{body: body, task_id: socket.assigns.task.id}
+      opts = [actor: socket.assigns.current_user, tenant: socket.assigns.current_workspace.id]
+
       activity =
-        Tasks.create_comment!(
-          %{body: body, task_id: socket.assigns.task.id},
-          actor: socket.assigns.current_user,
-          tenant: socket.assigns.current_workspace.id
-        )
+        if socket.assigns.request_changes do
+          Tasks.create_request_changes_comment!(params, opts)
+        else
+          Tasks.create_comment!(params, opts)
+        end
 
       activity =
         Ash.load!(activity, [:user],
@@ -77,6 +86,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         socket
         |> stream_insert(:activities, activity)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
+        |> assign(:request_changes, false)
 
       {:noreply, socket}
     end
@@ -109,7 +119,10 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         <div
           :for={{dom_id, activity} <- @streams.activities}
           id={dom_id}
-          class="flex gap-2 group"
+          class={[
+            "flex gap-2 group rounded-lg p-2 -ml-2",
+            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning"
+          ]}
         >
           <div class="flex-shrink-0 pt-0.5">
             <.activity_actor_avatar activity={activity} />
@@ -118,6 +131,12 @@ defmodule CitadelWeb.Components.TaskActivitySection do
             <div class="flex items-center gap-2">
               <span class="text-sm font-medium text-base-content">
                 <.activity_actor_name activity={activity} />
+              </span>
+              <span
+                :if={activity.type == :change_request}
+                class="inline-flex items-center gap-1 text-xs font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded"
+              >
+                <.icon name="hero-arrow-path" class="size-3" /> Changes Requested
               </span>
               <span class="text-xs text-base-content/40">
                 {relative_time(activity.inserted_at)}
@@ -155,14 +174,35 @@ defmodule CitadelWeb.Components.TaskActivitySection do
             name={@form[:body].name}
             value={@form[:body].value}
             rows="2"
-            placeholder="Add a comment..."
+            placeholder={if(@request_changes, do: "Describe what changes are needed...", else: "Add a comment...")}
             class="textarea textarea-bordered w-full text-sm resize-none"
             id={"#{@id}-body"}
             phx-hook="CmdEnterSubmit"
           />
-          <div class="flex justify-end mt-2">
-            <button type="submit" class="btn btn-sm btn-primary">
-              Comment
+          <div class="flex items-center justify-between mt-2">
+            <label class="flex items-center gap-2 cursor-pointer select-none" id={"#{@id}-request-changes-toggle"}>
+              <input
+                type="checkbox"
+                checked={@request_changes}
+                phx-click="toggle-request-changes"
+                phx-target={@myself}
+                class="checkbox checkbox-warning checkbox-xs"
+              />
+              <span class={[
+                "text-xs",
+                if(@request_changes, do: "text-warning font-medium", else: "text-base-content/50")
+              ]}>
+                Request changes
+              </span>
+            </label>
+            <button
+              type="submit"
+              class={[
+                "btn btn-sm",
+                if(@request_changes, do: "btn-warning", else: "btn-primary")
+              ]}
+            >
+              {if(@request_changes, do: "Request Changes", else: "Comment")}
             </button>
           </div>
         </div>
