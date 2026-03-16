@@ -27,7 +27,7 @@ defmodule Citadel.Tasks.AgentRun do
     end
 
     update :update do
-      accept [:status, :diff, :test_output, :logs, :error_message, :started_at, :completed_at]
+      accept [:status, :commits, :test_output, :logs, :error_message, :started_at, :completed_at]
     end
 
     update :cancel do
@@ -92,7 +92,7 @@ defmodule Citadel.Tasks.AgentRun do
       public? true
     end
 
-    attribute :diff, :string, public?: true
+    attribute :commits, {:array, :string}, public?: true, default: []
     attribute :test_output, :string, public?: true
     attribute :logs, :string, public?: true
     attribute :error_message, :string, public?: true

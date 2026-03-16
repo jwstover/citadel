@@ -509,13 +509,13 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       conn =
         patch(ctx.conn, ~p"/api/agent/runs/#{run.id}", %{
           "status" => "completed",
-          "diff" => "--- a/file.ex\n+++ b/file.ex",
+          "commits" => ["abc123", "def456"],
           "test_output" => "All tests passed"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "completed"
-      assert data["diff"] == "--- a/file.ex\n+++ b/file.ex"
+      assert data["commits"] == ["abc123", "def456"]
       assert data["test_output"] == "All tests passed"
     end
 
