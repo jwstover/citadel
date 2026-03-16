@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources2 do
+defmodule Citadel.Repo.Migrations.ReplaceDiffWithCommitsOnAgentRun do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -8,6 +8,10 @@ defmodule Citadel.Repo.Migrations.MigrateResources2 do
   use Ecto.Migration
 
   def up do
+    alter table(:tasks) do
+      add :forge_pr, :text
+    end
+
     alter table(:agent_runs) do
       remove :diff
       add :commits, {:array, :text}, default: []
@@ -18,6 +22,10 @@ defmodule Citadel.Repo.Migrations.MigrateResources2 do
     alter table(:agent_runs) do
       remove :commits
       add :diff, :text
+    end
+
+    alter table(:tasks) do
+      remove :forge_pr
     end
   end
 end
