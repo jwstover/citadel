@@ -89,7 +89,7 @@ defmodule CitadelAgent.Worker do
       {:ok, result} ->
         CitadelAgent.Client.update_run(run_id, %{
           "status" => result.status,
-          "diff" => result.diff,
+          "commits" => result.commits,
           "logs" => result.logs,
           "test_output" => result.test_output,
           "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()

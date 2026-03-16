@@ -28,11 +28,11 @@ defmodule CitadelAgent.Runner do
         try do
           with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
-               {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
+               {:ok, commits} <- capture_commits(worktree_path, base_branch, branch_name) do
             {:ok,
              %{
                status: determine_status(claude_result),
-               diff: diff,
+               commits: commits,
                logs: claude_result.output,
                test_output: nil,
                error_message: nil
@@ -617,16 +617,24 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp capture_diff(worktree_path, base_branch, branch_name) do
-    case System.cmd("git", ["diff", "#{base_branch}..#{branch_name}"],
+  defp capture_commits(worktree_path, base_branch, branch_name) do
+    case System.cmd("git", ["log", "--format=%H%n%s", "#{base_branch}..#{branch_name}"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
-      {diff, 0} ->
-        {:ok, diff}
+      {output, 0} ->
+        commits =
+          output
+          |> String.trim()
+          |> String.split("\n")
+          |> Enum.chunk_every(2)
+          |> Enum.filter(fn chunk -> length(chunk) == 2 end)
+          |> Enum.map(fn [sha, message] -> %{"sha" => sha, "message" => message} end)
 
-      {output, _code} ->
-        {:ok, output}
+        {:ok, commits}
+
+      {_output, _code} ->
+        {:ok, []}
     end
   end
 

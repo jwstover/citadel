@@ -30,7 +30,7 @@ defmodule CitadelWeb.Api.AgentController do
       params
       |> Map.take([
         "status",
-        "diff",
+        "commits",
         "test_output",
         "logs",
         "error_message",

@@ -943,11 +943,16 @@ defmodule CitadelWeb.TaskLive.Show do
                     </div>
                   </div>
 
-                  <details :if={run.diff && run.diff != ""} class="group">
+                  <details :if={run.commits != []} class="group">
                     <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
-                      Diff
+                      Commits ({length(run.commits)})
                     </summary>
-                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.diff}</code></pre>
+                    <ul class="mt-2 space-y-1">
+                      <li :for={commit <- run.commits} class="flex items-start gap-2 text-xs">
+                        <code class="px-1.5 py-0.5 bg-base-300/50 rounded font-mono text-base-content/70 shrink-0">{String.slice(commit["sha"], 0..6)}</code>
+                        <span class="text-base-content/80">{commit["message"]}</span>
+                      </li>
+                    </ul>
                   </details>
 
                   <details :if={run.test_output && run.test_output != ""} class="group mt-2">

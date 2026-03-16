@@ -184,7 +184,7 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       assert branches =~ "citadel/task-P-40"
     end
 
-    test "diff is captured against feature branch for subtasks", %{project_path: project_path} do
+    test "commits are captured against feature branch for subtasks", %{project_path: project_path} do
       task = %{
         "human_id" => "P-51",
         "title" => "Subtask",
@@ -193,7 +193,8 @@ defmodule CitadelAgent.RunnerFeatureBranchTest do
       }
 
       assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
-      assert result.diff =~ "subtask content"
+      assert is_list(result.commits)
+      assert length(result.commits) > 0
     end
   end
 
