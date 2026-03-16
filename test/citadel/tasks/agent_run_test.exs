@@ -129,7 +129,7 @@ defmodule Citadel.Tasks.AgentRunTest do
       assert updated.started_at != nil
     end
 
-    test "can set completed status with diff and test output", %{
+    test "can set completed status with commits and test output", %{
       user: user,
       workspace: workspace,
       task: task
@@ -142,13 +142,14 @@ defmodule Citadel.Tasks.AgentRunTest do
         )
 
       now = DateTime.utc_now()
+      commits = ["abc123def456", "789012fed345"]
 
       updated =
         Tasks.update_agent_run!(
           agent_run,
           %{
             status: :completed,
-            diff: "--- a/file.ex\n+++ b/file.ex\n@@ -1 +1 @@\n-old\n+new",
+            commits: commits,
             test_output: "All tests passed",
             logs: "Agent execution log...",
             completed_at: now
@@ -158,7 +159,7 @@ defmodule Citadel.Tasks.AgentRunTest do
         )
 
       assert updated.status == :completed
-      assert updated.diff =~ "file.ex"
+      assert updated.commits == commits
       assert updated.test_output == "All tests passed"
       assert updated.logs == "Agent execution log..."
     end

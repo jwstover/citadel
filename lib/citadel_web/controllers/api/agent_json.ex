@@ -56,6 +56,7 @@ defmodule CitadelWeb.Api.AgentJSON do
           id: task.task_state.id,
           name: task.task_state.name
         },
+        forge_pr: task.forge_pr,
         inserted_at: task.inserted_at,
         updated_at: task.updated_at
       }

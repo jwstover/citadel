@@ -1171,7 +1171,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       assert html =~ "completed"
     end
 
-    test "displays expandable diff section", %{
+    test "displays expandable commits section", %{
       conn: conn,
       task: task,
       user: user,
@@ -1183,15 +1183,15 @@ defmodule CitadelWeb.TaskLive.ShowTest do
           tenant: workspace.id
         )
 
-      Tasks.update_agent_run!(run.id, %{diff: "--- a/file.ex\n+++ b/file.ex"},
+      Tasks.update_agent_run!(run.id, %{commits: ["abc1234", "def5678"]},
         actor: user,
         tenant: workspace.id
       )
 
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Diff"
-      assert html =~ "--- a/file.ex"
+      assert html =~ "Commits (2)"
+      assert html =~ "abc1234"
     end
 
     test "displays error message for failed runs", %{

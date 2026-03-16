@@ -8,6 +8,7 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWork do
   def change(changeset, _opts, _context) do
     Ash.Changeset.after_action(changeset, fn _changeset, task ->
       maybe_create_work_item(task)
+      maybe_enqueue_unblocked_dependents(task)
       {:ok, task}
     end)
   end
@@ -21,8 +22,58 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWork do
   defp should_enqueue?(task) do
     task.agent_eligible == true &&
       workable_state?(task.task_state_id) &&
+      !blocked?(task) &&
       !active_run_exists?(task.id, task.workspace_id) &&
       !active_work_item_exists?(task.id, task.workspace_id)
+  end
+
+  defp blocked?(task) do
+    Citadel.Tasks.TaskDependency
+    |> Ash.Query.filter(task_id == ^task.id)
+    |> Ash.read!(authorize?: false)
+    |> Enum.any?(fn dep ->
+      dep_task =
+        Citadel.Tasks.Task
+        |> Ash.Query.filter(id == ^dep.depends_on_task_id)
+        |> Ash.read_one!(authorize?: false, tenant: task.workspace_id)
+
+      !complete_state?(dep_task.task_state_id)
+    end)
+  end
+
+  defp maybe_enqueue_unblocked_dependents(task) do
+    if complete_state?(task.task_state_id) do
+      enqueue_eligible_dependents(task)
+    end
+  end
+
+  defp enqueue_eligible_dependents(task) do
+    Citadel.Tasks.TaskDependency
+    |> Ash.Query.filter(depends_on_task_id == ^task.id)
+    |> Ash.read!(authorize?: false)
+    |> Enum.each(fn dep ->
+      dependent_task =
+        Citadel.Tasks.Task
+        |> Ash.Query.filter(id == ^dep.task_id)
+        |> Ash.read_one!(
+          authorize?: false,
+          tenant: task.workspace_id,
+          load: [dependencies: [task_state: [:is_complete]]]
+        )
+
+      if dependent_task do
+        maybe_create_work_item(dependent_task)
+      end
+    end)
+  end
+
+  defp complete_state?(task_state_id) do
+    case Citadel.Tasks.TaskState
+         |> Ash.Query.filter(id == ^task_state_id)
+         |> Ash.read_one(authorize?: false) do
+      {:ok, %{is_complete: true}} -> true
+      _ -> false
+    end
   end
 
   defp workable_state?(task_state_id) do

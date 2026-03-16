@@ -249,6 +249,213 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
     end
   end
 
+  describe "dependency-blocked tasks" do
+    test "does not create work item when task has incomplete dependency on create", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
+      blocking_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocker #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      dependent_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocked Task #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: true,
+            dependencies: [blocking_task.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert list_work_items_for_task(dependent_task.id, workspace.id) == []
+    end
+
+    test "does not create work item when task has incomplete dependency on update", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
+      blocking_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocker #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      dependent_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocked Task #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false,
+            dependencies: [blocking_task.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_task!(dependent_task.id, %{agent_eligible: true},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      assert list_work_items_for_task(dependent_task.id, workspace.id) == []
+    end
+
+    test "completing a blocking task enqueues work for unblocked dependent", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state,
+      done_state: done_state
+    } do
+      blocking_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocker #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      dependent_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocked Task #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: true,
+            dependencies: [blocking_task.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert list_work_items_for_task(dependent_task.id, workspace.id) == []
+
+      Tasks.update_task!(blocking_task.id, %{task_state_id: done_state.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      work_items = list_work_items_for_task(dependent_task.id, workspace.id)
+      assert length(work_items) == 1
+      assert hd(work_items).type == :new_task
+      assert hd(work_items).status == :pending
+    end
+
+    test "completing a blocking task does not enqueue dependent still blocked by another task", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state,
+      done_state: done_state
+    } do
+      blocker_a =
+        Tasks.create_task!(
+          %{
+            title: "Blocker A #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      blocker_b =
+        Tasks.create_task!(
+          %{
+            title: "Blocker B #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      dependent_task =
+        Tasks.create_task!(
+          %{
+            title: "Double Blocked #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: true,
+            dependencies: [blocker_a.id, blocker_b.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_task!(blocker_a.id, %{task_state_id: done_state.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      assert list_work_items_for_task(dependent_task.id, workspace.id) == []
+    end
+
+    test "completing a blocking task does not enqueue non-agent-eligible dependent", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state,
+      done_state: done_state
+    } do
+      blocking_task =
+        Tasks.create_task!(
+          %{
+            title: "Blocker #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      dependent_task =
+        Tasks.create_task!(
+          %{
+            title: "Non-Agent Dep #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            workspace_id: workspace.id,
+            agent_eligible: false,
+            dependencies: [blocking_task.id]
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_task!(blocking_task.id, %{task_state_id: done_state.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      assert list_work_items_for_task(dependent_task.id, workspace.id) == []
+    end
+  end
+
   describe "task completion cancels work items" do
     test "cancels pending work items when task moves to complete state", %{
       user: user,

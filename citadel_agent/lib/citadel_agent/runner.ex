@@ -216,36 +216,57 @@ defmodule CitadelAgent.Runner do
     try do
       {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
 
-      case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
-        {:ok, url} when is_binary(url) ->
-          Logger.info("PR already exists for #{feature_branch}: #{url}")
+      pr_url =
+        case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
+          {:ok, url} when is_binary(url) ->
+            Logger.info("PR already exists for #{feature_branch}: #{url}")
+            url
 
-        _ ->
-          {_, 0} =
-            System.cmd("git", ["push", "-u", "origin", feature_branch],
-              cd: project_path,
-              stderr_to_stdout: true
-            )
+          _ ->
+            {_, 0} =
+              System.cmd("git", ["push", "-u", "origin", feature_branch],
+                cd: project_path,
+                stderr_to_stdout: true
+              )
 
-          Logger.info("Pushed #{feature_branch} to origin")
+            Logger.info("Pushed #{feature_branch} to origin")
 
-          {:ok, pr_body} = generate_pr_description(task, project_path)
+            {:ok, pr_body} = generate_pr_description(task, project_path)
 
-          case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
-            {:ok, :already_exists} ->
-              Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+              {:ok, :already_exists} ->
+                Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+                nil
 
-            {:ok, url} ->
-              Logger.info("Created draft PR: #{url}")
+              {:ok, url} ->
+                Logger.info("Created draft PR: #{url}")
+                url
 
-            {:error, reason} ->
-              Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
-          end
+              {:error, reason} ->
+                Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+                nil
+            end
+        end
+
+      if pr_url do
+        set_forge_pr(task["parent_task_id"], pr_url)
       end
     rescue
       e ->
         Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
         Logger.warning("Stacktrace: #{Exception.format(:error, e, __STACKTRACE__)}")
+    end
+  end
+
+  defp set_forge_pr(nil, _pr_url), do: :ok
+
+  defp set_forge_pr(parent_task_id, pr_url) do
+    case CitadelAgent.Client.update_task(parent_task_id, %{"forge_pr" => pr_url}) do
+      {:ok, _task} ->
+        Logger.info("Set forge_pr on parent task #{parent_task_id}: #{pr_url}")
+
+      {:error, reason} ->
+        Logger.warning("Failed to set forge_pr on parent task #{parent_task_id}: #{inspect(reason)}")
     end
   end
 

@@ -943,7 +943,7 @@ defmodule CitadelWeb.TaskLive.Show do
                     </div>
                   </div>
 
-                  <details :if={run.commits != []} class="group">
+                  <details :if={run.commits != nil and run.commits != []} class="group">
                     <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
                       Commits ({length(run.commits)})
                     </summary>
