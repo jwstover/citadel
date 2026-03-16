@@ -24,11 +24,13 @@ defmodule CitadelAgent.Runner do
     with :ok <- fetch_origin(project_path),
          :ok <- maybe_ensure_feature_branch(task, project_path),
          :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
+      starting_sha = capture_head_sha(worktree_path)
+
       result =
         try do
           with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
-               {:ok, commits} <- capture_commits(worktree_path, base_branch, branch_name) do
+               {:ok, commits} <- capture_commits(worktree_path, starting_sha) do
             {:ok,
              %{
                status: determine_status(claude_result),
@@ -638,8 +640,15 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp capture_commits(worktree_path, base_branch, branch_name) do
-    case System.cmd("git", ["log", "--format=%H%n%s", "#{base_branch}..#{branch_name}"],
+  defp capture_head_sha(worktree_path) do
+    case System.cmd("git", ["rev-parse", "HEAD"], cd: worktree_path, stderr_to_stdout: true) do
+      {sha, 0} -> String.trim(sha)
+      _ -> nil
+    end
+  end
+
+  defp capture_commits(worktree_path, starting_sha) when is_binary(starting_sha) do
+    case System.cmd("git", ["log", "--format=%H%n%s", "#{starting_sha}..HEAD"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
@@ -658,6 +667,8 @@ defmodule CitadelAgent.Runner do
         {:ok, []}
     end
   end
+
+  defp capture_commits(_worktree_path, _starting_sha), do: {:ok, []}
 
   @stripped_env_vars ~w(ANTHROPIC_API_KEY OPENAI_API_KEY CLAUDECODE)
 
