@@ -17,7 +17,10 @@ defmodule Citadel.Tasks.Changes.SetModelConfigDefault do
       |> Ash.read!(authorize?: false)
       |> Enum.each(fn config ->
         config
-        |> Ash.Changeset.for_update(:unset_default, %{}, authorize?: false, tenant: changeset.tenant)
+        |> Ash.Changeset.for_update(:unset_default, %{},
+          authorize?: false,
+          tenant: changeset.tenant
+        )
         |> Ash.update!()
       end)
 
