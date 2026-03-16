@@ -92,6 +92,21 @@ defmodule Citadel.Tasks do
       define :list_agent_work_items, action: :read
     end
 
+    resource Citadel.Tasks.RefinementCycle do
+      define :create_refinement_cycle, action: :create
+      define :get_refinement_cycle, action: :read, get_by: [:id]
+      define :get_refinement_cycle_by_agent_run, action: :get_by_agent_run, args: [:agent_run_id]
+      define :update_refinement_cycle, action: :update
+      define :complete_refinement_cycle, action: :complete
+      define :fail_refinement_cycle, action: :fail
+    end
+
+    resource Citadel.Tasks.RefinementIteration do
+      define :create_refinement_iteration, action: :create
+      define :list_refinement_iterations, action: :list_by_cycle, args: [:refinement_cycle_id]
+      define :update_refinement_iteration, action: :update
+    end
+
     resource Citadel.Tasks.AgentRun do
       define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create

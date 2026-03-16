@@ -121,6 +121,7 @@ defmodule Citadel.Tasks.AgentRun do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
 
     has_one :work_item, Citadel.Tasks.AgentWorkItem
+    has_one :refinement_cycle, Citadel.Tasks.RefinementCycle
     has_many :events, Citadel.Tasks.AgentRunEvent
   end
 end
