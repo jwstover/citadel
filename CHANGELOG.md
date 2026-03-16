@@ -1,3 +1,17 @@
+# [0.33.0](https://github.com/jwstover/citadel/compare/v0.32.0...v0.33.0) (2026-03-16)
+
+
+### Bug Fixes
+
+* **agent:** move PR creation to after feature branch merge ([152faa2](https://github.com/jwstover/citadel/commit/152faa2d5b9f972aeaf02332671cf07abd0ca1e7))
+
+
+### Features
+
+* handle dependency unblocking in MaybeEnqueueAgentWork ([ba3788a](https://github.com/jwstover/citadel/commit/ba3788a0a98a546dc1470f87fa0677441717e744))
+
+
+
 # [0.32.0](https://github.com/jwstover/citadel/compare/v0.31.0...v0.32.0) (2026-03-16)
 
 
@@ -58,15 +72,6 @@
 ### Features
 
 * show task human_id with link in sidebar agent list ([da274d8](https://github.com/jwstover/citadel/commit/da274d8e67185029690d9d4a69cdc5b61dcf6694))
-
-
-
-# [0.28.0](https://github.com/jwstover/citadel/compare/v0.27.0...v0.28.0) (2026-03-14)
-
-
-### Features
-
-* make PR creation idempotent with find-before-create logic ([b5f4917](https://github.com/jwstover/citadel/commit/b5f4917a5792de21b04cb6dc391d73c8c75c22d1))
 
 
 
