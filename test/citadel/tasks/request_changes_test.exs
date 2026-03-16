@@ -4,20 +4,20 @@ defmodule Citadel.Tasks.RequestChangesTest do
   alias Citadel.Tasks
 
   setup do
+    require Ash.Query
+
     user = generate(user())
     workspace = generate(workspace([], actor: user))
 
-    in_review_state =
-      Tasks.create_task_state!(%{
-        name: "In Review",
-        order: 3
-      })
+    [in_review_state] =
+      Citadel.Tasks.TaskState
+      |> Ash.Query.filter(name == "In Review")
+      |> Ash.read!(authorize?: false)
 
-    in_progress_state =
-      Tasks.create_task_state!(%{
-        name: "In Progress",
-        order: 2
-      })
+    [in_progress_state] =
+      Citadel.Tasks.TaskState
+      |> Ash.Query.filter(name == "In Progress")
+      |> Ash.read!(authorize?: false)
 
     todo_state =
       Tasks.create_task_state!(%{
@@ -150,7 +150,7 @@ defmodule Citadel.Tasks.RequestChangesTest do
         |> Ash.Query.filter(task_id == ^task.id and status in [:pending, :claimed])
         |> Ash.read!(authorize?: false, tenant: workspace.id)
 
-      Citadel.Tasks.complete_agent_work_item!(first_item, authorize?: false, tenant: workspace.id)
+      Citadel.Tasks.cancel_agent_work_item!(first_item, authorize?: false, tenant: workspace.id)
 
       Tasks.create_request_changes_comment!(
         %{body: "Second request", task_id: task.id},
