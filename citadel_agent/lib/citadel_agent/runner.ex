@@ -16,6 +16,7 @@ defmodule CitadelAgent.Runner do
   def execute(task, project_path, opts \\ []) do
     human_id = task["human_id"]
     run_id = Keyword.get(opts, :run_id)
+    feedback = Keyword.get(opts, :feedback)
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
     base_branch = base_branch_for(task)
@@ -25,7 +26,7 @@ defmodule CitadelAgent.Runner do
          :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
       result =
         try do
-          with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id),
+          with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
                {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
             {:ok,
@@ -496,8 +497,9 @@ defmodule CitadelAgent.Runner do
   defp run_claude(task, worktree_path, opts) do
     human_id = task["human_id"]
     run_id = Keyword.get(opts, :run_id)
+    feedback = Keyword.get(opts, :feedback)
 
-    run_claude_cli(build_prompt(task),
+    run_claude_cli(build_prompt(task, feedback),
       working_dir: worktree_path,
       label: human_id,
       timeout: stall_timeout(),
@@ -594,16 +596,28 @@ defmodule CitadelAgent.Runner do
     CitadelAgent.config(:stall_timeout_ms) || @default_stall_timeout
   end
 
-  defp build_prompt(task) do
+  defp build_prompt(task, feedback \\ nil) do
     title = task["title"] || ""
     description = task["description"] || ""
 
-    """
-    Task: #{title}
+    base =
+      """
+      Task: #{title}
 
-    #{description}
-    """
-    |> String.trim()
+      #{description}
+      """
+      |> String.trim()
+
+    case feedback do
+      nil ->
+        base
+
+      body ->
+        base <>
+          "\n\n## Feedback - Changes Requested\n" <>
+          "The following feedback was provided on your previous work. Address these changes:\n\n" <>
+          body
+    end
   end
 
   defp capture_diff(worktree_path, base_branch, branch_name) do

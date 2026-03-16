@@ -73,6 +73,8 @@ defmodule Citadel.Tasks do
 
     resource Citadel.Tasks.TaskActivity do
       define :create_comment, action: :create_comment
+      define :create_request_changes_comment, action: :create_request_changes_comment
+      define :get_task_activity, action: :read, get_by: [:id]
       define :list_task_activities, action: :list_by_task, args: [:task_id]
       define :destroy_comment, action: :destroy_comment
     end
@@ -80,6 +82,14 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.AgentRunEvent do
       define :create_agent_run_event, action: :create
       define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
+    end
+
+    resource Citadel.Tasks.AgentWorkItem do
+      define :create_agent_work_item, action: :create
+      define :claim_agent_work_item, action: :claim
+      define :complete_agent_work_item, action: :complete
+      define :cancel_agent_work_item, action: :cancel
+      define :list_agent_work_items, action: :read
     end
 
     resource Citadel.Tasks.AgentRun do

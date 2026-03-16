@@ -27,10 +27,14 @@ defmodule Citadel.Tasks.AgentRun do
     end
 
     update :update do
+      require_atomic? false
       accept [:status, :diff, :test_output, :logs, :error_message, :started_at, :completed_at]
+
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
     update :cancel do
+      require_atomic? false
       accept []
 
       validate attribute_in(:status, [:pending, :running])
@@ -38,6 +42,7 @@ defmodule Citadel.Tasks.AgentRun do
       change set_attribute(:status, :cancelled)
       change set_attribute(:error_message, "Manually cancelled by user")
       change set_attribute(:completed_at, &DateTime.utc_now/0)
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
     create :claim_next do
@@ -115,6 +120,7 @@ defmodule Citadel.Tasks.AgentRun do
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
 
+    has_one :work_item, Citadel.Tasks.AgentWorkItem
     has_many :events, Citadel.Tasks.AgentRunEvent
   end
 end

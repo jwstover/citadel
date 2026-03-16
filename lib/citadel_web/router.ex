@@ -160,6 +160,7 @@ defmodule CitadelWeb.Router do
     pipe_through :api
 
     get "/agent/task-states", AgentController, :list_task_states
+    get "/agent/comments/:id", AgentController, :get_comment
     post "/agent/tasks/claim", AgentController, :claim_task
     patch "/agent/tasks/:id", AgentController, :update_task
     patch "/agent/runs/:id", AgentController, :update_run

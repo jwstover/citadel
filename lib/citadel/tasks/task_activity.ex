@@ -37,6 +37,16 @@ defmodule Citadel.Tasks.TaskActivity do
       change Citadel.Tasks.Changes.InheritTaskWorkspace
     end
 
+    create :create_request_changes_comment do
+      accept [:body, :task_id]
+
+      change set_attribute(:type, :change_request)
+      change set_attribute(:actor_type, :user)
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.RequestChanges
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -69,6 +79,7 @@ defmodule Citadel.Tasks.TaskActivity do
     prefix "tasks"
 
     publish :create_comment, ["task_activities", :task_id]
+    publish :create_request_changes_comment, ["task_activities", :task_id]
     publish :destroy_comment, ["task_activities", :task_id]
   end
 

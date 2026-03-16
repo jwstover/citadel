@@ -55,9 +55,11 @@ defmodule CitadelAgent.Worker do
         CitadelAgent.Socket.update_status("idle")
         state
 
-      {:ok, %{"task" => task, "agent_run" => run}} ->
+      {:ok, %{"task" => task, "agent_run" => run} = claim} ->
         Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
-        execute_task(task, run, state)
+        work_item = claim["work_item"]
+        feedback = fetch_feedback(work_item)
+        execute_task(task, run, feedback, state)
 
       {:error, reason} ->
         Logger.error("Failed to claim task: #{inspect(reason)}")
@@ -65,7 +67,7 @@ defmodule CitadelAgent.Worker do
     end
   end
 
-  defp execute_task(task, run, state) do
+  defp execute_task(task, run, feedback, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
         Logger.error("No project_path configured, skipping task #{task["human_id"]}")
@@ -74,16 +76,16 @@ defmodule CitadelAgent.Worker do
       project_path ->
         state = %{state | active_run: run}
         CitadelAgent.Socket.update_status("working", task["id"])
-        run_task(task, run, project_path)
+        run_task(task, run, feedback, project_path)
         CitadelAgent.Socket.update_status("idle")
         %{state | active_run: nil}
     end
   end
 
-  defp run_task(task, run, project_path) do
+  defp run_task(task, run, feedback, project_path) do
     run_id = run["id"]
 
-    case CitadelAgent.Runner.execute(task, project_path, run_id: run_id) do
+    case CitadelAgent.Runner.execute(task, project_path, run_id: run_id, feedback: feedback) do
       {:ok, result} ->
         CitadelAgent.Client.update_run(run_id, %{
           "status" => result.status,
@@ -132,6 +134,25 @@ defmodule CitadelAgent.Worker do
       e -> Logger.debug("Failed to push stream_complete: #{Exception.message(e)}")
     end
   end
+
+  defp fetch_feedback(%{"type" => "changes_requested", "comment_id" => comment_id})
+       when is_binary(comment_id) do
+    case CitadelAgent.Client.fetch_comment(comment_id) do
+      {:ok, %{"body" => body}} when is_binary(body) ->
+        Logger.info("Fetched feedback comment #{comment_id}")
+        body
+
+      {:ok, _} ->
+        Logger.warning("Comment #{comment_id} had no body, proceeding without feedback")
+        nil
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch comment #{comment_id}: #{inspect(reason)}, proceeding without feedback")
+        nil
+    end
+  end
+
+  defp fetch_feedback(_work_item), do: nil
 
   defp transition_task_to_in_review(task) do
     with {:ok, states} <- CitadelAgent.Client.fetch_task_states(),

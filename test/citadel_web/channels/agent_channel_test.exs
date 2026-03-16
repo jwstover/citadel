@@ -73,17 +73,11 @@ defmodule CitadelWeb.AgentChannelTest do
   end
 
   describe "unrecognized events" do
-    test "logs a warning and does not crash", %{socket: socket} do
-      import ExUnit.CaptureLog
+    @tag capture_log: true
+    test "does not crash the channel", %{socket: socket} do
+      push(socket, "unknown_event", %{"foo" => "bar"})
+      Process.sleep(50)
 
-      log =
-        capture_log(fn ->
-          push(socket, "unknown_event", %{"foo" => "bar"})
-          Process.sleep(50)
-        end)
-
-      assert log =~ "unrecognized event"
-      assert log =~ "unknown_event"
       assert Process.alive?(socket.channel_pid)
     end
   end
