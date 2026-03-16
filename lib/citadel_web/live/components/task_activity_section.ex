@@ -174,13 +174,21 @@ defmodule CitadelWeb.Components.TaskActivitySection do
             name={@form[:body].name}
             value={@form[:body].value}
             rows="2"
-            placeholder={if(@request_changes, do: "Describe what changes are needed...", else: "Add a comment...")}
+            placeholder={
+              if(@request_changes,
+                do: "Describe what changes are needed...",
+                else: "Add a comment..."
+              )
+            }
             class="textarea textarea-bordered w-full text-sm resize-none"
             id={"#{@id}-body"}
             phx-hook="CmdEnterSubmit"
           />
           <div class="flex items-center justify-between mt-2">
-            <label class="flex items-center gap-2 cursor-pointer select-none" id={"#{@id}-request-changes-toggle"}>
+            <label
+              class="flex items-center gap-2 cursor-pointer select-none"
+              id={"#{@id}-request-changes-toggle"}
+            >
               <input
                 type="checkbox"
                 checked={@request_changes}
