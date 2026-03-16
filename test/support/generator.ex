@@ -345,6 +345,39 @@ defmodule Citadel.Generator do
   end
 
   @doc """
+  Generates a model config.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [workspace_id: workspace_id, provider: :anthropic])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      model_config = generate(model_config(
+        [workspace_id: workspace.id],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def model_config(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.ModelConfig,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            name: sequence(:model_config_name, &"Model Config #{&1}"),
+            provider: :anthropic,
+            model: "claude-sonnet-4-20250514"
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
   Generates a conversation.
 
   ## Parameters
