@@ -30,7 +30,7 @@ defmodule CitadelWeb.Api.AgentController do
       params
       |> Map.take([
         "status",
-        "diff",
+        "commits",
         "test_output",
         "logs",
         "error_message",
@@ -133,7 +133,7 @@ defmodule CitadelWeb.Api.AgentController do
 
     input =
       params
-      |> Map.take(["task_state_id"])
+      |> Map.take(["task_state_id", "forge_pr"])
       |> atomize_keys()
 
     case Tasks.update_task(id, input,

@@ -28,7 +28,7 @@ defmodule Citadel.Tasks.AgentRun do
 
     update :update do
       require_atomic? false
-      accept [:status, :diff, :test_output, :logs, :error_message, :started_at, :completed_at]
+      accept [:status, :commits, :test_output, :logs, :error_message, :started_at, :completed_at]
 
       change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
@@ -105,7 +105,7 @@ defmodule Citadel.Tasks.AgentRun do
       public? true
     end
 
-    attribute :diff, :string, public?: true
+    attribute :commits, {:array, :string}, public?: true, default: []
     attribute :test_output, :string, public?: true
     attribute :logs, :string, public?: true
     attribute :error_message, :string, public?: true

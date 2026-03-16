@@ -61,7 +61,11 @@ defmodule CitadelAgent.Client do
   end
 
   def update_task_state(task_id, task_state_id) do
-    case req_patch("/api/agent/tasks/#{task_id}", %{"task_state_id" => task_state_id}) do
+    update_task(task_id, %{"task_state_id" => task_state_id})
+  end
+
+  def update_task(task_id, attrs) when is_map(attrs) do
+    case req_patch("/api/agent/tasks/#{task_id}", attrs) do
       {:ok, %Req.Response{status: 200, body: %{"data" => task}}} ->
         {:ok, task}
 

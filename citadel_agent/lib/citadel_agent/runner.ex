@@ -24,15 +24,18 @@ defmodule CitadelAgent.Runner do
     with :ok <- fetch_origin(project_path),
          :ok <- maybe_ensure_feature_branch(task, project_path),
          :ok <- create_worktree(worktree_path, branch_name, base_branch, project_path) do
+      starting_sha = capture_head_sha(worktree_path)
+
       result =
         try do
           with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
-               :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
-               {:ok, diff} <- capture_diff(worktree_path, base_branch, branch_name) do
+               :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name) do
+            commits = capture_commits(worktree_path, starting_sha)
+
             {:ok,
              %{
                status: determine_status(claude_result),
-               diff: diff,
+               commits: commits,
                logs: claude_result.output,
                test_output: nil,
                error_message: nil
@@ -216,36 +219,57 @@ defmodule CitadelAgent.Runner do
     try do
       {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
 
-      case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
-        {:ok, url} when is_binary(url) ->
-          Logger.info("PR already exists for #{feature_branch}: #{url}")
+      pr_url =
+        case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
+          {:ok, url} when is_binary(url) ->
+            Logger.info("PR already exists for #{feature_branch}: #{url}")
+            url
 
-        _ ->
-          {_, 0} =
-            System.cmd("git", ["push", "-u", "origin", feature_branch],
-              cd: project_path,
-              stderr_to_stdout: true
-            )
+          _ ->
+            {_, 0} =
+              System.cmd("git", ["push", "-u", "origin", feature_branch],
+                cd: project_path,
+                stderr_to_stdout: true
+              )
 
-          Logger.info("Pushed #{feature_branch} to origin")
+            Logger.info("Pushed #{feature_branch} to origin")
 
-          {:ok, pr_body} = generate_pr_description(task, project_path)
+            {:ok, pr_body} = generate_pr_description(task, project_path)
 
-          case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
-            {:ok, :already_exists} ->
-              Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+              {:ok, :already_exists} ->
+                Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+                nil
 
-            {:ok, url} ->
-              Logger.info("Created draft PR: #{url}")
+              {:ok, url} ->
+                Logger.info("Created draft PR: #{url}")
+                url
 
-            {:error, reason} ->
-              Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
-          end
+              {:error, reason} ->
+                Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+                nil
+            end
+        end
+
+      if pr_url do
+        set_forge_pr(task["parent_task_id"], pr_url)
       end
     rescue
       e ->
         Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
         Logger.warning("Stacktrace: #{Exception.format(:error, e, __STACKTRACE__)}")
+    end
+  end
+
+  defp set_forge_pr(nil, _pr_url), do: :ok
+
+  defp set_forge_pr(parent_task_id, pr_url) do
+    case CitadelAgent.Client.update_task(parent_task_id, %{"forge_pr" => pr_url}) do
+      {:ok, _task} ->
+        Logger.info("Set forge_pr on parent task #{parent_task_id}: #{pr_url}")
+
+      {:error, reason} ->
+        Logger.warning("Failed to set forge_pr on parent task #{parent_task_id}: #{inspect(reason)}")
     end
   end
 
@@ -617,18 +641,30 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp capture_diff(worktree_path, base_branch, branch_name) do
-    case System.cmd("git", ["diff", "#{base_branch}..#{branch_name}"],
+  defp capture_head_sha(worktree_path) do
+    case System.cmd("git", ["rev-parse", "HEAD"], cd: worktree_path, stderr_to_stdout: true) do
+      {sha, 0} -> String.trim(sha)
+      _ -> nil
+    end
+  end
+
+  defp capture_commits(worktree_path, starting_sha) when is_binary(starting_sha) do
+    case System.cmd("git", ["log", "--format=%H", "#{starting_sha}..HEAD"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
-      {diff, 0} ->
-        {:ok, diff}
+      {output, 0} ->
+        output
+        |> String.split("\n", trim: true)
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
 
-      {output, _code} ->
-        {:ok, output}
+      _ ->
+        []
     end
   end
+
+  defp capture_commits(_worktree_path, _starting_sha), do: []
 
   @stripped_env_vars ~w(ANTHROPIC_API_KEY OPENAI_API_KEY CLAUDECODE)
 

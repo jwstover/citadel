@@ -178,6 +178,18 @@
       "type": "boolean"
     },
     {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "forge_pr",
+      "type": "text"
+    },
+    {
       "allow_nil?": false,
       "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
       "generated?": false,
@@ -301,7 +313,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": false,
-  "hash": "ED0B310F35B7E355D5F56DF70831BA27462AA4D0FE1F4E6A68001AA3A6E31216",
+  "hash": "31B426BCD722686F38148C3DB162DAE5C7064024F8E3E7370972515AA372730F",
   "identities": [
     {
       "all_tenants?": false,

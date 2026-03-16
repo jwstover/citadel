@@ -56,6 +56,7 @@ defmodule CitadelWeb.Api.AgentJSON do
           id: task.task_state.id,
           name: task.task_state.name
         },
+        forge_pr: task.forge_pr,
         inserted_at: task.inserted_at,
         updated_at: task.updated_at
       }
@@ -82,7 +83,7 @@ defmodule CitadelWeb.Api.AgentJSON do
         id: agent_run.id,
         task_id: agent_run.task_id,
         status: agent_run.status,
-        diff: agent_run.diff,
+        commits: agent_run.commits,
         test_output: agent_run.test_output,
         logs: agent_run.logs,
         error_message: agent_run.error_message,
