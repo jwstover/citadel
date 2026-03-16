@@ -102,6 +102,16 @@ defmodule Citadel.Tasks do
       define :destroy_agent_run, action: :destroy
     end
 
+    resource Citadel.Tasks.ModelConfig do
+      define :create_model_config, action: :create
+      define :list_model_configs, action: :list
+      define :get_model_config, action: :read, get_by: [:id]
+      define :update_model_config, action: :update
+      define :set_model_config_default, action: :set_default
+      define :get_workspace_default_model_config, action: :get_workspace_default
+      define :destroy_model_config, action: :destroy
+    end
+
     resource Citadel.Tasks.TaskSummary do
       define :list_task_summaries, action: :read
     end
