@@ -1183,7 +1183,14 @@ defmodule CitadelWeb.TaskLive.ShowTest do
           tenant: workspace.id
         )
 
-      Tasks.update_agent_run!(run.id, %{commits: ["abc1234", "def5678"]},
+      Tasks.update_agent_run!(
+        run.id,
+        %{
+          commits: [
+            %{"sha" => "abc1234", "message" => "first commit"},
+            %{"sha" => "def5678", "message" => "second commit"}
+          ]
+        },
         actor: user,
         tenant: workspace.id
       )
