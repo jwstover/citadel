@@ -394,7 +394,7 @@ defmodule Citadel.Tasks.Task do
   defp format_assignees(%Ash.NotLoaded{}), do: nil
 
   defp format_assignees(assignees) do
-    list = Enum.map_join(assignees, ", ", &"#{&1.name || &1.email}")
+    list = Enum.map_join(assignees, ", ", fn user -> user.name || to_string(user.email) end)
     "\nAssignees: #{list}"
   end
 
