@@ -76,6 +76,7 @@ defmodule CitadelWeb.Router do
       live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
       live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
       live "/preferences/api-keys/new", PreferencesLive.ApiKeyNew, :new
+      live "/agent-runs/:id", AgentRunLive
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -159,9 +160,9 @@ defmodule CitadelWeb.Router do
     pipe_through :api
 
     get "/agent/task-states", AgentController, :list_task_states
-    get "/agent/tasks/next", AgentController, :next_task
+    get "/agent/comments/:id", AgentController, :get_comment
+    post "/agent/tasks/claim", AgentController, :claim_task
     patch "/agent/tasks/:id", AgentController, :update_task
-    post "/agent/tasks/:task_id/runs", AgentController, :create_run
     patch "/agent/runs/:id", AgentController, :update_run
     post "/agent/runs/:id/cancel", AgentController, :cancel_run
     post "/agent/runs/:id/events", AgentController, :create_run_event

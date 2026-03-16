@@ -1,65 +1,72 @@
-# [0.26.0](https://github.com/jwstover/citadel/compare/v0.25.0...v0.26.0) (2026-03-13)
+# [0.32.0](https://github.com/jwstover/citadel/compare/v0.31.0...v0.32.0) (2026-03-16)
 
 
 ### Bug Fixes
 
-* use detached worktree fallback when feature branch is already checked out ([91f2b29](https://github.com/jwstover/citadel/commit/91f2b294f8e44a9532e6c563b0a993ce03e0a2aa))
+* **tasks:** use to_string/1 for email in format_assignees ([d96cef4](https://github.com/jwstover/citadel/commit/d96cef4736fa12bb0ca656d4086de9a8cd690219))
+* **test:** use existing task states and cancel instead of complete work item ([9f2bbaa](https://github.com/jwstover/citadel/commit/9f2bbaa6a460ee5422f719566ebf908b4158e6e4))
 
 
 ### Features
 
-* add generate_pr_description/2 to Runner for AI-generated PR descriptions ([acd296d](https://github.com/jwstover/citadel/commit/acd296df1efb399af2fa3ab62b1e578bbde8fcae))
-* add GitHub token preflight check ([eeebb2d](https://github.com/jwstover/citadel/commit/eeebb2d11ac5e6cdaf74b30963e822dd36410be6))
-* add GITHUB_TOKEN to agent config ([b154b4e](https://github.com/jwstover/citadel/commit/b154b4e7db1b450c7801d87ec3f6d3e8c1b14897))
-* auto-create draft PR when new feature branch is created ([2a1bda6](https://github.com/jwstover/citadel/commit/2a1bda6413f27f9cd692e50aef07a38d0ad2b260))
-* make GitHub module testable via configurable Req options ([1a46a0f](https://github.com/jwstover/citadel/commit/1a46a0feda3c5eb3b6c113403ad221ee0b57d25a))
+* **agent:** add comment endpoint and work item metadata to claim response ([441fa21](https://github.com/jwstover/citadel/commit/441fa213534c007da9fba951b632ed83f4028161))
+* **agent:** handle changes_requested work items with feedback context ([793365d](https://github.com/jwstover/citadel/commit/793365df918fe2bd8b758bf414bef026ad5c5068))
+* **tasks:** add AgentWorkItem resource for agent work queue ([c7d486e](https://github.com/jwstover/citadel/commit/c7d486ecd960f88f74773bbf904dd232ea0c0231))
+* **tasks:** add request changes action and change_request activity type ([d2e74b6](https://github.com/jwstover/citadel/commit/d2e74b6aef9188b0c9e822953659ea572837682b))
+* **tasks:** auto-create work items when tasks become agent-eligible ([63bcac2](https://github.com/jwstover/citadel/commit/63bcac27b98256823834336ece40581ea7a3f2a4))
+* **tasks:** rework ClaimNextTask to claim from AgentWorkItem queue ([67f045e](https://github.com/jwstover/citadel/commit/67f045ebeb0a2efaece43314b449e56fefd6649b))
+* **tasks:** sync AgentWorkItem status with AgentRun lifecycle ([a997f33](https://github.com/jwstover/citadel/commit/a997f33701947b43c7f808043116ee94f2f22408))
+* **ui:** add Request Changes toggle to task activity comment form ([6a71fff](https://github.com/jwstover/citadel/commit/6a71fff5bfb4be5b91b3e4a6edeca0ee50e97334))
 
 
 
-# [0.25.0](https://github.com/jwstover/citadel/compare/v0.24.2...v0.25.0) (2026-03-13)
+# [0.31.0](https://github.com/jwstover/citadel/compare/v0.30.0...v0.31.0) (2026-03-14)
 
 
 ### Bug Fixes
 
-* load project, execution_status, and active_agent_run after inline edits ([e27a3e0](https://github.com/jwstover/citadel/commit/e27a3e08749c9c03de4a1dc5578fd2a182968f88))
-* **P-29:** fix agent channel joining and presence tracking ([2b07b08](https://github.com/jwstover/citadel/commit/2b07b08eac1060a31e04a5914cfc869b59366336))
-* **P-29:** fix agent presence not showing in sidebar ([39873a6](https://github.com/jwstover/citadel/commit/39873a6f3dbe6c988dd0dae7eb6824c5b4ae82be))
+* **agent:** filter sub-agent events from AgentRunLive stream ([7980c53](https://github.com/jwstover/citadel/commit/7980c536d85ea790a273541cd3c76f9777de7c07))
+* resolve Credo warnings in agent run components ([3bca753](https://github.com/jwstover/citadel/commit/3bca7534a1a45b3c5606375fa6272c7e1455dbce))
 
 
 ### Features
 
-* **P-27:** add Projects domain with Project resource ([30dcf11](https://github.com/jwstover/citadel/commit/30dcf1119904ba33e2fb2159f3cc4f71c05f0293))
-* **P-28:** add project, active_agent_run, and execution_status to Task ([e740c33](https://github.com/jwstover/citadel/commit/e740c33de6bb47e3b8fe8400cb12eae8a3fecdd8))
-* **P-28:** show project, execution status, and active agent run in task detail UI ([9547beb](https://github.com/jwstover/citadel/commit/9547beb808147a8725e429031b34e43e52e923a2))
-* **P-29:** add agent presence tracking via Phoenix Channels ([5db6385](https://github.com/jwstover/citadel/commit/5db638523ccbde5ea23f2b3fe346fc44bab81b42))
-* **P-29:** connect agent to Citadel via WebSocket for presence updates ([3da6f63](https://github.com/jwstover/citadel/commit/3da6f63fabe9182b37db1191e7eaecae1cb0172a))
+* **agent:** add AgentRunComponents for rendering stream events ([462b190](https://github.com/jwstover/citadel/commit/462b190a75dc8d3f16794aa723f4294c5e6bc523))
+* **agent:** add AgentRunLive page for real-time stream output ([a8430f3](https://github.com/jwstover/citadel/commit/a8430f3ec2720ae53b6df72aaae282a7007baebf))
+* **agent:** add StreamParser module for Claude stream-json output ([bd8c2e1](https://github.com/jwstover/citadel/commit/bd8c2e174076bbcc993c05565a5743ef8518af49))
+* **agent:** add Watch link to active agent runs on task show page ([3271daf](https://github.com/jwstover/citadel/commit/3271daf099d6a605347579fb6d01d2671fd9acce))
+* **agent:** improve AgentRunLive stream rendering ([710bf62](https://github.com/jwstover/citadel/commit/710bf62f0922165f473f725f45ad280acaf13748))
+* **agent:** push stream events to channel as Claude CLI output arrives ([f518f1f](https://github.com/jwstover/citadel/commit/f518f1f401c51fee7057fbf482476ad4409acc0c))
+* **agent:** relay stream events from runner to PubSub via AgentChannel ([b316910](https://github.com/jwstover/citadel/commit/b31691019a44cc20664fa6d84e6105de99423dfe))
 
 
 
-## [0.24.2](https://github.com/jwstover/citadel/compare/v0.24.1...v0.24.2) (2026-03-13)
-
-
-### Bug Fixes
-
-* make TaskSummary description attribute non-public ([278d771](https://github.com/jwstover/citadel/commit/278d7719653d3961833e2aa46308fd638bf88a07))
-
-
-
-## [0.24.1](https://github.com/jwstover/citadel/compare/v0.24.0...v0.24.1) (2026-03-13)
-
-
-### Bug Fixes
-
-* allow filtering by task description ([5731f5c](https://github.com/jwstover/citadel/commit/5731f5cb22bc764b8e5762538876030ae41b9f76))
-
-
-
-# [0.24.0](https://github.com/jwstover/citadel/compare/v0.23.0...v0.24.0) (2026-03-13)
+# [0.30.0](https://github.com/jwstover/citadel/compare/v0.29.0...v0.30.0) (2026-03-14)
 
 
 ### Features
 
-* add CitadelAgent.GitHub module for creating draft pull requests ([fca4c4a](https://github.com/jwstover/citadel/commit/fca4c4ab57921d70613e81e2e966f0e0a6a64332))
+* **agent:** replace multi-step task pickup with atomic claim_task ([258d3d0](https://github.com/jwstover/citadel/commit/258d3d088dd7683814bf9378e9c269e3871760e4))
+* **api:** replace next_task/create_run endpoints with atomic claim_task ([d594292](https://github.com/jwstover/citadel/commit/d594292100c03aad2ba730284675aac92866cef5))
+* **tasks:** add claim_next action to AgentRun for atomic task claiming ([b60b4e8](https://github.com/jwstover/citadel/commit/b60b4e895db52c85ab4ad8bbacc4c9bc48aa018f))
+
+
+
+# [0.29.0](https://github.com/jwstover/citadel/compare/v0.28.0...v0.29.0) (2026-03-14)
+
+
+### Features
+
+* show task human_id with link in sidebar agent list ([da274d8](https://github.com/jwstover/citadel/commit/da274d8e67185029690d9d4a69cdc5b61dcf6694))
+
+
+
+# [0.28.0](https://github.com/jwstover/citadel/compare/v0.27.0...v0.28.0) (2026-03-14)
+
+
+### Features
+
+* make PR creation idempotent with find-before-create logic ([b5f4917](https://github.com/jwstover/citadel/commit/b5f4917a5792de21b04cb6dc391d73c8c75c22d1))
 
 
 

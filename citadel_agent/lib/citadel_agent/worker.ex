@@ -49,72 +49,45 @@ defmodule CitadelAgent.Worker do
   end
 
   defp process_next_task(state) do
-    case CitadelAgent.Client.fetch_next_task() do
+    case CitadelAgent.Client.claim_task() do
       {:ok, nil} ->
         Logger.debug("No agent-eligible tasks available")
         CitadelAgent.Socket.update_status("idle")
         state
 
-      {:ok, task} ->
-        Logger.info("Picked up task #{task["human_id"]}: #{task["title"]}")
-        execute_task(task, state)
+      {:ok, %{"task" => task, "agent_run" => run} = claim} ->
+        Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
+        work_item = claim["work_item"]
+        feedback = fetch_feedback(work_item)
+        execute_task(task, run, feedback, state)
 
       {:error, reason} ->
-        Logger.error("Failed to fetch next task: #{inspect(reason)}")
+        Logger.error("Failed to claim task: #{inspect(reason)}")
         state
     end
   end
 
-  defp execute_task(task, state) do
+  defp execute_task(task, run, feedback, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
         Logger.error("No project_path configured, skipping task #{task["human_id"]}")
         state
 
       project_path ->
-        with {:ok, run} <- create_run(task),
-             {:ok, run} <- mark_running(run) do
-          state = %{state | active_run: run}
-          CitadelAgent.Socket.update_status("working", task["id"])
-          run_task(task, run, project_path)
-          CitadelAgent.Socket.update_status("idle")
-          %{state | active_run: nil}
-        else
-          _ -> state
-        end
+        state = %{state | active_run: run}
+        CitadelAgent.Socket.update_status("working", task["id"])
+        run_task(task, run, feedback, project_path)
+        CitadelAgent.Socket.update_status("idle")
+        %{state | active_run: nil}
     end
   end
 
-  defp create_run(task) do
-    case CitadelAgent.Client.create_run(task["id"]) do
-      {:ok, run} ->
-        Logger.info("Created AgentRun #{run["id"]} for task #{task["human_id"]}")
-        {:ok, run}
+  defp run_task(task, run, feedback, project_path) do
+    run_id = run["id"]
 
-      {:error, reason} ->
-        Logger.error("Failed to create AgentRun: #{inspect(reason)}")
-        {:error, reason}
-    end
-  end
-
-  defp mark_running(run) do
-    case CitadelAgent.Client.update_run(run["id"], %{
-           "status" => "running",
-           "started_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-         }) do
-      {:ok, run} ->
-        {:ok, run}
-
-      {:error, reason} ->
-        Logger.error("Failed to mark run as running: #{inspect(reason)}")
-        {:error, reason}
-    end
-  end
-
-  defp run_task(task, run, project_path) do
-    case CitadelAgent.Runner.execute(task, project_path) do
+    case CitadelAgent.Runner.execute(task, project_path, run_id: run_id, feedback: feedback) do
       {:ok, result} ->
-        CitadelAgent.Client.update_run(run["id"], %{
+        CitadelAgent.Client.update_run(run_id, %{
           "status" => result.status,
           "commits" => result.commits,
           "logs" => result.logs,
@@ -123,19 +96,21 @@ defmodule CitadelAgent.Worker do
         })
 
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
+        push_stream_complete(run_id)
 
         if result.status == "completed" do
           transition_task_to_in_review(task)
         end
 
       {:error, reason} ->
-        CitadelAgent.Client.update_run(run["id"], %{
+        CitadelAgent.Client.update_run(run_id, %{
           "status" => "failed",
           "error_message" => inspect(reason),
           "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
         })
 
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
+        push_stream_complete(run_id)
     end
   rescue
     exception ->
@@ -148,7 +123,36 @@ defmodule CitadelAgent.Worker do
         "error_message" => Exception.message(exception),
         "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
       })
+
+      push_stream_complete(run["id"])
   end
+
+  defp push_stream_complete(run_id) do
+    try do
+      CitadelAgent.Socket.push_stream_complete(run_id)
+    rescue
+      e -> Logger.debug("Failed to push stream_complete: #{Exception.message(e)}")
+    end
+  end
+
+  defp fetch_feedback(%{"type" => "changes_requested", "comment_id" => comment_id})
+       when is_binary(comment_id) do
+    case CitadelAgent.Client.fetch_comment(comment_id) do
+      {:ok, %{"body" => body}} when is_binary(body) ->
+        Logger.info("Fetched feedback comment #{comment_id}")
+        body
+
+      {:ok, _} ->
+        Logger.warning("Comment #{comment_id} had no body, proceeding without feedback")
+        nil
+
+      {:error, reason} ->
+        Logger.warning("Failed to fetch comment #{comment_id}: #{inspect(reason)}, proceeding without feedback")
+        nil
+    end
+  end
+
+  defp fetch_feedback(_work_item), do: nil
 
   defp transition_task_to_in_review(task) do
     with {:ok, states} <- CitadelAgent.Client.fetch_task_states(),

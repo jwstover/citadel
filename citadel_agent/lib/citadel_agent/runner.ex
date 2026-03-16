@@ -13,8 +13,10 @@ defmodule CitadelAgent.Runner do
 
   @commit_stall_timeout 120_000
 
-  def execute(task, project_path) do
+  def execute(task, project_path, opts \\ []) do
     human_id = task["human_id"]
+    run_id = Keyword.get(opts, :run_id)
+    feedback = Keyword.get(opts, :feedback)
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
     base_branch = base_branch_for(task)
@@ -26,7 +28,7 @@ defmodule CitadelAgent.Runner do
 
       result =
         try do
-          with {:ok, claude_result} <- run_claude(task, worktree_path),
+          with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name) do
             commits = capture_commits(worktree_path, starting_sha)
 
@@ -57,10 +59,11 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = _task, task_branch, project_path)
+  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = task, task_branch, project_path)
        when is_binary(parent_id) do
     feature_branch = "citadel/feature/#{parent_id}"
     merge_into_feature_branch(task_branch, feature_branch, project_path)
+    ensure_draft_pr(feature_branch, task, project_path)
   end
 
   defp maybe_merge_into_feature_branch(_task, _task_branch, _project_path), do: :ok
@@ -173,65 +176,79 @@ defmodule CitadelAgent.Runner do
     local_exists? = branch_exists_locally?(feature_branch, project_path)
     remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
 
-    cond do
-      local_exists? and remote_exists? ->
-        fetch_and_update_branch(feature_branch, project_path)
+    result =
+      cond do
+        local_exists? and remote_exists? ->
+          fetch_and_update_branch(feature_branch, project_path)
 
-      local_exists? ->
-        :ok
+        local_exists? ->
+          :ok
 
-      remote_exists? ->
-        System.cmd(
-          "git",
-          ["branch", feature_branch, "origin/#{feature_branch}"],
-          cd: project_path,
-          stderr_to_stdout: true
-        )
+        remote_exists? ->
+          System.cmd(
+            "git",
+            ["branch", feature_branch, "origin/#{feature_branch}"],
+            cd: project_path,
+            stderr_to_stdout: true
+          )
 
-        :ok
+          :ok
 
-      true ->
-        case System.cmd(
-               "git",
-               ["branch", feature_branch, "origin/main"],
-               cd: project_path,
-               stderr_to_stdout: true
-             ) do
-          {_output, 0} ->
-            Logger.info("Created feature branch #{feature_branch} from origin/main")
-            create_draft_pr(feature_branch, task, project_path)
-            :ok
+        true ->
+          case System.cmd(
+                 "git",
+                 ["branch", feature_branch, "origin/main"],
+                 cd: project_path,
+                 stderr_to_stdout: true
+               ) do
+            {_output, 0} ->
+              Logger.info("Created feature branch #{feature_branch} from origin/main")
+              :ok
 
-          {output, _code} ->
-            {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
-        end
-    end
+            {output, _code} ->
+              {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
+          end
+      end
+
+    result
   end
 
-  defp create_draft_pr(feature_branch, task, project_path) do
+  defp ensure_draft_pr(feature_branch, task, project_path) do
     parent_id = task["parent_human_id"]
 
     try do
-      {_, 0} =
-        System.cmd("git", ["push", "-u", "origin", feature_branch],
-          cd: project_path,
-          stderr_to_stdout: true
-        )
-
-      Logger.info("Pushed #{feature_branch} to origin")
-
-      {:ok, pr_body} = generate_pr_description(task, project_path)
       {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
 
-      case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
-        {:ok, url} ->
-          Logger.info("Created draft PR: #{url}")
+      case CitadelAgent.GitHub.find_pull_request(owner, repo, feature_branch, "main") do
+        {:ok, url} when is_binary(url) ->
+          Logger.info("PR already exists for #{feature_branch}: #{url}")
 
-        {:error, reason} ->
-          Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+        _ ->
+          {_, 0} =
+            System.cmd("git", ["push", "-u", "origin", feature_branch],
+              cd: project_path,
+              stderr_to_stdout: true
+            )
+
+          Logger.info("Pushed #{feature_branch} to origin")
+
+          {:ok, pr_body} = generate_pr_description(task, project_path)
+
+          case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+            {:ok, :already_exists} ->
+              Logger.info("PR already exists for #{feature_branch} (detected during creation)")
+
+            {:ok, url} ->
+              Logger.info("Created draft PR: #{url}")
+
+            {:error, reason} ->
+              Logger.warning("Failed to create PR for #{feature_branch}: #{reason}")
+          end
       end
     rescue
-      e -> Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
+      e ->
+        Logger.warning("Failed to create PR for #{feature_branch}: #{Exception.message(e)}")
+        Logger.warning("Stacktrace: #{Exception.format(:error, e, __STACKTRACE__)}")
     end
   end
 
@@ -441,10 +458,10 @@ defmodule CitadelAgent.Runner do
     |> String.split("\n", trim: true)
     |> Enum.reduce([], fn line, acc ->
       case Jason.decode(line) do
-        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} ->
+        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} when is_list(content) ->
           text =
             content
-            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.filter(&(is_map(&1) and &1["type"] == "text"))
             |> Enum.map_join("", & &1["text"])
 
           [text | acc]
@@ -452,10 +469,10 @@ defmodule CitadelAgent.Runner do
         {:ok, %{"type" => "content_block_delta", "delta" => %{"text" => text}}} ->
           [text | acc]
 
-        {:ok, %{"type" => "result", "result" => result}} ->
+        {:ok, %{"type" => "result", "result" => result}} when is_map(result) ->
           text =
             (result["content"] || [])
-            |> Enum.filter(&(&1["type"] == "text"))
+            |> Enum.filter(&(is_map(&1) and &1["type"] == "text"))
             |> Enum.map_join("", & &1["text"])
 
           [text | acc]
@@ -477,13 +494,16 @@ defmodule CitadelAgent.Runner do
     "Citadel task: #{title}"
   end
 
-  defp run_claude(task, worktree_path) do
+  defp run_claude(task, worktree_path, opts) do
     human_id = task["human_id"]
+    run_id = Keyword.get(opts, :run_id)
+    feedback = Keyword.get(opts, :feedback)
 
-    run_claude_cli(build_prompt(task),
+    run_claude_cli(build_prompt(task, feedback),
       working_dir: worktree_path,
       label: human_id,
-      timeout: stall_timeout()
+      timeout: stall_timeout(),
+      run_id: run_id
     )
   end
 
@@ -492,6 +512,7 @@ defmodule CitadelAgent.Runner do
     label = Keyword.get(opts, :label, "claude")
     timeout = Keyword.get(opts, :timeout, stall_timeout())
     model = Keyword.get(opts, :model)
+    run_id = Keyword.get(opts, :run_id)
 
     Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
@@ -507,18 +528,22 @@ defmodule CitadelAgent.Runner do
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
-      collect_port_output(port, label, [], timeout)
+      collect_port_output(port, label, [], timeout, run_id)
     end
   end
 
-  defp collect_port_output(port, human_id, acc, timeout) do
+  defp collect_port_output(port, human_id, acc, timeout, run_id) do
     receive do
       {^port, {:data, data}} ->
-        for line <- String.split(data, "\n", trim: true) do
+        lines = String.split(data, "\n", trim: true)
+
+        for line <- lines do
           Logger.info("[claude:#{human_id}] #{line}")
         end
 
-        collect_port_output(port, human_id, [data | acc], timeout)
+        push_lines_to_stream(run_id, lines)
+
+        collect_port_output(port, human_id, [data | acc], timeout, run_id)
 
       {^port, {:exit_status, code}} ->
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
@@ -533,6 +558,24 @@ defmodule CitadelAgent.Runner do
          "Claude Code process stalled after #{div(timeout, 1_000)}s of inactivity. " <>
            "Partial output (#{byte_size(output)} bytes) captured before kill."}
     end
+  end
+
+  defp push_lines_to_stream(nil, _lines), do: :ok
+
+  defp push_lines_to_stream(run_id, lines) do
+    for line <- lines do
+      trimmed = String.trim(line)
+
+      if trimmed != "" do
+        try do
+          CitadelAgent.Socket.push_stream_event(run_id, trimmed)
+        rescue
+          e -> Logger.debug("Failed to push stream event: #{Exception.message(e)}")
+        end
+      end
+    end
+
+    :ok
   end
 
   defp kill_port(port) do
@@ -553,16 +596,28 @@ defmodule CitadelAgent.Runner do
     CitadelAgent.config(:stall_timeout_ms) || @default_stall_timeout
   end
 
-  defp build_prompt(task) do
+  defp build_prompt(task, feedback \\ nil) do
     title = task["title"] || ""
     description = task["description"] || ""
 
-    """
-    Task: #{title}
+    base =
+      """
+      Task: #{title}
 
-    #{description}
-    """
-    |> String.trim()
+      #{description}
+      """
+      |> String.trim()
+
+    case feedback do
+      nil ->
+        base
+
+      body ->
+        base <>
+          "\n\n## Feedback - Changes Requested\n" <>
+          "The following feedback was provided on your previous work. Address these changes:\n\n" <>
+          body
+    end
   end
 
   defp capture_head_sha(worktree_path) do

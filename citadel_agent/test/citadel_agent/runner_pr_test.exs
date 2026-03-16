@@ -79,19 +79,27 @@ defmodule CitadelAgent.RunnerPRTest do
   end
 
   describe "PR creation on feature branch" do
-    test "creates draft PR when new feature branch is created", %{project_path: project_path} do
+    test "creates draft PR after merge into feature branch", %{project_path: project_path} do
       test_pid = self()
 
       Req.Test.stub(:github_pr, fn conn ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-        send(test_pid, {:pr_created, conn, Jason.decode!(body)})
+        case conn.method do
+          "GET" ->
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(200, Jason.encode!([]))
 
-        conn
-        |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          201,
-          Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
-        )
+          "POST" ->
+            {:ok, body, conn} = Plug.Conn.read_body(conn)
+            send(test_pid, {:pr_created, conn, Jason.decode!(body)})
+
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(
+              201,
+              Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
+            )
+        end
       end)
 
       task = %{
@@ -117,19 +125,39 @@ defmodule CitadelAgent.RunnerPRTest do
       project_path: project_path
     } do
       test_pid = self()
-      call_count = :counters.new(1, [:atomics])
+      pr_create_count = :counters.new(1, [:atomics])
 
       Req.Test.stub(:github_pr, fn conn ->
-        :counters.add(call_count, 1, 1)
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-        send(test_pid, {:pr_created, Jason.decode!(body)})
+        case conn.method do
+          "GET" ->
+            # After first PR creation, return the existing PR
+            if :counters.get(pr_create_count, 1) > 0 do
+              conn
+              |> Plug.Conn.put_resp_content_type("application/json")
+              |> Plug.Conn.send_resp(
+                200,
+                Jason.encode!([
+                  %{"html_url" => "https://github.com/test-owner/test-repo/pull/1"}
+                ])
+              )
+            else
+              conn
+              |> Plug.Conn.put_resp_content_type("application/json")
+              |> Plug.Conn.send_resp(200, Jason.encode!([]))
+            end
 
-        conn
-        |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          201,
-          Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
-        )
+          "POST" ->
+            :counters.add(pr_create_count, 1, 1)
+            {:ok, body, conn} = Plug.Conn.read_body(conn)
+            send(test_pid, {:pr_created, Jason.decode!(body)})
+
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(
+              201,
+              Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
+            )
+        end
       end)
 
       task1 = %{
@@ -149,14 +177,22 @@ defmodule CitadelAgent.RunnerPRTest do
       assert {:ok, _} = CitadelAgent.Runner.execute(task1, project_path)
       assert {:ok, _} = CitadelAgent.Runner.execute(task2, project_path)
 
-      assert :counters.get(call_count, 1) == 1
+      assert :counters.get(pr_create_count, 1) == 1
     end
 
     test "PR creation failure does not fail the overall task", %{project_path: project_path} do
       Req.Test.stub(:github_pr, fn conn ->
-        conn
-        |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(403, Jason.encode!(%{"message" => "Forbidden"}))
+        case conn.method do
+          "GET" ->
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(200, Jason.encode!([]))
+
+          "POST" ->
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(403, Jason.encode!(%{"message" => "Forbidden"}))
+        end
       end)
 
       task = %{
@@ -174,15 +210,23 @@ defmodule CitadelAgent.RunnerPRTest do
       test_pid = self()
 
       Req.Test.stub(:github_pr, fn conn ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-        send(test_pid, {:pr_created, Jason.decode!(body)})
+        case conn.method do
+          "GET" ->
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(200, Jason.encode!([]))
 
-        conn
-        |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(
-          201,
-          Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
-        )
+          "POST" ->
+            {:ok, body, conn} = Plug.Conn.read_body(conn)
+            send(test_pid, {:pr_created, Jason.decode!(body)})
+
+            conn
+            |> Plug.Conn.put_resp_content_type("application/json")
+            |> Plug.Conn.send_resp(
+              201,
+              Jason.encode!(%{"html_url" => "https://github.com/test-owner/test-repo/pull/1"})
+            )
+        end
       end)
 
       task = %{

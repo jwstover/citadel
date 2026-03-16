@@ -17,7 +17,7 @@ defmodule Citadel.Tasks do
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
-      description "Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id"
+      description "Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id. To add or remove dependencies, use the create_task_dependency and delete_task_dependency tools instead."
     end
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
@@ -73,6 +73,8 @@ defmodule Citadel.Tasks do
 
     resource Citadel.Tasks.TaskActivity do
       define :create_comment, action: :create_comment
+      define :create_request_changes_comment, action: :create_request_changes_comment
+      define :get_task_activity, action: :read, get_by: [:id]
       define :list_task_activities, action: :list_by_task, args: [:task_id]
       define :destroy_comment, action: :destroy_comment
     end
@@ -82,7 +84,16 @@ defmodule Citadel.Tasks do
       define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
     end
 
+    resource Citadel.Tasks.AgentWorkItem do
+      define :create_agent_work_item, action: :create
+      define :claim_agent_work_item, action: :claim
+      define :complete_agent_work_item, action: :complete
+      define :cancel_agent_work_item, action: :cancel
+      define :list_agent_work_items, action: :read
+    end
+
     resource Citadel.Tasks.AgentRun do
+      define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update
       define :cancel_agent_run, action: :cancel

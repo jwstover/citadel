@@ -1,4 +1,45 @@
 defmodule CitadelWeb.Api.AgentJSON do
+  def claim(%{agent_run: agent_run}) do
+    task = agent_run.task
+    work_item = agent_run.work_item
+
+    %{
+      data: %{
+        task: %{
+          id: task.id,
+          human_id: task.human_id,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          due_date: task.due_date,
+          agent_eligible: task.agent_eligible,
+          parent_task_id: task.parent_task_id,
+          parent_human_id: if(task.parent_task, do: task.parent_task.human_id),
+          task_state: %{
+            id: task.task_state.id,
+            name: task.task_state.name
+          },
+          inserted_at: task.inserted_at,
+          updated_at: task.updated_at
+        },
+        agent_run: %{
+          id: agent_run.id,
+          task_id: agent_run.task_id,
+          status: agent_run.status,
+          started_at: agent_run.started_at,
+          completed_at: agent_run.completed_at,
+          inserted_at: agent_run.inserted_at,
+          updated_at: agent_run.updated_at
+        },
+        work_item: %{
+          id: work_item.id,
+          type: work_item.type,
+          comment_id: work_item.comment_id
+        }
+      }
+    }
+  end
+
   def task(%{task: task}) do
     %{
       data: %{
@@ -64,6 +105,19 @@ defmodule CitadelWeb.Api.AgentJSON do
         metadata: event.metadata,
         inserted_at: event.inserted_at,
         updated_at: event.updated_at
+      }
+    }
+  end
+
+  def comment(%{comment: comment}) do
+    %{
+      data: %{
+        id: comment.id,
+        type: comment.type,
+        body: comment.body,
+        actor_type: comment.actor_type,
+        actor_display_name: comment.actor_display_name,
+        inserted_at: comment.inserted_at
       }
     }
   end

@@ -917,6 +917,13 @@ defmodule CitadelWeb.TaskLive.Show do
                       <span :if={run.error_message} class="text-xs text-error">
                         {run.error_message}
                       </span>
+                      <.link
+                        :if={run.status == :running}
+                        navigate={~p"/agent-runs/#{run.id}"}
+                        class="btn btn-xs btn-ghost text-info hover:bg-info/10"
+                      >
+                        <.icon name="hero-eye" class="size-3.5" /> Watch
+                      </.link>
                       <button
                         :if={@can_edit and run.status in [:pending, :running]}
                         phx-click="confirm_cancel_run"

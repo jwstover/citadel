@@ -1,4 +1,4 @@
 defmodule Citadel.Tasks.TaskActivity.Types.ActivityType do
   @moduledoc false
-  use Ash.Type.Enum, values: [:comment]
+  use Ash.Type.Enum, values: [:comment, :change_request]
 end
