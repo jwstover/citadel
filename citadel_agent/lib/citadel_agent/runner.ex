@@ -56,10 +56,11 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = _task, task_branch, project_path)
+  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = task, task_branch, project_path)
        when is_binary(parent_id) do
     feature_branch = "citadel/feature/#{parent_id}"
     merge_into_feature_branch(task_branch, feature_branch, project_path)
+    ensure_draft_pr(feature_branch, task, project_path)
   end
 
   defp maybe_merge_into_feature_branch(_task, _task_branch, _project_path), do: :ok
@@ -205,10 +206,6 @@ defmodule CitadelAgent.Runner do
               {:error, "Failed to create feature branch #{feature_branch}: #{output}"}
           end
       end
-
-    if result == :ok do
-      ensure_draft_pr(feature_branch, task, project_path)
-    end
 
     result
   end
