@@ -1,6 +1,7 @@
 defmodule CitadelWeb.Api.AgentJSON do
   def claim(%{agent_run: agent_run}) do
     task = agent_run.task
+    work_item = agent_run.work_item
 
     %{
       data: %{
@@ -29,6 +30,11 @@ defmodule CitadelWeb.Api.AgentJSON do
           completed_at: agent_run.completed_at,
           inserted_at: agent_run.inserted_at,
           updated_at: agent_run.updated_at
+        },
+        work_item: %{
+          id: work_item.id,
+          type: work_item.type,
+          comment_id: work_item.comment_id
         }
       }
     }
@@ -98,6 +104,19 @@ defmodule CitadelWeb.Api.AgentJSON do
         metadata: event.metadata,
         inserted_at: event.inserted_at,
         updated_at: event.updated_at
+      }
+    }
+  end
+
+  def comment(%{comment: comment}) do
+    %{
+      data: %{
+        id: comment.id,
+        type: comment.type,
+        body: comment.body,
+        actor_type: comment.actor_type,
+        actor_display_name: comment.actor_display_name,
+        inserted_at: comment.inserted_at
       }
     }
   end

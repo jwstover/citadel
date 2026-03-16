@@ -55,6 +55,9 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["task"]["task_state"]["name"] != nil
       assert data["agent_run"]["task_id"] == task.id
       assert data["agent_run"]["status"] == "running"
+      assert data["work_item"]["type"] == "new_task"
+      assert data["work_item"]["comment_id"] == nil
+      assert data["work_item"]["id"] != nil
     end
 
     test "returns 204 when no tasks available", ctx do
@@ -470,6 +473,46 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       conn = post(ctx.conn, ~p"/api/agent/runs/#{fake_id}/cancel")
 
       assert json_response(conn, 404)
+    end
+  end
+
+  describe "GET /api/agent/comments/:id" do
+    test "returns comment data", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      {:ok, comment} =
+        Tasks.create_comment(%{body: "Test comment", task_id: task.id},
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      conn = get(ctx.conn, ~p"/api/agent/comments/#{comment.id}")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == comment.id
+      assert data["type"] == "comment"
+      assert data["body"] == "Test comment"
+      assert data["actor_type"] == "user"
+      assert data["inserted_at"] != nil
+    end
+
+    test "returns 404 for non-existent comment", ctx do
+      fake_id = Ash.UUID.generate()
+
+      conn = get(ctx.conn, ~p"/api/agent/comments/#{fake_id}")
+
+      assert json_response(conn, 404)
+    end
+
+    test "returns 401 without authentication" do
+      fake_id = Ash.UUID.generate()
+
+      conn =
+        build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get(~p"/api/agent/comments/#{fake_id}")
+
+      assert json_response(conn, 401)
     end
   end
 
