@@ -1,3 +1,14 @@
+## [0.34.1](https://github.com/jwstover/citadel/compare/v0.34.0...v0.34.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* format show.ex template ([b879a33](https://github.com/jwstover/citadel/commit/b879a3308a9d3c53909baa985d131caff2f3e5f2))
+* scope capture_commits to only current agent run ([03724dd](https://github.com/jwstover/citadel/commit/03724dd101ba5230ab7f87abde0a45ae3966ff68))
+* update tests and migration for {:array, :map} commits attribute ([20985e9](https://github.com/jwstover/citadel/commit/20985e9226c869386267e4f415f4f27db19d1cb0))
+
+
+
 # [0.34.0](https://github.com/jwstover/citadel/compare/v0.33.0...v0.34.0) (2026-03-16)
 
 
@@ -64,17 +75,6 @@
 * **agent:** improve AgentRunLive stream rendering ([710bf62](https://github.com/jwstover/citadel/commit/710bf62f0922165f473f725f45ad280acaf13748))
 * **agent:** push stream events to channel as Claude CLI output arrives ([f518f1f](https://github.com/jwstover/citadel/commit/f518f1f401c51fee7057fbf482476ad4409acc0c))
 * **agent:** relay stream events from runner to PubSub via AgentChannel ([b316910](https://github.com/jwstover/citadel/commit/b31691019a44cc20664fa6d84e6105de99423dfe))
-
-
-
-# [0.30.0](https://github.com/jwstover/citadel/compare/v0.29.0...v0.30.0) (2026-03-14)
-
-
-### Features
-
-* **agent:** replace multi-step task pickup with atomic claim_task ([258d3d0](https://github.com/jwstover/citadel/commit/258d3d088dd7683814bf9378e9c269e3871760e4))
-* **api:** replace next_task/create_run endpoints with atomic claim_task ([d594292](https://github.com/jwstover/citadel/commit/d594292100c03aad2ba730284675aac92866cef5))
-* **tasks:** add claim_next action to AgentRun for atomic task claiming ([b60b4e8](https://github.com/jwstover/citadel/commit/b60b4e895db52c85ab4ad8bbacc4c9bc48aa018f))
 
 
 
