@@ -166,6 +166,13 @@ defmodule CitadelWeb.Router do
     patch "/agent/runs/:id", AgentController, :update_run
     post "/agent/runs/:id/cancel", AgentController, :cancel_run
     post "/agent/runs/:id/events", AgentController, :create_run_event
+    post "/agent/runs/:run_id/refinement", AgentController, :create_refinement_cycle
+
+    post "/agent/runs/:run_id/refinement/iterations",
+         AgentController,
+         :create_refinement_iteration
+
+    patch "/agent/runs/:run_id/refinement", AgentController, :update_refinement_cycle
   end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
