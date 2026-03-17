@@ -529,16 +529,21 @@ defmodule CitadelWeb.Api.AgentControllerTest do
           )
         )
 
+      commits = [
+        %{"sha" => "abc123", "message" => "first commit"},
+        %{"sha" => "def456", "message" => "second commit"}
+      ]
+
       conn =
         patch(ctx.conn, ~p"/api/agent/runs/#{run.id}", %{
           "status" => "completed",
-          "commits" => ["abc123", "def456"],
+          "commits" => commits,
           "test_output" => "All tests passed"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "completed"
-      assert data["commits"] == ["abc123", "def456"]
+      assert data["commits"] == commits
       assert data["test_output"] == "All tests passed"
     end
 

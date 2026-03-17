@@ -29,9 +29,8 @@ defmodule CitadelAgent.Runner do
       result =
         try do
           with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
-               :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name) do
-            commits = capture_commits(worktree_path, starting_sha)
-
+               :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
+               {:ok, commits} <- capture_commits(worktree_path, starting_sha) do
             {:ok,
              %{
                status: determine_status(claude_result),
@@ -649,22 +648,27 @@ defmodule CitadelAgent.Runner do
   end
 
   defp capture_commits(worktree_path, starting_sha) when is_binary(starting_sha) do
-    case System.cmd("git", ["log", "--format=%H", "#{starting_sha}..HEAD"],
+    case System.cmd("git", ["log", "--format=%H%n%s", "#{starting_sha}..HEAD"],
            cd: worktree_path,
            stderr_to_stdout: true
          ) do
       {output, 0} ->
-        output
-        |> String.split("\n", trim: true)
-        |> Enum.map(&String.trim/1)
-        |> Enum.reject(&(&1 == ""))
+        commits =
+          output
+          |> String.trim()
+          |> String.split("\n")
+          |> Enum.chunk_every(2)
+          |> Enum.filter(fn chunk -> length(chunk) == 2 end)
+          |> Enum.map(fn [sha, message] -> %{"sha" => sha, "message" => message} end)
 
-      _ ->
-        []
+        {:ok, commits}
+
+      {_output, _code} ->
+        {:ok, []}
     end
   end
 
-  defp capture_commits(_worktree_path, _starting_sha), do: []
+  defp capture_commits(_worktree_path, _starting_sha), do: {:ok, []}
 
   @stripped_env_vars ~w(ANTHROPIC_API_KEY OPENAI_API_KEY CLAUDECODE)
 

@@ -948,8 +948,11 @@ defmodule CitadelWeb.TaskLive.Show do
                       Commits ({length(run.commits)})
                     </summary>
                     <ul class="mt-2 space-y-1">
-                      <li :for={sha <- run.commits} class="text-xs font-mono text-base-content/70">
-                        {String.slice(sha, 0, 8)}
+                      <li :for={commit <- run.commits} class="flex items-start gap-2 text-xs">
+                        <code class="px-1.5 py-0.5 bg-base-300/50 rounded font-mono text-base-content/70 shrink-0">
+                          {String.slice(commit["sha"], 0..6)}
+                        </code>
+                        <span class="text-base-content/80">{commit["message"]}</span>
                       </li>
                     </ul>
                   </details>

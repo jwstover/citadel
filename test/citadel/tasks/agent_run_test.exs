@@ -142,7 +142,11 @@ defmodule Citadel.Tasks.AgentRunTest do
         )
 
       now = DateTime.utc_now()
-      commits = ["abc123def456", "789012fed345"]
+
+      commits = [
+        %{"sha" => "abc123def456", "message" => "first commit"},
+        %{"sha" => "789012fed345", "message" => "second commit"}
+      ]
 
       updated =
         Tasks.update_agent_run!(

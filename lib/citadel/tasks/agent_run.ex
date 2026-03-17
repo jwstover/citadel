@@ -105,7 +105,7 @@ defmodule Citadel.Tasks.AgentRun do
       public? true
     end
 
-    attribute :commits, {:array, :string}, public?: true, default: []
+    attribute :commits, {:array, :map}, public?: true, default: []
     attribute :test_output, :string, public?: true
     attribute :logs, :string, public?: true
     attribute :error_message, :string, public?: true

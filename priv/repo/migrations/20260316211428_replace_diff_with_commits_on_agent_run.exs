@@ -14,7 +14,7 @@ defmodule Citadel.Repo.Migrations.ReplaceDiffWithCommitsOnAgentRun do
 
     alter table(:agent_runs) do
       remove :diff
-      add :commits, {:array, :text}, default: []
+      add :commits, {:array, :map}, default: []
     end
   end
 
