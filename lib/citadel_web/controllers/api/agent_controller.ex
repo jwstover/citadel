@@ -2,6 +2,7 @@ defmodule CitadelWeb.Api.AgentController do
   use CitadelWeb, :controller
 
   alias Citadel.Tasks
+  alias Citadel.Tasks.StallDetector
 
   def claim_task(conn, _params) do
     tenant = Ash.PlugHelpers.get_tenant(conn)
@@ -41,6 +42,8 @@ defmodule CitadelWeb.Api.AgentController do
 
     with {:ok, agent_run} <- fetch_agent_run(id, actor, tenant),
          {:ok, updated} <- Tasks.update_agent_run(agent_run, input, actor: actor, tenant: tenant) do
+      StallDetector.record_activity(id)
+
       conn
       |> put_status(:ok)
       |> render(:agent_run, agent_run: updated)
@@ -91,6 +94,8 @@ defmodule CitadelWeb.Api.AgentController do
 
     case Tasks.create_agent_run_event(input, actor: actor, tenant: tenant) do
       {:ok, event} ->
+        StallDetector.record_activity(run_id)
+
         conn
         |> put_status(:created)
         |> render(:agent_run_event, event: event)
@@ -221,6 +226,8 @@ defmodule CitadelWeb.Api.AgentController do
                actor: actor,
                tenant: tenant
              ) do
+        StallDetector.record_activity(run_id)
+
         Phoenix.PubSub.broadcast(
           Citadel.PubSub,
           "tasks:refinement:#{run_id}",
@@ -281,6 +288,8 @@ defmodule CitadelWeb.Api.AgentController do
 
       case result do
         {:ok, updated_cycle} ->
+          StallDetector.record_activity(run_id)
+
           Phoenix.PubSub.broadcast(
             Citadel.PubSub,
             "tasks:refinement:#{run_id}",
