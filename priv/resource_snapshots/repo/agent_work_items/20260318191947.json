@@ -14,7 +14,19 @@
     },
     {
       "allow_nil?": false,
-      "default": "\"running\"",
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "type",
+      "type": "text"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"pending\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -23,54 +35,6 @@
       "size": null,
       "source": "status",
       "type": "text"
-    },
-    {
-      "allow_nil?": false,
-      "default": "3",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "max_iterations",
-      "type": "bigint"
-    },
-    {
-      "allow_nil?": false,
-      "default": "0",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "current_iteration",
-      "type": "bigint"
-    },
-    {
-      "allow_nil?": true,
-      "default": "%{}",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "evaluator_config",
-      "type": "map"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "final_score",
-      "type": "float"
     },
     {
       "allow_nil?": false,
@@ -115,7 +79,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "refinement_cycles_workspace_id_fkey",
+        "name": "agent_work_items_workspace_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -143,11 +107,73 @@
         "match_with": null,
         "multitenancy": {
           "attribute": "workspace_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "agent_work_items_task_id_fkey",
+        "on_delete": "delete",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "tasks"
+      },
+      "scale": null,
+      "size": null,
+      "source": "task_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "workspace_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "agent_work_items_comment_id_fkey",
+        "on_delete": "nilify",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "task_activities"
+      },
+      "scale": null,
+      "size": null,
+      "source": "comment_id",
+      "type": "uuid"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "workspace_id",
           "global": true,
           "strategy": "attribute"
         },
-        "name": "refinement_cycles_agent_run_id_fkey",
-        "on_delete": "delete",
+        "name": "agent_work_items_agent_run_id_fkey",
+        "on_delete": "nilify",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
@@ -162,10 +188,33 @@
   "base_filter": null,
   "check_constraints": [],
   "create_table_options": null,
-  "custom_indexes": [],
+  "custom_indexes": [
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "task_id"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "task_id"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "agent_work_items_one_active_per_task",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": true,
+      "using": null,
+      "where": "status IN ('pending', 'claimed')"
+    }
+  ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "6BF7BEC9DAB5C5EFC34F1B1E8136FE447B686B4C4BEC230406054A073817DEFE",
+  "hash": "13EC4227820F2E38BB458A3AE43608CE9BC14A690E63C106529667299B670D11",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
@@ -174,5 +223,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "refinement_cycles"
+  "table": "agent_work_items"
 }

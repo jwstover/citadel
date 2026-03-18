@@ -21,19 +21,43 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "type",
+      "source": "event_type",
       "type": "text"
     },
     {
-      "allow_nil?": false,
-      "default": "\"pending\"",
+      "allow_nil?": true,
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "status",
+      "source": "message",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "%{}",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "metadata",
+      "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "dedup_key",
       "type": "text"
     },
     {
@@ -79,7 +103,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "agent_work_items_workspace_id_fkey",
+        "name": "agent_run_events_workspace_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -107,73 +131,11 @@
         "match_with": null,
         "multitenancy": {
           "attribute": "workspace_id",
-          "global": false,
-          "strategy": "attribute"
-        },
-        "name": "agent_work_items_task_id_fkey",
-        "on_delete": "delete",
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "tasks"
-      },
-      "scale": null,
-      "size": null,
-      "source": "task_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": "workspace_id",
-          "global": false,
-          "strategy": "attribute"
-        },
-        "name": "agent_work_items_comment_id_fkey",
-        "on_delete": "nilify",
-        "on_update": null,
-        "primary_key?": true,
-        "schema": "public",
-        "table": "task_activities"
-      },
-      "scale": null,
-      "size": null,
-      "source": "comment_id",
-      "type": "uuid"
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": {
-        "deferrable": false,
-        "destination_attribute": "id",
-        "destination_attribute_default": null,
-        "destination_attribute_generated": null,
-        "index?": false,
-        "match_type": null,
-        "match_with": null,
-        "multitenancy": {
-          "attribute": "workspace_id",
           "global": true,
           "strategy": "attribute"
         },
-        "name": "agent_work_items_agent_run_id_fkey",
-        "on_delete": "nilify",
+        "name": "agent_run_events_agent_run_id_fkey",
+        "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
         "schema": "public",
@@ -188,34 +150,26 @@
   "base_filter": null,
   "check_constraints": [],
   "create_table_options": null,
-  "custom_indexes": [
-    {
-      "all_tenants?": false,
-      "concurrently": false,
-      "error_fields": [
-        "task_id"
-      ],
-      "fields": [
-        {
-          "type": "atom",
-          "value": "task_id"
-        }
-      ],
-      "include": null,
-      "message": null,
-      "name": "agent_work_items_one_active_per_task",
-      "nulls_distinct": true,
-      "prefix": null,
-      "table": null,
-      "unique": true,
-      "using": null,
-      "where": "status IN ('pending', 'claimed')"
-    }
-  ],
+  "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "7AFDCD276FFE497CAD74D67EE54FBDCA0A310BA72C677840B6ADC6A79A3E573C",
-  "identities": [],
+  "hash": "6D8DA063D3BCA961BE6421FCB20AEB74BBA3E3DAC9D40DB9F59F0560E2D06B2D",
+  "identities": [
+    {
+      "all_tenants?": false,
+      "base_filter": null,
+      "index_name": "agent_run_events_unique_dedup_key_index",
+      "keys": [
+        {
+          "type": "atom",
+          "value": "dedup_key"
+        }
+      ],
+      "name": "unique_dedup_key",
+      "nils_distinct?": true,
+      "where": null
+    }
+  ],
   "multitenancy": {
     "attribute": "workspace_id",
     "global": false,
@@ -223,5 +177,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "agent_work_items"
+  "table": "agent_run_events"
 }

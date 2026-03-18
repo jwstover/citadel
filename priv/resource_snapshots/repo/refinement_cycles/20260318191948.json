@@ -14,27 +14,39 @@
     },
     {
       "allow_nil?": false,
-      "default": "nil",
+      "default": "\"running\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "event_type",
+      "source": "status",
       "type": "text"
     },
     {
-      "allow_nil?": true,
-      "default": "nil",
+      "allow_nil?": false,
+      "default": "3",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "message",
-      "type": "text"
+      "source": "max_iterations",
+      "type": "bigint"
+    },
+    {
+      "allow_nil?": false,
+      "default": "0",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "current_iteration",
+      "type": "bigint"
     },
     {
       "allow_nil?": true,
@@ -45,8 +57,20 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "metadata",
+      "source": "evaluator_config",
       "type": "map"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "final_score",
+      "type": "float"
     },
     {
       "allow_nil?": false,
@@ -91,7 +115,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "agent_run_events_workspace_id_fkey",
+        "name": "refinement_cycles_workspace_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -122,7 +146,7 @@
           "global": true,
           "strategy": "attribute"
         },
-        "name": "agent_run_events_agent_run_id_fkey",
+        "name": "refinement_cycles_agent_run_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -141,7 +165,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "E8F0F46EDC4FDAA2A975E68E697B887F84F37A8E03C9DD05D02B984779784CEC",
+  "hash": "1F8F40AEEEC5B5D0A1F2FA16B3F8E8C9E38354D2A018A206C9DEB847C40BF5EF",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
@@ -150,5 +174,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "agent_run_events"
+  "table": "refinement_cycles"
 }

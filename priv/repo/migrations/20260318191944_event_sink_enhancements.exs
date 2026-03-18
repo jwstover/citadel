@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources1 do
+defmodule Citadel.Repo.Migrations.EventSinkEnhancements do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -55,6 +55,8 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
     drop constraint(:agent_run_events, "agent_run_events_agent_run_id_fkey")
 
     alter table(:agent_run_events) do
+      add :dedup_key, :text
+
       modify :agent_run_id,
              references(:agent_runs,
                column: :id,
@@ -64,9 +66,17 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
                on_delete: :delete_all
              )
     end
+
+    create unique_index(:agent_run_events, [:workspace_id, :dedup_key],
+             name: "agent_run_events_unique_dedup_key_index"
+           )
   end
 
   def down do
+    drop_if_exists unique_index(:agent_run_events, [:workspace_id, :dedup_key],
+                     name: "agent_run_events_unique_dedup_key_index"
+                   )
+
     drop constraint(:agent_run_events, "agent_run_events_agent_run_id_fkey")
 
     alter table(:agent_run_events) do
@@ -78,6 +88,8 @@ defmodule Citadel.Repo.Migrations.MigrateResources1 do
                prefix: "public",
                on_delete: :delete_all
              )
+
+      remove :dedup_key
     end
 
     alter table(:agent_runs) do
