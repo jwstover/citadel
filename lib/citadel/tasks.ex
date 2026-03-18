@@ -111,9 +111,11 @@ defmodule Citadel.Tasks do
       define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update
+      define :update_agent_run_stall_status, action: :update_stall_status, get_by: [:id]
       define :cancel_agent_run, action: :cancel
       define :list_agent_runs_by_task, action: :list_by_task, args: [:task_id]
       define :get_agent_run, action: :read, get_by: [:id]
+      define :list_running_agent_runs, action: :read
       define :destroy_agent_run, action: :destroy
     end
 
