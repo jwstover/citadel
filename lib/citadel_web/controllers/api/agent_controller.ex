@@ -14,6 +14,12 @@ defmodule CitadelWeb.Api.AgentController do
            load: [:work_item, task: [:task_state, :parent_task]]
          ) do
       {:ok, agent_run} ->
+        CitadelWeb.Endpoint.broadcast("tasks:agent_activity", "run_started", %{
+          run_id: agent_run.id,
+          task_id: agent_run.task_id,
+          workspace_id: agent_run.workspace_id
+        })
+
         conn
         |> put_status(:ok)
         |> render(:claim, agent_run: agent_run)
