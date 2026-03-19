@@ -35,7 +35,8 @@ defmodule CitadelWeb.Api.AgentJSON do
         work_item: %{
           id: work_item.id,
           type: work_item.type,
-          comment_id: work_item.comment_id
+          comment_id: work_item.comment_id,
+          session_id: work_item.session_id
         }
       }
     }

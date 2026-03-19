@@ -31,7 +31,7 @@ defmodule Citadel.Tasks.AgentWorkItem do
     defaults [:read]
 
     create :create do
-      accept [:type, :task_id, :comment_id]
+      accept [:type, :task_id, :comment_id, :session_id]
 
       change Citadel.Tasks.Changes.InheritTaskWorkspace
     end
@@ -104,6 +104,11 @@ defmodule Citadel.Tasks.AgentWorkItem do
     attribute :status, WorkItemStatus do
       default :pending
       allow_nil? false
+      public? true
+    end
+
+    attribute :session_id, :string do
+      allow_nil? true
       public? true
     end
 
