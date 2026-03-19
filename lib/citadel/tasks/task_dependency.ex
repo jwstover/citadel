@@ -155,6 +155,7 @@ defmodule Citadel.Tasks.TaskDependency do
 
   validations do
     validate Citadel.Tasks.Validations.NoCircularDependency
+    validate Citadel.Tasks.Validations.NoParentDependency
   end
 
   attributes do
