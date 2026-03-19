@@ -298,7 +298,7 @@ defmodule CitadelWeb.Layouts do
                   <.icon name="hero-building-library" class="size-4" />
                 </div>
               </div>
-              <span class="text-xl font-bold tracking-tight">Citadel</span>
+              <span class="text-xl font-bold tracking-tight">Pyllar</span>
             </.link>
 
             <div class="hidden md:flex items-center gap-8">

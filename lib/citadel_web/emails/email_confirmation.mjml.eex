@@ -5,7 +5,7 @@
     </mj-text>
 
     <mj-text padding-top="20px">
-      Welcome to Citadel! Please confirm your email address to complete your registration.
+      Welcome to Pyllar! Please confirm your email address to complete your registration.
     </mj-text>
 
     <mj-button href="<%= @confirm_url %>" padding-top="24px">

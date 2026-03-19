@@ -6,7 +6,7 @@
 
     <mj-text padding-top="20px">
       <strong><%= @inviter_email %></strong> has invited you to collaborate on
-      <strong><%= @workspace_name %></strong> in Citadel.
+      <strong><%= @workspace_name %></strong> in Pyllar.
     </mj-text>
 
     <mj-button href="<%= @accept_url %>" padding-top="24px">

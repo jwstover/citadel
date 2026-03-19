@@ -8,15 +8,15 @@
 
 ## 1. Agreement to Terms
 
-By accessing or using Citadel ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.
+By accessing or using Pyllar ("the Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.
 
-These Terms constitute a legally binding agreement between you and Citadel ("we," "us," or "our"). Please read them carefully.
+These Terms constitute a legally binding agreement between you and Pyllar ("we," "us," or "our"). Please read them carefully.
 
 ---
 
 ## 2. Description of Service
 
-Citadel is a task management and AI-powered chat application that provides:
+Pyllar is a task management and AI-powered chat application that provides:
 
 - **Workspace-based task management** - Create, organize, and track tasks within collaborative workspaces
 - **AI-powered chat** - Conversational AI assistance for productivity and task management
@@ -30,7 +30,7 @@ The Service may be updated, modified, or enhanced over time. We reserve the righ
 
 ### 3.1 Account Creation
 
-To use Citadel, you must:
+To use Pyllar, you must:
 
 - Sign in using Google OAuth authentication
 - Provide accurate and complete information
@@ -70,7 +70,7 @@ Content you create within a workspace (tasks, conversations, messages) is visibl
 
 ### 5.1 AI-Generated Content
 
-Citadel provides AI-powered features including chat assistance and task parsing. Regarding AI-generated content:
+Pyllar provides AI-powered features including chat assistance and task parsing. Regarding AI-generated content:
 
 - **No Warranty**: AI responses are provided "as-is" without any warranty of accuracy, completeness, or fitness for any particular purpose
 - **Not Professional Advice**: AI responses do not constitute professional, legal, medical, financial, or any other specialized advice
@@ -101,7 +101,7 @@ You may not use AI features to:
 
 ### 6.1 Credit System
 
-Citadel uses a credit system for AI features:
+Pyllar uses a credit system for AI features:
 
 - Users receive a monthly allocation of credits
 - Credits are consumed when using AI chat features
@@ -164,7 +164,7 @@ You agree not to:
 
 ### 9.1 Our Intellectual Property
 
-Citadel and its content (excluding user content) are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
+Pyllar and its content (excluding user content) are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
 
 ### 9.2 Your Content
 
@@ -182,7 +182,7 @@ Any feedback or suggestions you provide may be used by us without obligation to 
 
 ## 10. Third-Party Services
 
-Citadel integrates with third-party services:
+Pyllar integrates with third-party services:
 
 | Service | Purpose |
 |---------|---------|
@@ -228,7 +228,7 @@ This limitation applies regardless of the theory of liability (contract, tort, o
 
 ## 14. Indemnification
 
-You agree to indemnify and hold harmless Citadel and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorneys' fees) arising from:
+You agree to indemnify and hold harmless Pyllar and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorneys' fees) arising from:
 
 - Your use of the Service
 - Your violation of these Terms
@@ -290,7 +290,7 @@ Any disputes arising from these Terms or the Service shall be resolved through:
 
 ### 18.1 Entire Agreement
 
-These Terms, along with our Privacy Policy, constitute the entire agreement between you and Citadel.
+These Terms, along with our Privacy Policy, constitute the entire agreement between you and Pyllar.
 
 ### 18.2 Severability
 
@@ -315,4 +315,4 @@ If you have questions about these Terms, please contact us:
 
 ---
 
-*By using Citadel, you acknowledge that you have read, understood, and agree to these Terms of Service.*
+*By using Pyllar, you acknowledge that you have read, understood, and agree to these Terms of Service.*
