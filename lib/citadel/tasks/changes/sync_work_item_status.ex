@@ -13,6 +13,8 @@ defmodule Citadel.Tasks.Changes.SyncWorkItemStatus do
   end
 
   defp update_work_item_for_run(agent_run) do
+    require Logger
+
     work_item_action =
       case agent_run.status do
         :completed -> :complete
@@ -21,17 +23,28 @@ defmodule Citadel.Tasks.Changes.SyncWorkItemStatus do
         _ -> nil
       end
 
+    Logger.info("DEBUG[sync_work_item]: run_id=#{agent_run.id} status=#{agent_run.status} work_item_action=#{inspect(work_item_action)} workspace_id=#{agent_run.workspace_id}")
+
     if work_item_action do
-      Citadel.Tasks.AgentWorkItem
-      |> Ash.Query.filter(agent_run_id == ^agent_run.id and status == :claimed)
-      |> Ash.read!(authorize?: false, tenant: agent_run.workspace_id)
-      |> Enum.each(fn work_item ->
-        work_item
-        |> Ash.Changeset.for_update(work_item_action, %{},
-          authorize?: false,
-          tenant: agent_run.workspace_id
-        )
-        |> Ash.update()
+      work_items =
+        Citadel.Tasks.AgentWorkItem
+        |> Ash.Query.filter(agent_run_id == ^agent_run.id and status == :claimed)
+        |> Ash.read!(authorize?: false, tenant: agent_run.workspace_id)
+
+      Logger.info("DEBUG[sync_work_item]: found #{length(work_items)} claimed work item(s) for run_id=#{agent_run.id}")
+
+      Enum.each(work_items, fn work_item ->
+        Logger.info("DEBUG[sync_work_item]: applying :#{work_item_action} to work_item_id=#{work_item.id}")
+
+        result =
+          work_item
+          |> Ash.Changeset.for_update(work_item_action, %{},
+            authorize?: false,
+            tenant: agent_run.workspace_id
+          )
+          |> Ash.update()
+
+        Logger.info("DEBUG[sync_work_item]: work_item update result=#{inspect(result)}")
       end)
     end
   end

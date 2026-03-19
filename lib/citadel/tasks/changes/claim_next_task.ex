@@ -84,14 +84,30 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
 
   defp claim_work_item(work_item_id, agent_run_id, workspace_id) do
     require Ash.Query
+    require Logger
 
-    Citadel.Tasks.AgentWorkItem
-    |> Ash.Query.filter(id == ^work_item_id)
-    |> Ash.read_one!(authorize?: false, tenant: workspace_id)
-    |> Ash.Changeset.for_update(:claim, %{agent_run_id: agent_run_id},
-      authorize?: false,
-      tenant: workspace_id
-    )
-    |> Ash.update!()
+    Logger.info("DEBUG[claim_work_item]: claiming work_item_id=#{work_item_id} agent_run_id=#{agent_run_id} workspace_id=#{workspace_id}")
+
+    work_item =
+      Citadel.Tasks.AgentWorkItem
+      |> Ash.Query.filter(id == ^work_item_id)
+      |> Ash.read_one!(authorize?: false, tenant: workspace_id)
+
+    Logger.info("DEBUG[claim_work_item]: found work_item status=#{inspect(work_item && work_item.status)} agent_run_id=#{inspect(work_item && work_item.agent_run_id)}")
+
+    result =
+      work_item
+      |> Ash.Changeset.for_update(:claim, %{agent_run_id: agent_run_id},
+        authorize?: false,
+        tenant: workspace_id
+      )
+      |> Ash.update()
+
+    Logger.info("DEBUG[claim_work_item]: update result=#{inspect(result)}")
+
+    case result do
+      {:ok, updated} -> updated
+      {:error, error} -> raise "claim_work_item failed: #{inspect(error)}"
+    end
   end
 end

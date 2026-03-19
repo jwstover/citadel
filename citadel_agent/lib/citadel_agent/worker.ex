@@ -49,6 +49,8 @@ defmodule CitadelAgent.Worker do
   end
 
   defp process_next_task(state) do
+    Logger.debug("DEBUG[claim]: Polling for next task")
+
     case CitadelAgent.Client.claim_task() do
       {:ok, nil} ->
         Logger.debug("No agent-eligible tasks available")
@@ -57,12 +59,15 @@ defmodule CitadelAgent.Worker do
 
       {:ok, %{"task" => task, "agent_run" => run} = claim} ->
         Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
+        Logger.info("DEBUG[claim]: task parent_task_id=#{inspect(task["parent_task_id"])} parent_human_id=#{inspect(task["parent_human_id"])} run_id=#{run["id"]} run_status=#{run["status"]}")
         work_item = claim["work_item"]
+        Logger.info("DEBUG[claim]: work_item=#{inspect(work_item)}")
         feedback = fetch_feedback(work_item)
         execute_task(task, run, feedback, state)
 
       {:error, reason} ->
         Logger.error("Failed to claim task: #{inspect(reason)}")
+        Logger.error("DEBUG[claim]: claim_task returned error — any agent_run created during this attempt is now stuck running")
         state
     end
   end
@@ -87,14 +92,16 @@ defmodule CitadelAgent.Worker do
 
     case CitadelAgent.Runner.execute(task, project_path, run_id: run_id, feedback: feedback) do
       {:ok, result} ->
-        CitadelAgent.Client.update_run(run_id, %{
+        Logger.info("DEBUG[run]: Runner returned ok with status=#{result.status}, calling update_run run_id=#{run_id}")
+
+        update_result = CitadelAgent.Client.update_run(run_id, %{
           "status" => result.status,
-          "commits" => result.commits,
           "logs" => result.logs,
           "test_output" => result.test_output,
           "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
         })
 
+        Logger.info("DEBUG[run]: update_run result=#{inspect(update_result)}")
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
         push_stream_complete(run_id)
 
@@ -103,12 +110,15 @@ defmodule CitadelAgent.Worker do
         end
 
       {:error, reason} ->
-        CitadelAgent.Client.update_run(run_id, %{
+        Logger.error("DEBUG[run]: Runner returned error=#{inspect(reason)}, calling update_run run_id=#{run_id}")
+
+        update_result = CitadelAgent.Client.update_run(run_id, %{
           "status" => "failed",
           "error_message" => inspect(reason),
           "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
         })
 
+        Logger.error("DEBUG[run]: update_run result=#{inspect(update_result)}")
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
         push_stream_complete(run_id)
     end
@@ -118,12 +128,15 @@ defmodule CitadelAgent.Worker do
         "Task #{task["human_id"]} crashed: #{Exception.format(:error, exception, __STACKTRACE__)}"
       )
 
-      CitadelAgent.Client.update_run(run["id"], %{
+      Logger.error("DEBUG[run]: Rescue block caught exception, calling update_run run_id=#{run["id"]}")
+
+      update_result = CitadelAgent.Client.update_run(run["id"], %{
         "status" => "failed",
         "error_message" => Exception.message(exception),
         "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
       })
 
+      Logger.error("DEBUG[run]: update_run result in rescue=#{inspect(update_result)}")
       push_stream_complete(run["id"])
   end
 

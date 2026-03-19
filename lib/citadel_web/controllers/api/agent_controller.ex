@@ -4,8 +4,11 @@ defmodule CitadelWeb.Api.AgentController do
   alias Citadel.Tasks
 
   def claim_task(conn, _params) do
+    require Logger
     tenant = Ash.PlugHelpers.get_tenant(conn)
     actor = conn.assigns.current_user
+
+    Logger.info("DEBUG[claim_task]: Attempting claim for tenant=#{inspect(tenant)} actor=#{inspect(actor && actor.id)}")
 
     case Tasks.claim_next_task(
            actor: actor,
@@ -13,16 +16,22 @@ defmodule CitadelWeb.Api.AgentController do
            load: [:work_item, task: [:task_state, :parent_task]]
          ) do
       {:ok, agent_run} ->
+        Logger.info("DEBUG[claim_task]: claim_next_task succeeded run_id=#{agent_run.id} task_id=#{agent_run.task_id}")
+        Logger.info("DEBUG[claim_task]: work_item=#{inspect(agent_run.work_item)}")
+        Logger.info("DEBUG[claim_task]: task.parent_task=#{inspect(agent_run.task && agent_run.task.parent_task)}")
+
         conn
         |> put_status(:ok)
         |> render(:claim, agent_run: agent_run)
 
-      {:error, %Ash.Error.Invalid{}} ->
+      {:error, %Ash.Error.Invalid{} = error} ->
+        Logger.info("DEBUG[claim_task]: claim_next_task returned Invalid error (no tasks): #{inspect(error)}")
         send_resp(conn, :no_content, "")
     end
   end
 
   def update_run(conn, %{"id" => id} = params) do
+    require Logger
     tenant = Ash.PlugHelpers.get_tenant(conn)
     actor = conn.assigns.current_user
 
@@ -39,18 +48,23 @@ defmodule CitadelWeb.Api.AgentController do
       ])
       |> atomize_keys()
 
+    Logger.info("DEBUG[update_run]: run_id=#{id} input_status=#{inspect(input[:status])}")
+
     with {:ok, agent_run} <- fetch_agent_run(id, actor, tenant),
          {:ok, updated} <- Tasks.update_agent_run(agent_run, input, actor: actor, tenant: tenant) do
+      Logger.info("DEBUG[update_run]: success run_id=#{id} new_status=#{updated.status}")
       conn
       |> put_status(:ok)
       |> render(:agent_run, agent_run: updated)
     else
       :not_found ->
+        Logger.error("DEBUG[update_run]: run_id=#{id} not found")
         conn
         |> put_status(:not_found)
         |> json(%{errors: %{detail: "Not Found"}})
 
       {:error, %Ash.Error.Invalid{} = error} ->
+        Logger.error("DEBUG[update_run]: run_id=#{id} invalid error=#{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(:error, error: error)
