@@ -20,7 +20,6 @@ defmodule Citadel.Tasks.TaskSummaryTest do
         %{
           title: "Test Task #{System.unique_integer([:positive])}",
           task_state_id: task_state.id,
-          workspace_id: workspace.id,
           priority: :high,
           due_date: ~D[2026-04-01]
         },
@@ -99,8 +98,7 @@ defmodule Citadel.Tasks.TaskSummaryTest do
       Tasks.create_task!(
         %{
           title: "Other Workspace Task #{System.unique_integer([:positive])}",
-          task_state_id: task_state.id,
-          workspace_id: other_workspace.id
+          task_state_id: task_state.id
         },
         actor: other_user,
         tenant: other_workspace.id
@@ -151,8 +149,7 @@ defmodule Citadel.Tasks.TaskSummaryTest do
         %{
           title: "Another Task #{System.unique_integer([:positive])}",
           description: needle,
-          task_state_id: task_state.id,
-          workspace_id: workspace.id
+          task_state_id: task_state.id
         },
         actor: user,
         tenant: workspace.id

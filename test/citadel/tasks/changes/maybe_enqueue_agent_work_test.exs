@@ -61,7 +61,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Agent Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -84,7 +83,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Non-Agent Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -105,7 +103,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Done Task #{System.unique_integer([:positive])}",
             task_state_id: done_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -126,7 +123,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Review Task #{System.unique_integer([:positive])}",
             task_state_id: in_review_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -149,7 +145,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Toggle Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -175,7 +170,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Review to Progress #{System.unique_integer([:positive])}",
             task_state_id: in_review_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -203,7 +197,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "No Dup Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -230,7 +223,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Active Run Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -260,7 +252,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -272,7 +263,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocked Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             dependencies: [blocking_task.id]
           },
@@ -293,7 +283,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -305,7 +294,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocked Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false,
             dependencies: [blocking_task.id]
           },
@@ -332,7 +320,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -344,7 +331,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocked Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             dependencies: [blocking_task.id]
           },
@@ -376,7 +362,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker A #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -388,7 +373,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker B #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -400,7 +384,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Double Blocked #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             dependencies: [blocker_a.id, blocker_b.id]
           },
@@ -427,7 +410,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Blocker #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false
           },
           actor: user,
@@ -439,7 +421,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Non-Agent Dep #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: false,
             dependencies: [blocking_task.id]
           },
@@ -468,7 +449,6 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Complete Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,

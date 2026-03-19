@@ -53,7 +53,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Claimable #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -91,8 +90,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
         Tasks.create_task!(
           %{
             title: "Dep Task #{System.unique_integer([:positive])}",
-            task_state_id: todo_state.id,
-            workspace_id: workspace.id
+            task_state_id: todo_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -103,7 +101,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Blocked Task #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             dependencies: [dep_task.id]
           },
@@ -126,7 +123,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Low #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             priority: :low
           },
@@ -139,7 +135,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "High #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true,
             priority: :high
           },
@@ -163,7 +158,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Lifecycle #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -197,7 +191,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Fail #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,
@@ -231,7 +224,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           %{
             title: "Cancel #{System.unique_integer([:positive])}",
             task_state_id: todo_state.id,
-            workspace_id: workspace.id,
             agent_eligible: true
           },
           actor: user,

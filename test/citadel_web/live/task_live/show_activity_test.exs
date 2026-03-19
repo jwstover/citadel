@@ -21,7 +21,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
     task =
       generate(
         task(
-          [workspace_id: workspace.id, task_state_id: task_state.id, title: "Task With Activity"],
+          [task_state_id: task_state.id, title: "Task With Activity"],
           actor: user,
           tenant: workspace.id
         )

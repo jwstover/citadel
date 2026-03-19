@@ -29,8 +29,7 @@ defmodule Citadel.Tasks.RequestChangesTest do
       Tasks.create_task!(
         %{
           title: "Test Task #{System.unique_integer([:positive])}",
-          task_state_id: in_review_state.id,
-          workspace_id: workspace.id
+          task_state_id: in_review_state.id
         },
         actor: user,
         tenant: workspace.id
@@ -115,8 +114,7 @@ defmodule Citadel.Tasks.RequestChangesTest do
         Tasks.create_task!(
           %{
             title: "Todo Task #{System.unique_integer([:positive])}",
-            task_state_id: todo_state.id,
-            workspace_id: workspace.id
+            task_state_id: todo_state.id
           },
           actor: user,
           tenant: workspace.id

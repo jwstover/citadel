@@ -45,7 +45,6 @@ defmodule Citadel.Tasks.Task do
         :title,
         :description,
         :task_state_id,
-        :workspace_id,
         :parent_task_id,
         :project_id,
         :due_date,

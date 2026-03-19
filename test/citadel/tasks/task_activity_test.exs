@@ -17,8 +17,7 @@ defmodule Citadel.Tasks.TaskActivityTest do
       Tasks.create_task!(
         %{
           title: "Test Task #{System.unique_integer([:positive])}",
-          task_state_id: task_state.id,
-          workspace_id: workspace.id
+          task_state_id: task_state.id
         },
         actor: user,
         tenant: workspace.id
