@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources2 do
+defmodule Citadel.Repo.Migrations.AddQuestionAnsweredWorkItemType do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -11,9 +11,17 @@ defmodule Citadel.Repo.Migrations.MigrateResources2 do
     alter table(:agent_work_items) do
       add :session_id, :text
     end
+
+    alter table(:agent_runs) do
+      add :session_id, :text
+    end
   end
 
   def down do
+    alter table(:agent_runs) do
+      remove :session_id
+    end
+
     alter table(:agent_work_items) do
       remove :session_id
     end
