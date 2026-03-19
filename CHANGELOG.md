@@ -1,3 +1,13 @@
+## [0.34.2](https://github.com/jwstover/citadel/compare/v0.34.1...v0.34.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* remove duplicate Home nav item from sidebar ([ec66b5f](https://github.com/jwstover/citadel/commit/ec66b5f8ad7dd410ac1d6fda1bbb85ce53e52498))
+* use dynamic workspace task_prefix in dependency input placeholder ([cc392ab](https://github.com/jwstover/citadel/commit/cc392abd860a179fb4543e441f3a0f2742245037))
+
+
+
 ## [0.34.1](https://github.com/jwstover/citadel/compare/v0.34.0...v0.34.1) (2026-03-17)
 
 
@@ -54,27 +64,6 @@
 * **tasks:** rework ClaimNextTask to claim from AgentWorkItem queue ([67f045e](https://github.com/jwstover/citadel/commit/67f045ebeb0a2efaece43314b449e56fefd6649b))
 * **tasks:** sync AgentWorkItem status with AgentRun lifecycle ([a997f33](https://github.com/jwstover/citadel/commit/a997f33701947b43c7f808043116ee94f2f22408))
 * **ui:** add Request Changes toggle to task activity comment form ([6a71fff](https://github.com/jwstover/citadel/commit/6a71fff5bfb4be5b91b3e4a6edeca0ee50e97334))
-
-
-
-# [0.31.0](https://github.com/jwstover/citadel/compare/v0.30.0...v0.31.0) (2026-03-14)
-
-
-### Bug Fixes
-
-* **agent:** filter sub-agent events from AgentRunLive stream ([7980c53](https://github.com/jwstover/citadel/commit/7980c536d85ea790a273541cd3c76f9777de7c07))
-* resolve Credo warnings in agent run components ([3bca753](https://github.com/jwstover/citadel/commit/3bca7534a1a45b3c5606375fa6272c7e1455dbce))
-
-
-### Features
-
-* **agent:** add AgentRunComponents for rendering stream events ([462b190](https://github.com/jwstover/citadel/commit/462b190a75dc8d3f16794aa723f4294c5e6bc523))
-* **agent:** add AgentRunLive page for real-time stream output ([a8430f3](https://github.com/jwstover/citadel/commit/a8430f3ec2720ae53b6df72aaae282a7007baebf))
-* **agent:** add StreamParser module for Claude stream-json output ([bd8c2e1](https://github.com/jwstover/citadel/commit/bd8c2e174076bbcc993c05565a5743ef8518af49))
-* **agent:** add Watch link to active agent runs on task show page ([3271daf](https://github.com/jwstover/citadel/commit/3271daf099d6a605347579fb6d01d2671fd9acce))
-* **agent:** improve AgentRunLive stream rendering ([710bf62](https://github.com/jwstover/citadel/commit/710bf62f0922165f473f725f45ad280acaf13748))
-* **agent:** push stream events to channel as Claude CLI output arrives ([f518f1f](https://github.com/jwstover/citadel/commit/f518f1f401c51fee7057fbf482476ad4409acc0c))
-* **agent:** relay stream events from runner to PubSub via AgentChannel ([b316910](https://github.com/jwstover/citadel/commit/b31691019a44cc20664fa6d84e6105de99423dfe))
 
 
 
