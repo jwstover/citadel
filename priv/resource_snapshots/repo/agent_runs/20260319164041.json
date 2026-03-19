@@ -235,7 +235,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "172F36EEDE2CD29CF8A80795DDB3A67046480358C1067EF407E9C42527591B30",
+  "hash": "0246D5F6D765659145FF21D1FA169DEEA57E2E1CCDCBD5469A6259B5401292D5",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
