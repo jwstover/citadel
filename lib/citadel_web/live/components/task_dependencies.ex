@@ -36,7 +36,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
                   <input
                     type="text"
                     name="human_id"
-                    placeholder="Add dependency (e.g., PER-45)"
+                    placeholder={"Add dependency (e.g., #{@current_workspace.task_prefix}-45)"}
                     class="input input-sm input-bordered flex-1"
                   />
                   <button type="submit" class="btn btn-sm btn-secondary">Add</button>
