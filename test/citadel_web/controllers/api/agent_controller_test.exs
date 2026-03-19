@@ -278,6 +278,20 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["task_state"]["name"] == new_state.name
     end
 
+    test "sets forge_pr on a task", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      pr_url = "https://github.com/test-owner/test-repo/pull/42"
+
+      conn =
+        patch(ctx.conn, ~p"/api/agent/tasks/#{task.id}", %{
+          "forge_pr" => pr_url
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == task.id
+      assert data["forge_pr"] == pr_url
+    end
+
     test "returns 404 for non-existent task", ctx do
       fake_id = Ash.UUID.generate()
 
