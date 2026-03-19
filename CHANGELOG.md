@@ -1,3 +1,14 @@
+## [0.34.3](https://github.com/jwstover/citadel/compare/v0.34.2...v0.34.3) (2026-03-19)
+
+
+### Bug Fixes
+
+* remove workspace_id from task create accept list ([b8e0667](https://github.com/jwstover/citadel/commit/b8e0667f8efcab86ef36d4267552cbe2afe15e83))
+* remove workspace_id from task create calls in tests ([f20937e](https://github.com/jwstover/citadel/commit/f20937e41126b226d341d4735fb908add7168c0d))
+* use context.tenant for workspace_id in assignee validation ([2b34e44](https://github.com/jwstover/citadel/commit/2b34e44f50225318dd00aeb035a279265d1e5f9c))
+
+
+
 ## [0.34.2](https://github.com/jwstover/citadel/compare/v0.34.1...v0.34.2) (2026-03-19)
 
 
@@ -42,28 +53,6 @@
 ### Features
 
 * handle dependency unblocking in MaybeEnqueueAgentWork ([ba3788a](https://github.com/jwstover/citadel/commit/ba3788a0a98a546dc1470f87fa0677441717e744))
-
-
-
-# [0.32.0](https://github.com/jwstover/citadel/compare/v0.31.0...v0.32.0) (2026-03-16)
-
-
-### Bug Fixes
-
-* **tasks:** use to_string/1 for email in format_assignees ([d96cef4](https://github.com/jwstover/citadel/commit/d96cef4736fa12bb0ca656d4086de9a8cd690219))
-* **test:** use existing task states and cancel instead of complete work item ([9f2bbaa](https://github.com/jwstover/citadel/commit/9f2bbaa6a460ee5422f719566ebf908b4158e6e4))
-
-
-### Features
-
-* **agent:** add comment endpoint and work item metadata to claim response ([441fa21](https://github.com/jwstover/citadel/commit/441fa213534c007da9fba951b632ed83f4028161))
-* **agent:** handle changes_requested work items with feedback context ([793365d](https://github.com/jwstover/citadel/commit/793365df918fe2bd8b758bf414bef026ad5c5068))
-* **tasks:** add AgentWorkItem resource for agent work queue ([c7d486e](https://github.com/jwstover/citadel/commit/c7d486ecd960f88f74773bbf904dd232ea0c0231))
-* **tasks:** add request changes action and change_request activity type ([d2e74b6](https://github.com/jwstover/citadel/commit/d2e74b6aef9188b0c9e822953659ea572837682b))
-* **tasks:** auto-create work items when tasks become agent-eligible ([63bcac2](https://github.com/jwstover/citadel/commit/63bcac27b98256823834336ece40581ea7a3f2a4))
-* **tasks:** rework ClaimNextTask to claim from AgentWorkItem queue ([67f045e](https://github.com/jwstover/citadel/commit/67f045ebeb0a2efaece43314b449e56fefd6649b))
-* **tasks:** sync AgentWorkItem status with AgentRun lifecycle ([a997f33](https://github.com/jwstover/citadel/commit/a997f33701947b43c7f808043116ee94f2f22408))
-* **ui:** add Request Changes toggle to task activity comment form ([6a71fff](https://github.com/jwstover/citadel/commit/6a71fff5bfb4be5b91b3e4a6edeca0ee50e97334))
 
 
 
