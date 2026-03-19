@@ -41,7 +41,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -67,7 +66,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -117,7 +115,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -129,7 +126,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace2.id,
               task_state_id: task_state.id
             ],
             actor: owner2,
@@ -160,7 +156,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -172,7 +167,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace2.id,
               task_state_id: task_state.id
             ],
             actor: owner2,
@@ -202,7 +196,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -233,7 +226,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace1.id,
               task_state_id: task_state.id
             ],
             actor: owner1,
@@ -269,7 +261,6 @@ defmodule Citadel.Tasks.TaskMultitenancyTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id
             ],
             actor: owner,

@@ -15,7 +15,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Test Task"],
+            [task_state_id: task_state.id, title: "Test Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -52,7 +52,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Original Title"],
+            [task_state_id: task_state.id, title: "Original Title"],
             actor: user,
             tenant: workspace.id
           )
@@ -62,7 +62,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task",
               parent_task_id: task.id
@@ -168,7 +167,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -203,7 +202,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               due_date: ~D[2025-01-15]
             ],
@@ -238,7 +236,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Due Date",
               parent_task_id: task.id
@@ -271,7 +268,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, priority: :low],
+            [task_state_id: task_state.id, priority: :low],
             actor: user,
             tenant: workspace.id
           )
@@ -329,7 +326,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Priority",
               parent_task_id: task.id
@@ -362,7 +358,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -422,7 +418,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Assignee",
               parent_task_id: task.id
@@ -461,7 +456,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -512,7 +507,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: todo_state.id,
               title: "Sub Task for State",
               parent_task_id: task.id
@@ -546,7 +540,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Parent Task"],
+            [task_state_id: todo_state.id, title: "Parent Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -556,7 +550,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: todo_state.id,
               title: "Draggable Sub Task",
               parent_task_id: task.id
@@ -635,7 +628,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: owner_workspace.id, task_state_id: task_state.id, title: "Owner Task"],
+            [task_state_id: task_state.id, title: "Owner Task"],
             actor: owner,
             tenant: owner_workspace.id
           )
@@ -661,7 +654,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Main Task"],
+            [task_state_id: todo_state.id, title: "Main Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -692,7 +685,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Dependency Task"],
+            [task_state_id: todo_state.id, title: "Dependency Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -730,7 +723,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task_b =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -764,7 +757,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -800,7 +793,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -828,7 +821,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       complete_dependency =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: done_state.id],
+            [task_state_id: done_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -856,7 +849,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -891,7 +884,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -941,7 +934,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -988,7 +981,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependent_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1018,7 +1011,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1048,7 +1041,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1109,7 +1102,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Agent Task",
               agent_eligible: true
@@ -1139,7 +1131,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Non-Agent Task",
               agent_eligible: false
@@ -1228,7 +1219,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Cancel Test Task",
               agent_eligible: true

@@ -29,7 +29,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -52,7 +52,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -81,7 +81,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -110,7 +110,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -142,7 +142,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       parent_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -154,7 +154,6 @@ defmodule Citadel.Tasks.TaskPubSubTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               parent_task_id: parent_task.id
             ],
@@ -180,7 +179,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       parent_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -190,7 +189,6 @@ defmodule Citadel.Tasks.TaskPubSubTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               parent_task_id: parent_task.id
             ],
@@ -223,7 +221,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       parent_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )
@@ -233,7 +231,6 @@ defmodule Citadel.Tasks.TaskPubSubTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               parent_task_id: parent_task.id
             ],
@@ -273,7 +270,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       _task2 =
         generate(
           task(
-            [workspace_id: workspace2.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner2,
             tenant: workspace2.id
           )
@@ -292,7 +289,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task1 =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Task 1"],
+            [task_state_id: task_state.id, title: "Task 1"],
             actor: owner,
             tenant: workspace.id
           )
@@ -310,7 +307,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task2 =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Task 2"],
+            [task_state_id: task_state.id, title: "Task 2"],
             actor: owner,
             tenant: workspace.id
           )
@@ -338,7 +335,6 @@ defmodule Citadel.Tasks.TaskPubSubTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Test Task",
               description: "Description",
@@ -372,7 +368,7 @@ defmodule Citadel.Tasks.TaskPubSubTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: owner,
             tenant: workspace.id
           )

@@ -28,7 +28,6 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
             title: "Test Task #{System.unique_integer([:positive])}",
             description: "A detailed description",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             priority: :high,
             due_date: ~D[2026-04-01]
           },
@@ -60,8 +59,7 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -72,7 +70,6 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
           %{
             title: "Child Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             parent_task_id: parent.id
           },
           actor: user,
@@ -98,8 +95,7 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -110,7 +106,6 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
           %{
             title: "Sub Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             parent_task_id: parent.id
           },
           actor: user,
@@ -137,7 +132,6 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
           %{
             title: "Assigned Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [user.id]
           },
           actor: user,
@@ -162,8 +156,7 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
         Tasks.create_task!(
           %{
             title: "Dependency Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -174,7 +167,6 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
           %{
             title: "Blocked Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             dependencies: [dep_task.id]
           },
           actor: user,
@@ -212,8 +204,7 @@ defmodule Citadel.Tasks.GetTaskDetailsTest do
         Tasks.create_task!(
           %{
             title: "Tenant Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id

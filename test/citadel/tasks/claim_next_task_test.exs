@@ -47,7 +47,6 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
       %{
         title: "Eligible Task #{System.unique_integer([:positive])}",
         task_state_id: ctx.todo_state.id,
-        workspace_id: ctx.workspace.id,
         agent_eligible: true,
         priority: Keyword.get(opts, :priority, :medium)
       },
@@ -161,7 +160,6 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         %{
           title: "Completed Task #{System.unique_integer([:positive])}",
           task_state_id: ctx.done_state.id,
-          workspace_id: ctx.workspace.id,
           agent_eligible: true
         },
         actor: ctx.user,
@@ -184,7 +182,6 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         %{
           title: "In Review Task #{System.unique_integer([:positive])}",
           task_state_id: ctx.in_review_state.id,
-          workspace_id: ctx.workspace.id,
           agent_eligible: true
         },
         actor: ctx.user,
@@ -207,8 +204,7 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         Tasks.create_task!(
           %{
             title: "Dependency #{System.unique_integer([:positive])}",
-            task_state_id: ctx.todo_state.id,
-            workspace_id: ctx.workspace.id
+            task_state_id: ctx.todo_state.id
           },
           actor: ctx.user,
           tenant: ctx.workspace.id
@@ -237,8 +233,7 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         Tasks.create_task!(
           %{
             title: "Completed Dep #{System.unique_integer([:positive])}",
-            task_state_id: ctx.done_state.id,
-            workspace_id: ctx.workspace.id
+            task_state_id: ctx.done_state.id
           },
           actor: ctx.user,
           tenant: ctx.workspace.id
@@ -265,7 +260,6 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         %{
           title: "Not Eligible #{System.unique_integer([:positive])}",
           task_state_id: ctx.todo_state.id,
-          workspace_id: ctx.workspace.id,
           agent_eligible: false
         },
         actor: ctx.user,
