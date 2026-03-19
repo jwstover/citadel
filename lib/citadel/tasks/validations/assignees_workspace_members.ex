@@ -29,6 +29,7 @@ defmodule Citadel.Tasks.Validations.AssigneesWorkspaceMembers do
 
   defp get_workspace_id(changeset, context) do
     Ash.Changeset.get_attribute(changeset, :workspace_id) ||
+      context.tenant ||
       get_workspace_id_from_parent(changeset, context)
   end
 
