@@ -78,12 +78,6 @@ defmodule CitadelWeb.Layouts do
               <ul class="menu-compact">
                 <li>
                   <.link navigate={~p"/dashboard"} class="flex items-center gap-2">
-                    <.icon name="hero-home" class="size-4 text-base-content/70" />
-                    <span>Home</span>
-                  </.link>
-                </li>
-                <li>
-                  <.link navigate={~p"/dashboard"} class="flex items-center gap-2">
                     <.icon name="hero-chart-bar" class="size-4 text-base-content/70" />
                     <span>Dashboard</span>
                   </.link>
