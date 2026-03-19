@@ -65,7 +65,9 @@ defmodule CitadelAgent.Runner do
     ensure_draft_pr(feature_branch, task, project_path)
   end
 
-  defp maybe_merge_into_feature_branch(_task, _task_branch, _project_path), do: :ok
+  defp maybe_merge_into_feature_branch(task, task_branch, project_path) do
+    ensure_draft_pr(task_branch, task, project_path)
+  end
 
   defp merge_into_feature_branch(task_branch, feature_branch, project_path) do
     merge_id = System.unique_integer([:positive])
@@ -213,7 +215,8 @@ defmodule CitadelAgent.Runner do
   end
 
   defp ensure_draft_pr(feature_branch, task, project_path) do
-    parent_id = task["parent_human_id"]
+    pr_title_id = task["parent_human_id"] || task["human_id"]
+    task_id = task["parent_task_id"] || task["id"]
 
     try do
       {:ok, {owner, repo}} = CitadelAgent.GitHub.parse_remote_url(project_path)
@@ -235,7 +238,7 @@ defmodule CitadelAgent.Runner do
 
             {:ok, pr_body} = generate_pr_description(task, project_path)
 
-            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", parent_id, pr_body) do
+            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", pr_title_id, pr_body) do
               {:ok, :already_exists} ->
                 Logger.info("PR already exists for #{feature_branch} (detected during creation)")
                 nil
@@ -251,7 +254,7 @@ defmodule CitadelAgent.Runner do
         end
 
       if pr_url do
-        set_forge_pr(task["parent_task_id"], pr_url)
+        set_forge_pr(task_id, pr_url)
       end
     rescue
       e ->
