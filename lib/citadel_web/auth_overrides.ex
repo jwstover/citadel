@@ -82,7 +82,7 @@ defmodule CitadelWeb.AuthOverrides do
 
   # Register form styling
   override Components.Password.RegisterForm do
-    set :slot_class, "flex justify-between text-sm mt-4"
+    set :slot_class, "mt-4"
     set :label_class, "text-2xl font-bold mb-6"
   end
 
@@ -100,6 +100,7 @@ defmodule CitadelWeb.AuthOverrides do
     set :sign_in_form_module, CitadelWeb.Auth.SignInFormComponent
     set :register_form_module, CitadelWeb.Auth.RegisterFormComponent
     set :reset_form_module, CitadelWeb.Auth.ResetRequestFormComponent
+    set :register_extra_component, &PasswordHint.render/1
   end
 
   # OAuth2 button - ghost style for dark background
