@@ -7,19 +7,19 @@ defmodule CitadelWeb.AuthController do
   def success(conn, activity, user, _token) do
     return_to = get_session(conn, :return_to) || ~p"/"
 
-    message =
+    {message, redirect_to} =
       case activity do
         {:confirm_new_user, :confirm} ->
-          "Your email address has now been confirmed"
+          {"Your email address has now been confirmed", return_to}
 
         {:password, :reset_password_with_token} ->
-          "Your password has successfully been reset"
+          {"Your password has successfully been reset", return_to}
 
         {:password, :register_with_password} ->
-          "Welcome! Please check your email to confirm your account."
+          {"Welcome! Please check your email to confirm your account.", ~p"/dashboard"}
 
         _ ->
-          "You are now signed in"
+          {"You are now signed in", return_to}
       end
 
     conn
@@ -28,7 +28,7 @@ defmodule CitadelWeb.AuthController do
     # If your resource has a different name, update the assign name here (i.e :current_admin)
     |> assign(:current_user, user)
     |> put_flash(:info, message)
-    |> redirect(to: return_to)
+    |> redirect(to: redirect_to)
   end
 
   def failure(conn, activity, reason) do
