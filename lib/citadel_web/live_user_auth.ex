@@ -96,6 +96,20 @@ defmodule CitadelWeb.LiveUserAuth do
     end
   end
 
+  def on_mount(:set_auth_page_title, _params, _session, socket) do
+    page_title =
+      case socket.assigns[:live_action] do
+        :register -> "Register"
+        _ -> "Sign In"
+      end
+
+    {:cont, assign(socket, :page_title, page_title)}
+  end
+
+  def on_mount(:set_reset_page_title, _params, _session, socket) do
+    {:cont, assign(socket, :page_title, "Reset Password")}
+  end
+
   defp get_default_workspace_id(workspaces) do
     List.first(workspaces).id
   end
