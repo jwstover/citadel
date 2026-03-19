@@ -8,6 +8,7 @@ defmodule CitadelWeb.BillingLive.Index do
   alias Citadel.Accounts
   alias Citadel.Billing
   alias Citadel.Billing.Plan
+  alias Citadel.Billing.PriceCache
 
   def mount(_params, _session, socket) do
     organization_id = socket.assigns.current_workspace.organization_id
@@ -20,6 +21,7 @@ defmodule CitadelWeb.BillingLive.Index do
     balance = get_balance(organization_id, user)
     memberships = get_memberships(organization_id, user)
     plan = Plan.get(subscription.tier)
+    plan_prices = PriceCache.get_plan_prices()
 
     {:ok,
      socket
@@ -28,7 +30,8 @@ defmodule CitadelWeb.BillingLive.Index do
      |> assign(:subscription, subscription)
      |> assign(:balance, balance)
      |> assign(:memberships, memberships)
-     |> assign(:plan, plan)}
+     |> assign(:plan, plan)
+     |> assign(:plan_prices, plan_prices)}
   end
 
   def handle_params(params, _uri, socket) do
@@ -179,12 +182,12 @@ defmodule CitadelWeb.BillingLive.Index do
       else
         additional_members = max(member_count - 1, 0)
 
-        base_monthly = Plan.base_price_cents(:pro, :monthly) |> div(100)
-        per_seat_monthly = Plan.per_member_price_cents(:pro, :monthly) |> div(100)
+        base_monthly = div(assigns.plan_prices.pro_monthly_cents, 100)
+        per_seat_monthly = div(assigns.plan_prices.pro_seat_monthly_cents, 100)
         total_monthly = base_monthly + additional_members * per_seat_monthly
 
-        base_annual = Plan.base_price_cents(:pro, :annual) |> div(100)
-        per_seat_annual = Plan.per_member_price_cents(:pro, :annual) |> div(100)
+        base_annual = div(assigns.plan_prices.pro_annual_cents, 100)
+        per_seat_annual = div(assigns.plan_prices.pro_seat_annual_cents, 100)
         total_annual = base_annual + additional_members * per_seat_annual
         monthly_equivalent = div(total_annual, 12)
 
@@ -212,7 +215,7 @@ defmodule CitadelWeb.BillingLive.Index do
           >
             <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Monthly</div>
             <div class="text-3xl font-bold mb-1">
-              ${Plan.base_price_cents(:pro, :monthly) |> div(100)}
+              ${div(@plan_prices.pro_monthly_cents, 100)}
             </div>
             <div class="text-xs text-base-content/60 mb-4">per month</div>
             <div class="btn btn-ghost btn-sm w-full pointer-events-none">Choose Monthly</div>
@@ -231,9 +234,11 @@ defmodule CitadelWeb.BillingLive.Index do
             </div>
             <div class="text-xs text-base-content/60 uppercase tracking-wide mb-1">Annual</div>
             <div class="text-3xl font-bold mb-1">
-              ${Plan.base_price_cents(:pro, :annual) |> div(100)}
+              ${div(@plan_prices.pro_annual_cents, 100)}
             </div>
-            <div class="text-xs text-base-content/60 mb-4">per year (≈ $16/mo)</div>
+            <div class="text-xs text-base-content/60 mb-4">
+              per year (≈ ${div(@plan_prices.pro_annual_cents, 1200)}/mo)
+            </div>
             <div class="btn btn-primary btn-sm w-full pointer-events-none">Choose Annual</div>
           </button>
         </form>

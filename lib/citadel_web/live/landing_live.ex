@@ -3,6 +3,8 @@ defmodule CitadelWeb.LandingLive do
 
   use CitadelWeb, :live_view
 
+  alias Citadel.Billing.PriceCache
+
   on_mount {CitadelWeb.LiveUserAuth, :live_user_optional}
 
   def mount(_params, _session, socket) do
@@ -12,7 +14,8 @@ defmodule CitadelWeb.LandingLive do
      |> assign(
        :meta_description,
        "AI-native project management for developers. Turn complex features into actionable tasks. Manage everything from your coding assistant."
-     )}
+     )
+     |> assign(:plan_prices, PriceCache.get_plan_prices())}
   end
 
   def render(assigns) do
@@ -22,7 +25,7 @@ defmodule CitadelWeb.LandingLive do
       <.problem_section />
       <.solution_section />
       <.features_section />
-      <.pricing_section />
+      <.pricing_section plan_prices={@plan_prices} />
       <.cta_section />
       <.footer_section />
     </Layouts.marketing>
@@ -377,6 +380,8 @@ defmodule CitadelWeb.LandingLive do
   end
 
   defp pricing_section(assigns) do
+    assigns = assign(assigns, :pro_monthly_price, div(assigns.plan_prices.pro_monthly_cents, 100))
+
     ~H"""
     <section id="pricing" class="py-24 lg:py-32 relative overflow-hidden">
       <div class="absolute inset-0 pointer-events-none">
@@ -456,7 +461,7 @@ defmodule CitadelWeb.LandingLive do
                 </div>
 
                 <div class="mb-6">
-                  <span class="text-4xl font-bold">$12</span>
+                  <span class="text-4xl font-bold">${@pro_monthly_price}</span>
                   <span class="text-base-content/60 ml-1">/per month</span>
                 </div>
 

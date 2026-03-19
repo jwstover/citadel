@@ -22,6 +22,7 @@ defmodule Citadel.Application do
       {Phoenix.PubSub, name: Citadel.PubSub},
       CitadelWeb.AgentPresence,
       Citadel.Settings.FeatureFlagCache,
+      Citadel.Billing.PriceCache,
       # Start a worker by calling: Citadel.Worker.start_link(arg)
       # {Citadel.Worker, arg},
       # Start to serve requests, typically the last entry
