@@ -26,6 +26,7 @@ defmodule CitadelWeb.Api.AgentJSON do
           id: agent_run.id,
           task_id: agent_run.task_id,
           status: agent_run.status,
+          session_id: agent_run.session_id,
           started_at: agent_run.started_at,
           completed_at: agent_run.completed_at,
           inserted_at: agent_run.inserted_at,
@@ -34,7 +35,8 @@ defmodule CitadelWeb.Api.AgentJSON do
         work_item: %{
           id: work_item.id,
           type: work_item.type,
-          comment_id: work_item.comment_id
+          comment_id: work_item.comment_id,
+          session_id: work_item.session_id
         }
       }
     }
@@ -83,6 +85,7 @@ defmodule CitadelWeb.Api.AgentJSON do
         id: agent_run.id,
         task_id: agent_run.task_id,
         status: agent_run.status,
+        session_id: agent_run.session_id,
         commits: agent_run.commits,
         test_output: agent_run.test_output,
         logs: agent_run.logs,
