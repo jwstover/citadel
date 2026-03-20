@@ -25,6 +25,10 @@ defmodule Citadel.Tasks.AgentRunEvent do
       change Citadel.Tasks.Changes.InheritAgentRunWorkspace
     end
 
+    create :create_sink_event do
+      accept [:event_type, :message, :metadata, :agent_run_id, :dedup_key]
+    end
+
     read :list_by_run do
       argument :agent_run_id, :uuid, allow_nil?: false
 
@@ -62,13 +66,26 @@ defmodule Citadel.Tasks.AgentRunEvent do
     uuid_v7_primary_key :id
 
     attribute :event_type, :atom do
-      constraints one_of: [:run_started, :run_completed, :run_failed, :error]
+      constraints one_of: [
+                    :run_started,
+                    :run_completed,
+                    :run_failed,
+                    :error,
+                    :stream_output,
+                    :status_change,
+                    :stall_detected,
+                    :refinement_started,
+                    :refinement_iteration,
+                    :refinement_completed
+                  ]
+
       allow_nil? false
       public? true
     end
 
     attribute :message, :string, public?: true
     attribute :metadata, :map, default: %{}, public?: true
+    attribute :dedup_key, :string, public?: false
 
     timestamps()
   end
@@ -76,5 +93,9 @@ defmodule Citadel.Tasks.AgentRunEvent do
   relationships do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :agent_run, Citadel.Tasks.AgentRun, public?: true, allow_nil?: false
+  end
+
+  identities do
+    identity :unique_dedup_key, [:dedup_key]
   end
 end

@@ -2084,4 +2084,163 @@ defmodule Citadel.Tasks.TaskTest do
       assert updated.parent_task_id == new_parent.id
     end
   end
+
+  describe "model_config_id" do
+    test "creates a task with a model_config_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      model_config =
+        generate(model_config([workspace_id: workspace.id], actor: user, tenant: workspace.id))
+
+      attrs = %{
+        title: "Task #{System.unique_integer([:positive])}",
+        task_state_id: task_state.id,
+        workspace_id: workspace.id,
+        model_config_id: model_config.id
+      }
+
+      task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
+      assert task.model_config_id == model_config.id
+    end
+
+    test "creates a task without a model_config_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      attrs = %{
+        title: "Task #{System.unique_integer([:positive])}",
+        task_state_id: task_state.id,
+        workspace_id: workspace.id
+      }
+
+      task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
+      assert is_nil(task.model_config_id)
+    end
+
+    test "updates a task's model_config_id", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      model_config =
+        generate(model_config([workspace_id: workspace.id], actor: user, tenant: workspace.id))
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      updated =
+        Tasks.update_task!(task.id, %{model_config_id: model_config.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.model_config_id == model_config.id
+    end
+
+    test "loads model_config relationship", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      model_config =
+        generate(model_config([workspace_id: workspace.id], actor: user, tenant: workspace.id))
+
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id,
+            model_config_id: model_config.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      task = Ash.load!(task, [:model_config], authorize?: false)
+      assert task.model_config.id == model_config.id
+      assert task.model_config.provider == :anthropic
+    end
+  end
+
+  describe "refinement_config" do
+    test "creates a task with refinement_config", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      refinement_config = %{
+        "enabled" => true,
+        "max_iterations" => 3,
+        "on_failure" => "pause_for_review"
+      }
+
+      attrs = %{
+        title: "Task #{System.unique_integer([:positive])}",
+        task_state_id: task_state.id,
+        workspace_id: workspace.id,
+        refinement_config: refinement_config
+      }
+
+      task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
+      assert task.refinement_config == refinement_config
+    end
+
+    test "creates a task without refinement_config", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      attrs = %{
+        title: "Task #{System.unique_integer([:positive])}",
+        task_state_id: task_state.id,
+        workspace_id: workspace.id
+      }
+
+      task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
+      assert is_nil(task.refinement_config)
+    end
+
+    test "updates a task's refinement_config", %{
+      user: user,
+      workspace: workspace,
+      task_state: task_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Task #{System.unique_integer([:positive])}",
+            task_state_id: task_state.id,
+            workspace_id: workspace.id
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      refinement_config = %{
+        "enabled" => true,
+        "max_iterations" => 5,
+        "on_failure" => "accept_best"
+      }
+
+      updated =
+        Tasks.update_task!(task.id, %{refinement_config: refinement_config},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert updated.refinement_config == refinement_config
+    end
+  end
 end

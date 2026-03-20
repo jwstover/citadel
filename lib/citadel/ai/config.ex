@@ -182,4 +182,68 @@ defmodule Citadel.AI.Config do
       _ -> to_string(provider)
     end
   end
+
+  @doc """
+  Resolves the AI model configuration from the given options.
+
+  Resolution priority:
+  1. If `model_config_id` is provided, loads that specific ModelConfig
+  2. If `workspace_id` is provided, returns the workspace's default ModelConfig
+  3. Falls back to system defaults (provider from env, default model from provider module)
+
+  Always returns a plain map with `:provider`, `:model`, `:temperature`, `:max_tokens` keys.
+  """
+  @spec resolve_model_config(keyword()) :: {:ok, map()} | {:error, term()}
+  def resolve_model_config(opts \\ []) do
+    cond do
+      opts[:model_config_id] ->
+        resolve_from_model_config(opts[:model_config_id])
+
+      opts[:workspace_id] ->
+        resolve_from_workspace_default(opts[:workspace_id])
+
+      true ->
+        {:ok, system_defaults()}
+    end
+  end
+
+  defp resolve_from_model_config(model_config_id) do
+    import Ecto.Query, only: [from: 2]
+
+    case Citadel.Repo.one(from(mc in Citadel.Tasks.ModelConfig, where: mc.id == ^model_config_id)) do
+      nil -> {:error, "ModelConfig not found"}
+      config -> {:ok, model_config_to_map(config)}
+    end
+  end
+
+  defp resolve_from_workspace_default(workspace_id) do
+    case Citadel.Tasks.get_workspace_default_model_config(
+           authorize?: false,
+           tenant: workspace_id
+         ) do
+      {:ok, config} -> {:ok, model_config_to_map(config)}
+      {:error, _} -> {:ok, system_defaults()}
+    end
+  end
+
+  defp model_config_to_map(config) do
+    %{
+      provider: config.provider,
+      model: config.model,
+      temperature: config.temperature,
+      max_tokens: config.max_tokens
+    }
+  end
+
+  defp system_defaults do
+    provider = default_provider()
+    provider_mod = provider_module(provider)
+
+    %{
+      provider: provider,
+      model: provider_mod.default_model(),
+      temperature: 0.7,
+      max_tokens: nil
+    }
+  end
 end
