@@ -609,10 +609,19 @@ defmodule CitadelWeb.TaskLive.Show do
   defp execution_status_dot_class(:cancelled), do: "bg-orange-400"
   defp execution_status_dot_class(_), do: "bg-base-content/40"
 
-  defp extract_pr_number(url) when is_binary(url) do
-    case Regex.run(~r"/pull/(\d+)", url) do
-      [_, number] -> "##{number}"
-      _ -> "View PR"
+  defp forge_pr_label(url) when is_binary(url) do
+    cond do
+      match = Regex.run(~r"/pull/(\d+)", url) ->
+        {"Pull Request", "##{Enum.at(match, 1)}"}
+
+      match = Regex.run(~r"/merge_requests/(\d+)", url) ->
+        {"Merge Request", "!#{Enum.at(match, 1)}"}
+
+      String.contains?(url, "merge_request") ->
+        {"Merge Request", "View MR"}
+
+      true ->
+        {"Pull Request", "View PR"}
     end
   end
 
@@ -857,9 +866,10 @@ defmodule CitadelWeb.TaskLive.Show do
                   <% end %>
                 </div>
 
+                <% {pr_label, pr_text} = forge_pr_label(@task.forge_pr || "") %>
                 <div :if={@task.forge_pr} class="flex items-center justify-between gap-4">
                   <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Pull Request
+                    {pr_label}
                   </label>
                   <a
                     href={@task.forge_pr}
@@ -867,7 +877,7 @@ defmodule CitadelWeb.TaskLive.Show do
                     rel="noopener noreferrer"
                     class="inline-flex items-center gap-1.5 text-sm text-base-content/80 hover:text-primary transition-colors"
                   >
-                    #{extract_pr_number(@task.forge_pr)}
+                    {pr_text}
                     <.icon name="hero-arrow-top-right-on-square" class="size-3.5" />
                   </a>
                 </div>
