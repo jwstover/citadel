@@ -1,3 +1,21 @@
+# [0.38.0](https://github.com/jwstover/citadel/compare/v0.37.0...v0.38.0) (2026-03-23)
+
+
+### Features
+
+* **agent:** exclude Backlog tasks from agent work items ([4ad18d0](https://github.com/jwstover/citadel/commit/4ad18d0761f20de5ca01dd3f685fbff12a702539))
+
+
+
+# [0.37.0](https://github.com/jwstover/citadel/compare/v0.36.0...v0.37.0) (2026-03-23)
+
+
+### Features
+
+* add status selector to new task modal ([c3895a1](https://github.com/jwstover/citadel/commit/c3895a1118978068a6156f2383bc329165484ef1))
+
+
+
 # [0.36.0](https://github.com/jwstover/citadel/compare/v0.35.1...v0.36.0) (2026-03-23)
 
 
@@ -27,26 +45,6 @@
 ### Features
 
 * show password requirements on registration form before submission ([eb71a87](https://github.com/jwstover/citadel/commit/eb71a8725229ee705bcf6abbd14fdd6d2a1c51e8))
-
-
-
-## [0.34.4](https://github.com/jwstover/citadel/compare/v0.34.3...v0.34.4) (2026-03-23)
-
-
-### Bug Fixes
-
-* create draft PR for top-level tasks in agent runner ([d9e7308](https://github.com/jwstover/citadel/commit/d9e73085ac17332c00abf1a6abad7301eb4a8a66))
-
-
-
-## [0.34.3](https://github.com/jwstover/citadel/compare/v0.34.2...v0.34.3) (2026-03-19)
-
-
-### Bug Fixes
-
-* remove workspace_id from task create accept list ([b8e0667](https://github.com/jwstover/citadel/commit/b8e0667f8efcab86ef36d4267552cbe2afe15e83))
-* remove workspace_id from task create calls in tests ([f20937e](https://github.com/jwstover/citadel/commit/f20937e41126b226d341d4735fb908add7168c0d))
-* use context.tenant for workspace_id in assignee validation ([2b34e44](https://github.com/jwstover/citadel/commit/2b34e44f50225318dd00aeb035a279265d1e5f9c))
 
 
 

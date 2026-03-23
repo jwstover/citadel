@@ -82,6 +82,7 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWork do
          |> Ash.read_one(authorize?: false) do
       {:ok, %{is_complete: true}} -> false
       {:ok, %{name: "In Review"}} -> false
+      {:ok, %{name: "Backlog"}} -> false
       {:ok, %{}} -> true
       _ -> false
     end

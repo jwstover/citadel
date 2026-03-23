@@ -72,6 +72,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
         where: wi.status == :pending,
         where: ts.is_complete != true,
         where: ts.name != "In Review",
+        where: ts.name != "Backlog",
         where: not exists(active_runs_subquery),
         where: not exists(incomplete_deps_subquery),
         order_by: ^[desc: priority_order, asc: dynamic([work_item: wi], wi.inserted_at)],
