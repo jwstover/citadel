@@ -431,7 +431,8 @@ defmodule CitadelAgent.Runner do
            working_dir: worktree_path,
            label: "commit:#{task["human_id"]}",
            timeout: @commit_stall_timeout,
-           model: "sonnet"
+           model: "sonnet",
+           allowed_tools: ["Bash"]
          ) do
       {:ok, %{exit_code: 0}} ->
         :ok
@@ -560,6 +561,7 @@ defmodule CitadelAgent.Runner do
     model = Keyword.get(opts, :model)
     run_id = Keyword.get(opts, :run_id)
     resume_session_id = Keyword.get(opts, :resume_session_id)
+    allowed_tools = Keyword.get(opts, :allowed_tools)
 
     Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
@@ -570,9 +572,10 @@ defmodule CitadelAgent.Runner do
     else
       model_flag = if model, do: " --model #{model}", else: ""
       resume_flag = if resume_session_id, do: " --resume #{escape_shell(resume_session_id)}", else: ""
+      tools_flag = if allowed_tools, do: " --allowedTools #{Enum.join(allowed_tools, ",")}", else: ""
 
       cmd =
-        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag}#{tools_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
