@@ -59,9 +59,9 @@ defmodule CitadelAgent.Socket do
   end
 
   @impl true
-  def handle_topic_close(_topic, _reason, socket) do
-    Logger.warning("Agent channel closed, will rejoin on reconnect...")
-    reconnect_or_keep(socket)
+  def handle_topic_close(topic, _reason, socket) do
+    Logger.warning("Agent channel closed, rejoining...")
+    rejoin(socket, topic)
   end
 
   @impl true
@@ -92,8 +92,12 @@ defmodule CitadelAgent.Socket do
 
   defp reconnect_or_keep(socket) do
     case reconnect(socket) do
-      {:ok, socket} -> {:ok, socket}
-      {:error, _reason} -> {:ok, socket}
+      {:ok, socket} ->
+        {:ok, socket}
+
+      {:error, reason} ->
+        Logger.error("Failed to reconnect WebSocket: #{inspect(reason)}")
+        {:ok, socket}
     end
   end
 
