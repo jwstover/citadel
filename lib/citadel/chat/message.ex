@@ -172,14 +172,14 @@ defmodule Citadel.Chat.Message do
       authorize_if always()
     end
 
-    policy action(:respond) do
+    policy action :respond do
       authorize_if expr(
                      conversation.workspace.owner_id == ^actor(:id) or
                        exists(conversation.workspace.memberships, user_id == ^actor(:id))
                    )
     end
 
-    policy action(:for_conversation) do
+    policy action :for_conversation do
       authorize_if expr(
                      conversation.workspace.owner_id == ^actor(:id) or
                        exists(conversation.workspace.memberships, user_id == ^actor(:id))

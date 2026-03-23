@@ -63,7 +63,7 @@ defmodule Citadel.Accounts.WorkspaceInvitation do
     # Users can read invitations in workspaces they belong to, or by token
     policy action_type(:read) do
       authorize_if expr(workspace.owner_id == ^actor(:id))
-      authorize_if expr(exists(workspace.memberships, user_id == ^actor(:id)))
+      authorize_if expr(exists workspace.memberships, user_id == ^actor(:id))
       authorize_if {Citadel.Accounts.Checks.HasValidInvitationToken, []}
     end
 

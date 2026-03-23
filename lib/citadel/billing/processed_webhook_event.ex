@@ -58,9 +58,8 @@ defmodule Citadel.Billing.ProcessedWebhookEvent do
 
         {count, _} =
           Citadel.Repo.delete_all(
-            from(e in "processed_webhook_events",
+            from e in "processed_webhook_events",
               where: e.processed_at < ^cutoff
-            )
           )
 
         {:ok, count}
