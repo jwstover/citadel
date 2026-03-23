@@ -70,7 +70,7 @@ defmodule Citadel.Accounts.WorkspaceMembership do
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:user)
       authorize_if expr(workspace.owner_id == ^actor(:id))
-      authorize_if expr(exists(workspace.memberships, user_id == ^actor(:id)))
+      authorize_if expr(exists workspace.memberships, user_id == ^actor(:id))
     end
 
     policy action_type(:destroy) do

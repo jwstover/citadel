@@ -82,23 +82,21 @@ defmodule Citadel.Billing.Subscription do
   end
 
   policies do
-    bypass action(:create) do
+    bypass action :create do
       authorize_if always()
     end
 
     policy action_type(:read) do
       authorize_if relates_to_actor_via([:organization, :owner])
-      authorize_if expr(exists(organization.memberships, user_id == ^actor(:id)))
+      authorize_if expr(exists organization.memberships, user_id == ^actor(:id))
     end
 
     policy action_type(:update) do
       authorize_if relates_to_actor_via([:organization, :owner])
 
       authorize_if expr(
-                     exists(
-                       organization.memberships,
-                       user_id == ^actor(:id) and role in [:owner, :admin]
-                     )
+                     exists organization.memberships,
+                            user_id == ^actor(:id) and role in [:owner, :admin]
                    )
     end
   end

@@ -60,12 +60,12 @@ defmodule Citadel.Accounts.Organization do
 
     policy action_type(:read) do
       authorize_if relates_to_actor_via(:owner)
-      authorize_if expr(exists(memberships, user_id == ^actor(:id)))
+      authorize_if expr(exists memberships, user_id == ^actor(:id))
     end
 
     policy action_type(:update) do
       authorize_if relates_to_actor_via(:owner)
-      authorize_if expr(exists(memberships, user_id == ^actor(:id) and role in [:owner, :admin]))
+      authorize_if expr(exists memberships, user_id == ^actor(:id) and role in [:owner, :admin])
     end
 
     policy action_type(:destroy) do
