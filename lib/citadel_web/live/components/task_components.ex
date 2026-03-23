@@ -179,4 +179,18 @@ defmodule CitadelWeb.Components.TaskComponents do
   end
 
   defp get_initial(_), do: "?"
+
+  def agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
+  def agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
+  def agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
+  def agent_run_status_classes(:failed), do: "bg-red-500/15 text-red-400"
+  def agent_run_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
+  def agent_run_status_classes(_), do: "bg-base-300/50 text-base-content/60"
+
+  def agent_run_dot_class(:pending), do: "bg-base-content/40"
+  def agent_run_dot_class(:running), do: "bg-yellow-400 animate-pulse"
+  def agent_run_dot_class(:completed), do: "bg-emerald-400"
+  def agent_run_dot_class(:failed), do: "bg-red-400"
+  def agent_run_dot_class(:cancelled), do: "bg-orange-400"
+  def agent_run_dot_class(_), do: "bg-base-content/40"
 end
