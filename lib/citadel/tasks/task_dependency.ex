@@ -97,10 +97,7 @@ defmodule Citadel.Tasks.TaskDependency do
     end
 
     policy action_type(:create) do
-      authorize_if expr(
-                     task.workspace.owner_id == ^actor(:id) or
-                       exists(task.workspace.memberships, user_id == ^actor(:id))
-                   )
+      authorize_if Citadel.Tasks.Checks.TaskWorkspaceMember
     end
 
     policy action_type([:update, :destroy]) do

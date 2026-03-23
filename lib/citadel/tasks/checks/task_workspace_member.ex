@@ -13,6 +13,8 @@ defmodule Citadel.Tasks.Checks.TaskWorkspaceMember do
   end
 
   @impl true
+  def match?(_actor, %{context: %{private: %{ash_ai_pre_check?: true}}}, _opts), do: true
+
   def match?(actor, %{changeset: changeset} = context, _opts) when not is_nil(actor) do
     task_id = Ash.Changeset.get_attribute(changeset, :task_id)
     tenant = Map.get(context, :tenant) || changeset.tenant
