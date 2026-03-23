@@ -9,9 +9,7 @@ defmodule CitadelWeb.TaskLive.Show do
     only: [
       task_state_icon: 1,
       user_avatar: 1,
-      priority_badge: 1,
-      agent_run_status_classes: 1,
-      agent_run_dot_class: 1
+      priority_badge: 1
     ]
 
   alias CitadelWeb.Components.TaskActivitySection
@@ -54,12 +52,6 @@ defmodule CitadelWeb.TaskLive.Show do
     can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
     can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
 
-    agent_runs =
-      Tasks.list_agent_runs_by_task!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
     if connected?(socket) do
       CitadelWeb.Endpoint.subscribe("tasks:task:#{task.id}")
       CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
@@ -77,7 +69,6 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:task_dependencies, task_dependencies)
       |> assign(:can_edit, can_edit)
       |> assign(:can_delete, can_delete)
-      |> assign(:agent_runs, agent_runs)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
       |> assign(:cancel_run_id, nil)
@@ -209,7 +200,11 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("do_cancel_run", _params, socket) do
-    run = Enum.find(socket.assigns.agent_runs, &(&1.id == socket.assigns.cancel_run_id))
+    {:ok, run} =
+      Tasks.get_agent_run(socket.assigns.cancel_run_id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id
+      )
 
     case Tasks.cancel_agent_run(run,
            actor: socket.assigns.current_user,
@@ -503,18 +498,12 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id} = broadcast,
         socket
       ) do
-    agent_runs =
-      Tasks.list_agent_runs_by_task!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
     send_update(TaskActivitySection,
       id: "task-activities-#{socket.assigns.task.id}",
       agent_run_updated: broadcast
     )
 
-    {:noreply, assign(socket, :agent_runs, agent_runs)}
+    {:noreply, socket}
   end
 
   def handle_info(
@@ -922,95 +911,6 @@ defmodule CitadelWeb.TaskLive.Show do
                 current_user={@current_user}
                 current_workspace={@current_workspace}
               />
-            <% end %>
-          </div>
-
-          <div
-            :if={@task.agent_eligible == true or @agent_runs != []}
-            class="py-4 border-t border-base-300"
-          >
-            <h2 class="text-sm font-semibold text-base-content/70 mb-3">
-              Agent Runs ({length(@agent_runs)})
-            </h2>
-
-            <%= if @agent_runs == [] do %>
-              <p class="text-base-content/50 italic text-sm">No agent runs yet</p>
-            <% else %>
-              <div class="space-y-3">
-                <div
-                  :for={run <- Enum.reverse(@agent_runs)}
-                  class="border border-base-300 rounded-lg p-3"
-                >
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <span class={[
-                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                        agent_run_status_classes(run.status)
-                      ]}>
-                        <span class={[
-                          "size-1.5 rounded-full",
-                          agent_run_dot_class(run.status)
-                        ]} />
-                        {run.status}
-                      </span>
-                      <span :if={run.error_message} class="text-xs text-error">
-                        {run.error_message}
-                      </span>
-                      <.link
-                        :if={run.status == :running}
-                        navigate={~p"/agent-runs/#{run.id}"}
-                        class="btn btn-xs btn-ghost text-info hover:bg-info/10"
-                      >
-                        <.icon name="hero-eye" class="size-3.5" /> Watch
-                      </.link>
-                      <button
-                        :if={@can_edit and run.status in [:pending, :running]}
-                        phx-click="confirm_cancel_run"
-                        phx-value-run-id={run.id}
-                        class="btn btn-xs btn-ghost text-error hover:bg-error/10"
-                      >
-                        <.icon name="hero-x-mark" class="size-3.5" /> Cancel
-                      </button>
-                    </div>
-                    <div class="text-xs text-base-content/50 flex gap-3">
-                      <span :if={run.started_at}>
-                        Started: {Calendar.strftime(run.started_at, "%b %d %H:%M:%S")}
-                      </span>
-                      <span :if={run.completed_at}>
-                        Completed: {Calendar.strftime(run.completed_at, "%b %d %H:%M:%S")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <details :if={run.commits != nil and run.commits != []} class="group">
-                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
-                      Commits ({length(run.commits)})
-                    </summary>
-                    <ul class="mt-2 space-y-1">
-                      <li :for={commit <- run.commits} class="flex items-start gap-2 text-xs">
-                        <code class="px-1.5 py-0.5 bg-base-300/50 rounded font-mono text-base-content/70 shrink-0">
-                          {String.slice(commit["sha"], 0..6)}
-                        </code>
-                        <span class="text-base-content/80">{commit["message"]}</span>
-                      </li>
-                    </ul>
-                  </details>
-
-                  <details :if={run.test_output && run.test_output != ""} class="group mt-2">
-                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
-                      Test Output
-                    </summary>
-                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.test_output}</code></pre>
-                  </details>
-
-                  <details :if={run.logs && run.logs != ""} class="group mt-2">
-                    <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
-                      Logs
-                    </summary>
-                    <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{run.logs}</code></pre>
-                  </details>
-                </div>
-              </div>
             <% end %>
           </div>
 
