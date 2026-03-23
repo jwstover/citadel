@@ -36,7 +36,7 @@ defmodule Citadel.Generator do
     seed_generator(
       {Citadel.Accounts.User,
        %{
-         email: sequence(:user_email, &"user-#{&1}@example.com"),
+         email: sequence(:user_email, &"user#{&1}@example.com"),
          hashed_password: "hashed_password_123"
        }},
       Keyword.merge([overrides: overrides], generator_opts)
