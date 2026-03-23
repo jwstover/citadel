@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="Citadel" suffix=" · Citadel">
+    <.live_title default="Pyllar" suffix=" · Pyllar">
       {assigns[:page_title]}
     </.live_title>
 
@@ -22,7 +22,7 @@
     <meta property="og:url" content={assigns[:og_url] || "https://citadel.app"} />
     <meta
       property="og:title"
-      content={assigns[:page_title] || "Citadel - AI-Powered Task Management"}
+      content={assigns[:page_title] || "Pyllar - AI-Powered Task Management"}
     />
     <meta
       property="og:description"
@@ -32,12 +32,12 @@
       }
     />
     <meta property="og:image" content={assigns[:og_image] || "/images/og-image.png"} />
-    <meta property="og:site_name" content="Citadel" />
+    <meta property="og:site_name" content="Pyllar" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content={assigns[:page_title] || "Citadel - AI-Powered Task Management"}
+      content={assigns[:page_title] || "Pyllar - AI-Powered Task Management"}
     />
     <meta
       name="twitter:description"

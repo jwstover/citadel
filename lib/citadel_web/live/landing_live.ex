@@ -58,7 +58,7 @@ defmodule CitadelWeb.LandingLive do
           </h1>
 
           <p class="text-lg sm:text-xl text-base-content/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-            AI-native project management for developers. Describe what you're building—Citadel creates the plan.
+            AI-native project management for developers. Describe what you're building—Pyllar creates the plan.
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">

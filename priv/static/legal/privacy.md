@@ -8,9 +8,9 @@
 
 ## Introduction
 
-Citadel ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, share, and protect your information when you use our task management and AI chat application ("the Service").
+Pyllar ("we," "us," or "our") respects your privacy and is committed to protecting your personal data. This Privacy Policy explains how we collect, use, share, and protect your information when you use our task management and AI chat application ("the Service").
 
-By using Citadel, you agree to the collection and use of information as described in this policy. If you do not agree, please do not use the Service.
+By using Pyllar, you agree to the collection and use of information as described in this policy. If you do not agree, please do not use the Service.
 
 ---
 
@@ -268,7 +268,7 @@ We will respond within 45 days.
 
 ## 8. Children's Privacy
 
-Citadel is not intended for children under 18 years of age. We do not knowingly collect personal information from children. If we learn we have collected data from a child, we will delete it promptly.
+Pyllar is not intended for children under 18 years of age. We do not knowingly collect personal information from children. If we learn we have collected data from a child, we will delete it promptly.
 
 ---
 
@@ -331,4 +331,4 @@ For your convenience, here's a summary of our privacy practices:
 
 ---
 
-*By using Citadel, you acknowledge that you have read and understood this Privacy Policy.*
+*By using Pyllar, you acknowledge that you have read and understood this Privacy Policy.*
