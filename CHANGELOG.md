@@ -1,3 +1,12 @@
+# [0.38.0](https://github.com/jwstover/citadel/compare/v0.37.0...v0.38.0) (2026-03-23)
+
+
+### Features
+
+* **agent:** exclude Backlog tasks from agent work items ([4ad18d0](https://github.com/jwstover/citadel/commit/4ad18d0761f20de5ca01dd3f685fbff12a702539))
+
+
+
 # [0.37.0](https://github.com/jwstover/citadel/compare/v0.36.0...v0.37.0) (2026-03-23)
 
 
@@ -36,15 +45,6 @@
 ### Features
 
 * show password requirements on registration form before submission ([eb71a87](https://github.com/jwstover/citadel/commit/eb71a8725229ee705bcf6abbd14fdd6d2a1c51e8))
-
-
-
-## [0.34.4](https://github.com/jwstover/citadel/compare/v0.34.3...v0.34.4) (2026-03-23)
-
-
-### Bug Fixes
-
-* create draft PR for top-level tasks in agent runner ([d9e7308](https://github.com/jwstover/citadel/commit/d9e73085ac17332c00abf1a6abad7301eb4a8a66))
 
 
 
