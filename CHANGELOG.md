@@ -1,3 +1,12 @@
+## [0.43.2](https://github.com/jwstover/citadel/compare/v0.43.1...v0.43.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* preserve agent status across server redeploys ([5e5d54d](https://github.com/jwstover/citadel/commit/5e5d54d482d8dec44b5efe651261c137fcea285e))
+
+
+
 ## [0.43.1](https://github.com/jwstover/citadel/compare/v0.43.0...v0.43.1) (2026-03-23)
 
 
@@ -46,15 +55,6 @@
 * display forge_pr link in task detail sidebar ([c79c153](https://github.com/jwstover/citadel/commit/c79c15323c7db9b351f81aee42eb740b32b83904)), closes [#123](https://github.com/jwstover/citadel/issues/123)
 * display forge_pr link in task detail sidebar ([d138246](https://github.com/jwstover/citadel/commit/d13824667724a56403c2b66c0b3638fbc7bebfff))
 * support GitLab merge request URLs in forge_pr link label ([ec83e76](https://github.com/jwstover/citadel/commit/ec83e76f5987dd214ca562f1a801fc61fb2f1fae))
-
-
-
-# [0.40.0](https://github.com/jwstover/citadel/compare/v0.39.0...v0.40.0) (2026-03-23)
-
-
-### Features
-
-* **agent:** support CITADEL_AGENT_NAME env var in runtime config ([9696828](https://github.com/jwstover/citadel/commit/9696828ef63d48ba30bbd2cd87ccee219e371417))
 
 
 
