@@ -26,7 +26,7 @@ defmodule CitadelAgent.Socket do
 
   @impl true
   def init(_opts) do
-    agent_name = CitadelAgent.config(:agent_name) || "citadel-agent"
+    agent_name = CitadelAgent.config(:agent_name) || default_agent_name()
     workspace_id = CitadelAgent.config(:workspace_id)
 
     socket =
@@ -99,6 +99,11 @@ defmodule CitadelAgent.Socket do
         Logger.error("Failed to reconnect WebSocket: #{inspect(reason)}")
         {:ok, socket}
     end
+  end
+
+  defp default_agent_name do
+    suffix = :crypto.strong_rand_bytes(4) |> Base.encode16(case: :lower)
+    "citadel-agent-#{suffix}"
   end
 
   defp ws_uri do
