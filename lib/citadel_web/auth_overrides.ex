@@ -6,6 +6,7 @@ defmodule CitadelWeb.AuthOverrides do
   use AshAuthentication.Phoenix.Overrides
 
   alias AshAuthentication.Phoenix.Components
+  alias CitadelWeb.AuthComponents.PasswordHint
 
   # Root container - dark background with centered content
   override AshAuthentication.Phoenix.SignInLive do
@@ -57,7 +58,7 @@ defmodule CitadelWeb.AuthOverrides do
 
   # Register form styling
   override Components.Password.RegisterForm do
-    set :slot_class, "flex justify-between text-sm mt-4"
+    set :slot_class, "mt-4"
     set :label_class, "text-xl font-bold mb-4"
   end
 
@@ -71,6 +72,7 @@ defmodule CitadelWeb.AuthOverrides do
   override Components.Password do
     set :toggler_class, "link link-primary"
     set :interstitial_class, "flex flex-row justify-between gap-4 text-sm mb-4"
+    set :register_extra_component, &PasswordHint.render/1
   end
 
   # OAuth2 button - ghost style for dark background
