@@ -36,7 +36,14 @@ defmodule CitadelWeb.LiveUserAuth do
     if socket.assigns[:current_user] do
       {:halt, Phoenix.LiveView.redirect(socket, to: ~p"/dashboard")}
     else
-      {:cont, assign(socket, :current_user, nil)}
+      page_title =
+        case socket.assigns[:live_action] do
+          :register -> "Register"
+          :reset -> "Reset Password"
+          _ -> "Sign In"
+        end
+
+      {:cont, socket |> assign(:current_user, nil) |> assign(:page_title, page_title)}
     end
   end
 
@@ -94,16 +101,6 @@ defmodule CitadelWeb.LiveUserAuth do
 
         {:halt, socket}
     end
-  end
-
-  def on_mount(:set_auth_page_title, _params, _session, socket) do
-    page_title =
-      case socket.assigns[:live_action] do
-        :register -> "Register"
-        _ -> "Sign In"
-      end
-
-    {:cont, assign(socket, :page_title, page_title)}
   end
 
   def on_mount(:set_reset_page_title, _params, _session, socket) do

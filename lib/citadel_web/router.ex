@@ -134,10 +134,7 @@ defmodule CitadelWeb.Router do
     sign_in_route register_path: "/register",
                   reset_path: "/reset",
                   auth_routes_prefix: "/auth",
-                  on_mount: [
-                    {CitadelWeb.LiveUserAuth, :live_no_user},
-                    {CitadelWeb.LiveUserAuth, :set_auth_page_title}
-                  ],
+                  on_mount: [{CitadelWeb.LiveUserAuth, :live_no_user}],
                   overrides: [
                     CitadelWeb.AuthOverrides,
                     AshAuthentication.Phoenix.Overrides.Default
