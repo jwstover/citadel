@@ -236,9 +236,10 @@ defmodule CitadelAgent.Runner do
 
             Logger.info("Pushed #{feature_branch} to origin")
 
+            pr_title = generate_pr_title(task, project_path, pr_title_id)
             {:ok, pr_body} = generate_pr_description(task, project_path)
 
-            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", pr_title_id, pr_body) do
+            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", pr_title, pr_body) do
               {:ok, :already_exists} ->
                 Logger.info("PR already exists for #{feature_branch} (detected during creation)")
                 nil
@@ -439,6 +440,42 @@ defmodule CitadelAgent.Runner do
   end
 
   defp maybe_commit_and_push(_claude_result, _task, _worktree_path, _branch_name), do: :ok
+
+  def generate_pr_title(task, project_path, pr_title_id) do
+    title = task["title"] || ""
+    description = task["description"] || ""
+
+    prompt = """
+    Generate a short, descriptive pull request title (under 60 characters) for the following task. \
+    Output ONLY the title text, nothing else. Do not use any tools or make any code changes. \
+    Do not include the task ID — just the descriptive title.
+
+    Task: #{title}
+
+    #{description}
+    """
+
+    case run_claude_cli(String.trim(prompt),
+           working_dir: project_path,
+           label: "pr-title:#{task["human_id"]}",
+           timeout: @commit_stall_timeout,
+           model: "sonnet"
+         ) do
+      {:ok, %{exit_code: 0, output: output}} ->
+        case extract_text_from_stream_json(output) do
+          nil -> pr_title_id
+          text -> "#{pr_title_id}: #{String.trim(text)}"
+        end
+
+      {:ok, %{exit_code: _code}} ->
+        Logger.warning("PR title generation failed, using fallback")
+        pr_title_id
+
+      {:error, reason} ->
+        Logger.warning("PR title generation failed: #{inspect(reason)}, using fallback")
+        pr_title_id
+    end
+  end
 
   def generate_pr_description(task, project_path) do
     title = task["title"] || ""
