@@ -38,7 +38,7 @@ defmodule CitadelWeb.LandingLiveTest do
       assert html =~ "Free"
       assert html =~ "Pro"
       assert html =~ "$0"
-      assert html =~ "$12"
+      assert html =~ "$19"
     end
 
     test "displays footer with links" do
