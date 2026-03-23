@@ -1,3 +1,13 @@
+## [0.43.1](https://github.com/jwstover/citadel/compare/v0.43.0...v0.43.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* expose create_task_dependency as MCP tool ([ab2c21d](https://github.com/jwstover/citadel/commit/ab2c21d12acf8cb586f3998ea9a0cea6e9c6c132))
+* pass AshAi pre-check in TaskWorkspaceMember ([30f101c](https://github.com/jwstover/citadel/commit/30f101cf16b7146e2107cd34c89627498e709a5f))
+
+
+
 # [0.43.0](https://github.com/jwstover/citadel/compare/v0.42.0...v0.43.0) (2026-03-23)
 
 
@@ -45,20 +55,6 @@
 ### Features
 
 * **agent:** support CITADEL_AGENT_NAME env var in runtime config ([9696828](https://github.com/jwstover/citadel/commit/9696828ef63d48ba30bbd2cd87ccee219e371417))
-
-
-
-# [0.39.0](https://github.com/jwstover/citadel/compare/v0.38.0...v0.39.0) (2026-03-23)
-
-
-### Bug Fixes
-
-* **agent:** rejoin channel on close instead of reconnecting WebSocket ([4c15f3b](https://github.com/jwstover/citadel/commit/4c15f3bd40327d2d5c7cdd4e385bdd24b20a22d9))
-
-
-### Features
-
-* **agent:** generate unique default name to prevent presence collisions ([f15652c](https://github.com/jwstover/citadel/commit/f15652c2637c01db351d8745371fbb7757c76401))
 
 
 
