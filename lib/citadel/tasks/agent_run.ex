@@ -24,6 +24,7 @@ defmodule Citadel.Tasks.AgentRun do
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.CreateAgentRunActivity
     end
 
     update :update do
@@ -87,7 +88,9 @@ defmodule Citadel.Tasks.AgentRun do
     publish :create, ["agent_runs", :task_id]
     publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
+    publish :update, ["task_activities", :task_id]
     publish :cancel, ["agent_runs", :task_id]
+    publish :cancel, ["task_activities", :task_id]
   end
 
   multitenancy do

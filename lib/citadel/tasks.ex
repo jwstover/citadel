@@ -76,6 +76,7 @@ defmodule Citadel.Tasks do
       define :create_request_changes_comment, action: :create_request_changes_comment
       define :get_task_activity, action: :read, get_by: [:id]
       define :list_task_activities, action: :list_by_task, args: [:task_id]
+      define :create_agent_run_activity, action: :create_agent_run_activity
       define :destroy_comment, action: :destroy_comment
     end
 

@@ -15,6 +15,7 @@ defmodule Citadel.Tasks.TaskActivity do
 
     references do
       reference :task, on_delete: :delete
+      reference :agent_run, on_delete: :nilify
     end
   end
 
@@ -47,6 +48,14 @@ defmodule Citadel.Tasks.TaskActivity do
       change Citadel.Tasks.Changes.RequestChanges
     end
 
+    create :create_agent_run_activity do
+      accept [:task_id, :agent_run_id]
+
+      change set_attribute(:type, :agent_run)
+      change set_attribute(:actor_type, :system)
+      change set_attribute(:actor_display_name, "Agent")
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -65,6 +74,10 @@ defmodule Citadel.Tasks.TaskActivity do
                    )
     end
 
+    policy action(:create_agent_run_activity) do
+      authorize_if always()
+    end
+
     policy action_type(:create) do
       authorize_if Citadel.Accounts.Checks.TenantWorkspaceMember
     end
@@ -80,6 +93,7 @@ defmodule Citadel.Tasks.TaskActivity do
 
     publish :create_comment, ["task_activities", :task_id]
     publish :create_request_changes_comment, ["task_activities", :task_id]
+    publish :create_agent_run_activity, ["task_activities", :task_id]
     publish :destroy_comment, ["task_activities", :task_id]
   end
 
@@ -116,5 +130,6 @@ defmodule Citadel.Tasks.TaskActivity do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
+    belongs_to :agent_run, Citadel.Tasks.AgentRun, allow_nil?: true
   end
 end
