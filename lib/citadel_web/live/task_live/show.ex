@@ -609,6 +609,24 @@ defmodule CitadelWeb.TaskLive.Show do
   defp execution_status_dot_class(:cancelled), do: "bg-orange-400"
   defp execution_status_dot_class(_), do: "bg-base-content/40"
 
+  defp forge_pr_label(nil), do: {"Pull Request", nil}
+
+  defp forge_pr_label(url) when is_binary(url) do
+    cond do
+      match = Regex.run(~r"/pull/(\d+)", url) ->
+        {"Pull Request", "##{Enum.at(match, 1)}"}
+
+      match = Regex.run(~r"/merge_requests/(\d+)", url) ->
+        {"Merge Request", "!#{Enum.at(match, 1)}"}
+
+      String.contains?(url, "merge_request") ->
+        {"Merge Request", "View MR"}
+
+      true ->
+        {"Pull Request", "View PR"}
+    end
+  end
+
   defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
   defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
   defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
@@ -847,6 +865,26 @@ defmodule CitadelWeb.TaskLive.Show do
                     ]}>
                       {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
                     </span>
+                  <% end %>
+                </div>
+
+                <% {pr_label, pr_text} = forge_pr_label(@task.forge_pr) %>
+                <div class="flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    {pr_label}
+                  </label>
+                  <%= if @task.forge_pr do %>
+                    <a
+                      href={@task.forge_pr}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1.5 text-sm text-base-content/80 hover:text-primary transition-colors"
+                    >
+                      {pr_text}
+                      <.icon name="hero-arrow-top-right-on-square" class="size-3.5" />
+                    </a>
+                  <% else %>
+                    <span class="text-sm text-base-content/40">None</span>
                   <% end %>
                 </div>
               </div>
