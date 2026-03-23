@@ -4,7 +4,7 @@ defmodule Citadel.MixProject do
   def project do
     [
       app: :citadel,
-      version: "0.35.1",
+      version: "0.36.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
