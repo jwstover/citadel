@@ -850,6 +850,19 @@ defmodule CitadelWeb.TaskLive.Show do
                   <% end %>
                 </div>
               </div>
+              <div :if={@task.forge_pr} class="flex items-center justify-between gap-4">
+                <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                  Pull Request
+                </label>
+                <a
+                  href={@task.forge_pr}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-sm text-primary hover:underline"
+                >
+                  View PR
+                </a>
+              </div>
             </div>
           </div>
 
