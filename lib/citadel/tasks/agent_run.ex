@@ -54,6 +54,17 @@ defmodule Citadel.Tasks.AgentRun do
       change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
+    update :request_input do
+      require_atomic? false
+      accept []
+
+      validate attribute_equals(:status, :running)
+
+      change set_attribute(:status, :input_requested)
+      change set_attribute(:completed_at, &DateTime.utc_now/0)
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
+    end
+
     update :cancel do
       require_atomic? false
       accept []
@@ -109,6 +120,7 @@ defmodule Citadel.Tasks.AgentRun do
     publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
     publish :cancel, ["agent_runs", :task_id]
+    publish :request_input, ["agent_runs", :task_id]
   end
 
   multitenancy do
