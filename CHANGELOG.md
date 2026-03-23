@@ -1,3 +1,12 @@
+## [0.34.4](https://github.com/jwstover/citadel/compare/v0.34.3...v0.34.4) (2026-03-23)
+
+
+### Bug Fixes
+
+* create draft PR for top-level tasks in agent runner ([d9e7308](https://github.com/jwstover/citadel/commit/d9e73085ac17332c00abf1a6abad7301eb4a8a66))
+
+
+
 ## [0.34.3](https://github.com/jwstover/citadel/compare/v0.34.2...v0.34.3) (2026-03-19)
 
 
@@ -39,20 +48,6 @@
 * **agent:** wire PR creation to set forge_pr on parent task ([2ed0139](https://github.com/jwstover/citadel/commit/2ed0139b6bfe210b2f54d78c06bbc2744df1e906))
 * **api:** expose forge_pr in agent API for reading and updating tasks ([8cee8a4](https://github.com/jwstover/citadel/commit/8cee8a4e8745c8ad8447ad0451a9edbe0bff378c))
 * **tasks:** add forge_pr attribute to store associated PR URL ([db32361](https://github.com/jwstover/citadel/commit/db323616ab2bbcc26f0c560f0aafd000aa2db53c))
-
-
-
-# [0.33.0](https://github.com/jwstover/citadel/compare/v0.32.0...v0.33.0) (2026-03-16)
-
-
-### Bug Fixes
-
-* **agent:** move PR creation to after feature branch merge ([152faa2](https://github.com/jwstover/citadel/commit/152faa2d5b9f972aeaf02332671cf07abd0ca1e7))
-
-
-### Features
-
-* handle dependency unblocking in MaybeEnqueueAgentWork ([ba3788a](https://github.com/jwstover/citadel/commit/ba3788a0a98a546dc1470f87fa0677441717e744))
 
 
 
