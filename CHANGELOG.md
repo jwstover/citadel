@@ -1,3 +1,12 @@
+# [0.43.0](https://github.com/jwstover/citadel/compare/v0.42.0...v0.43.0) (2026-03-23)
+
+
+### Features
+
+* prevent child tasks from depending on their parent task ([6bd73c7](https://github.com/jwstover/citadel/commit/6bd73c78428e0781b54d59a2477ba597438952ca))
+
+
+
 # [0.42.0](https://github.com/jwstover/citadel/compare/v0.41.0...v0.42.0) (2026-03-23)
 
 
@@ -50,15 +59,6 @@
 ### Features
 
 * **agent:** generate unique default name to prevent presence collisions ([f15652c](https://github.com/jwstover/citadel/commit/f15652c2637c01db351d8745371fbb7757c76401))
-
-
-
-# [0.38.0](https://github.com/jwstover/citadel/compare/v0.37.0...v0.38.0) (2026-03-23)
-
-
-### Features
-
-* **agent:** exclude Backlog tasks from agent work items ([4ad18d0](https://github.com/jwstover/citadel/commit/4ad18d0761f20de5ca01dd3f685fbff12a702539))
 
 
 
