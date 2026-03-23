@@ -858,9 +858,9 @@ defmodule CitadelWeb.TaskLive.Show do
                   href={@task.forge_pr}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-sm text-primary hover:underline"
+                  class="text-base-content/60 hover:text-primary transition-colors"
                 >
-                  View PR
+                  <.icon name="hero-arrow-top-right-on-square" class="size-4" />
                 </a>
               </div>
             </div>
