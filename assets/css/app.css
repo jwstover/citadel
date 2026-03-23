@@ -132,6 +132,11 @@ html { font-family: "Exo 2", sans-serif; }
 }
 
 
+/* Hide "Forgot your password?" link on the register form — it only makes sense on sign-in */
+[id$="register-with-password-wrapper"] .flex.flex-row > a:first-child {
+  display: none;
+}
+
 /* This file is for your main application CSS */
 
 /* Safelist: Task state icons stored in database */

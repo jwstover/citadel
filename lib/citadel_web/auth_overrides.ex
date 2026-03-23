@@ -89,17 +89,17 @@ defmodule CitadelWeb.AuthOverrides do
   # Reset form styling
   override Components.Password.ResetForm do
     set :slot_class, "flex justify-between text-sm mt-4"
-    set :label_class, "text-xl font-bold mb-4"
+    set :label_class, "text-2xl font-bold mb-6"
   end
 
-  # Password component - use custom form modules for headings, remove reset toggle
-  # to eliminate the "Forgot your password?" link from the register form
+  # Password component - use custom form modules for headings
   override Components.Password do
     set :toggler_class, "link link-primary"
     set :interstitial_class, "flex flex-row justify-between gap-4 text-sm mb-4"
-    set :reset_toggle_text, nil
+    set :reset_toggle_text, "Forgot your password?"
     set :sign_in_form_module, CitadelWeb.Auth.SignInFormComponent
     set :register_form_module, CitadelWeb.Auth.RegisterFormComponent
+    set :reset_form_module, CitadelWeb.Auth.ResetRequestFormComponent
   end
 
   # OAuth2 button - ghost style for dark background

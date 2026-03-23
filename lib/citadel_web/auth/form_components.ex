@@ -17,6 +17,25 @@ defmodule CitadelWeb.Auth.SignInFormComponent do
     do: SignInForm.handle_event(event, params, socket)
 end
 
+defmodule CitadelWeb.Auth.ResetRequestFormComponent do
+  @moduledoc false
+  use Phoenix.LiveComponent
+
+  alias AshAuthentication.Phoenix.Components.Password.ResetForm
+
+  @impl true
+  def update(assigns, socket), do: ResetForm.update(assigns, socket)
+
+  @impl true
+  def render(assigns) do
+    ResetForm.render(Map.put(assigns, :label, "Reset your password"))
+  end
+
+  @impl true
+  def handle_event(event, params, socket),
+    do: ResetForm.handle_event(event, params, socket)
+end
+
 defmodule CitadelWeb.Auth.RegisterFormComponent do
   @moduledoc false
   use Phoenix.LiveComponent
