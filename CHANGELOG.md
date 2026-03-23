@@ -1,3 +1,12 @@
+## [0.35.1](https://github.com/jwstover/citadel/compare/v0.35.0...v0.35.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* correct Pro plan price on landing page from $12 to $19/month ([0b08d1c](https://github.com/jwstover/citadel/commit/0b08d1c86af42935bd6e7f8996d25d14da7c03a5))
+
+
+
 # [0.35.0](https://github.com/jwstover/citadel/compare/v0.34.4...v0.35.0) (2026-03-23)
 
 
@@ -39,17 +48,6 @@
 
 * remove duplicate Home nav item from sidebar ([ec66b5f](https://github.com/jwstover/citadel/commit/ec66b5f8ad7dd410ac1d6fda1bbb85ce53e52498))
 * use dynamic workspace task_prefix in dependency input placeholder ([cc392ab](https://github.com/jwstover/citadel/commit/cc392abd860a179fb4543e441f3a0f2742245037))
-
-
-
-## [0.34.1](https://github.com/jwstover/citadel/compare/v0.34.0...v0.34.1) (2026-03-17)
-
-
-### Bug Fixes
-
-* format show.ex template ([b879a33](https://github.com/jwstover/citadel/commit/b879a3308a9d3c53909baa985d131caff2f3e5f2))
-* scope capture_commits to only current agent run ([03724dd](https://github.com/jwstover/citadel/commit/03724dd101ba5230ab7f87abde0a45ae3966ff68))
-* update tests and migration for {:array, :map} commits attribute ([20985e9](https://github.com/jwstover/citadel/commit/20985e9226c869386267e4f415f4f27db19d1cb0))
 
 
 
