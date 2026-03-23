@@ -22,7 +22,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           Tasks.list_task_activities!(assigns.task.id,
             actor: assigns.current_user,
             tenant: assigns.current_workspace.id,
-            load: [:user]
+            load: [:user, :agent_run]
           )
 
         socket
@@ -47,6 +47,30 @@ defmodule CitadelWeb.Components.TaskActivitySection do
       )
 
     stream_insert(socket, :activities, activity)
+  end
+
+  defp handle_broadcast(
+         %Phoenix.Socket.Broadcast{
+           event: "create_agent_run_activity",
+           payload: %{data: activity}
+         },
+         socket
+       ) do
+    activity =
+      Ash.load!(activity, [:agent_run],
+        tenant: socket.assigns.current_workspace.id,
+        actor: socket.assigns.current_user
+      )
+
+    stream_insert(socket, :activities, activity)
+  end
+
+  defp handle_broadcast(
+         %Phoenix.Socket.Broadcast{event: event},
+         socket
+       )
+       when event in ["update", "cancel"] do
+    reload_agent_run_activities(socket)
   end
 
   defp handle_broadcast(
@@ -121,7 +145,8 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           id={dom_id}
           class={[
             "flex gap-2 group rounded-lg p-2 -ml-2",
-            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning"
+            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning",
+            activity.type == :agent_run && "bg-info/5 border-l-2 border-info"
           ]}
         >
           <div class="flex-shrink-0 pt-0.5">
@@ -138,6 +163,10 @@ defmodule CitadelWeb.Components.TaskActivitySection do
               >
                 <.icon name="hero-arrow-path" class="size-3" /> Changes Requested
               </span>
+              <.agent_run_status_badge
+                :if={activity.type == :agent_run}
+                agent_run={activity.agent_run}
+              />
               <span class="text-xs text-base-content/40">
                 {relative_time(activity.inserted_at)}
               </span>
@@ -152,8 +181,14 @@ defmodule CitadelWeb.Components.TaskActivitySection do
                 <.icon name="hero-trash" class="size-3" />
               </button>
             </div>
-            <p class="text-sm text-base-content/80 mt-1">
+            <p :if={activity.body} class="text-sm text-base-content/80 mt-1">
               {activity.body}
+            </p>
+            <p
+              :if={activity.type == :agent_run && !activity.body}
+              class="text-sm text-base-content/60 mt-1"
+            >
+              Agent run started
             </p>
           </div>
         </div>
@@ -216,6 +251,38 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         </div>
       </.form>
     </div>
+    """
+  end
+
+  attr :agent_run, :any, required: true
+
+  defp agent_run_status_badge(%{agent_run: nil} = assigns) do
+    ~H"""
+    <span class="inline-flex items-center gap-1 text-xs font-medium text-info bg-info/10 px-1.5 py-0.5 rounded">
+      <.icon name="hero-cpu-chip" class="size-3" /> Agent Run
+    </span>
+    """
+  end
+
+  defp agent_run_status_badge(assigns) do
+    {label, color_class} =
+      case assigns.agent_run.status do
+        :pending -> {"Pending", "text-base-content/60 bg-base-300/50"}
+        :running -> {"Running", "text-info bg-info/10"}
+        :completed -> {"Completed", "text-success bg-success/10"}
+        :failed -> {"Failed", "text-error bg-error/10"}
+        :cancelled -> {"Cancelled", "text-base-content/50 bg-base-300/50"}
+      end
+
+    assigns = assign(assigns, label: label, color_class: color_class)
+
+    ~H"""
+    <span class={[
+      "inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded",
+      @color_class
+    ]}>
+      <.icon name="hero-cpu-chip" class="size-3" /> {@label}
+    </span>
     """
   end
 
@@ -284,6 +351,17 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     ~H"""
     Unknown
     """
+  end
+
+  defp reload_agent_run_activities(socket) do
+    activities =
+      Tasks.list_task_activities!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:user, :agent_run]
+      )
+
+    stream(socket, :activities, activities, reset: true)
   end
 
   defp relative_time(datetime) do
