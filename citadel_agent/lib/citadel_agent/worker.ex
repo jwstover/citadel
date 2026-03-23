@@ -59,7 +59,8 @@ defmodule CitadelAgent.Worker do
         Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
         work_item = claim["work_item"]
         feedback = fetch_feedback(work_item)
-        execute_task(task, run, feedback, state)
+        resume_session_id = fetch_resume_session_id(work_item)
+        execute_task(task, run, feedback, resume_session_id, state)
 
       {:error, reason} ->
         Logger.error("Failed to claim task: #{inspect(reason)}")
@@ -67,7 +68,7 @@ defmodule CitadelAgent.Worker do
     end
   end
 
-  defp execute_task(task, run, feedback, state) do
+  defp execute_task(task, run, feedback, resume_session_id, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
         Logger.error("No project_path configured, skipping task #{task["human_id"]}")
@@ -76,31 +77,45 @@ defmodule CitadelAgent.Worker do
       project_path ->
         state = %{state | active_run: run}
         CitadelAgent.Socket.update_status("working", task["id"])
-        run_task(task, run, feedback, project_path)
+        run_task(task, run, feedback, resume_session_id, project_path)
         CitadelAgent.Socket.update_status("idle")
         %{state | active_run: nil}
     end
   end
 
-  defp run_task(task, run, feedback, project_path) do
+  defp run_task(task, run, feedback, resume_session_id, project_path) do
     run_id = run["id"]
 
-    case CitadelAgent.Runner.execute(task, project_path, run_id: run_id, feedback: feedback) do
+    case CitadelAgent.Runner.execute(task, project_path,
+           run_id: run_id,
+           feedback: feedback,
+           resume_session_id: resume_session_id
+         ) do
       {:ok, result} ->
-        CitadelAgent.Client.update_run(run_id, %{
-          "status" => result.status,
-          "commits" => result.commits,
-          "logs" => result.logs,
-          "test_output" => result.test_output,
-          "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-        })
+        case CitadelAgent.Client.update_run(run_id, %{
+               "status" => result.status,
+               "commits" => result.commits,
+               "logs" => result.logs,
+               "test_output" => result.test_output,
+               "session_id" => result.session_id,
+               "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+             }) do
+          {:ok, %{"status" => "completed"}} ->
+            transition_task_to_in_review(task)
+
+          {:ok, _run} ->
+            Logger.info(
+              "Task #{task["human_id"]} run ended with non-completed status, skipping In Review"
+            )
+
+          {:error, reason} ->
+            Logger.error(
+              "Failed to update run #{run_id}: #{inspect(reason)}"
+            )
+        end
 
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
         push_stream_complete(run_id)
-
-        if result.status == "completed" do
-          transition_task_to_in_review(task)
-        end
 
       {:error, reason} ->
         CitadelAgent.Client.update_run(run_id, %{
@@ -137,6 +152,17 @@ defmodule CitadelAgent.Worker do
 
   defp fetch_feedback(%{"type" => "changes_requested", "comment_id" => comment_id})
        when is_binary(comment_id) do
+    fetch_comment_body(comment_id)
+  end
+
+  defp fetch_feedback(%{"type" => "question_answered", "comment_id" => comment_id})
+       when is_binary(comment_id) do
+    fetch_comment_body(comment_id)
+  end
+
+  defp fetch_feedback(_work_item), do: nil
+
+  defp fetch_comment_body(comment_id) do
     case CitadelAgent.Client.fetch_comment(comment_id) do
       {:ok, %{"body" => body}} when is_binary(body) ->
         Logger.info("Fetched feedback comment #{comment_id}")
@@ -152,7 +178,12 @@ defmodule CitadelAgent.Worker do
     end
   end
 
-  defp fetch_feedback(_work_item), do: nil
+  defp fetch_resume_session_id(%{"type" => "question_answered", "session_id" => session_id})
+       when is_binary(session_id) do
+    session_id
+  end
+
+  defp fetch_resume_session_id(_work_item), do: nil
 
   defp transition_task_to_in_review(task) do
     with {:ok, states} <- CitadelAgent.Client.fetch_task_states(),

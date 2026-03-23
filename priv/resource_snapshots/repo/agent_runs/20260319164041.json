@@ -26,6 +26,18 @@
     },
     {
       "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "session_id",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
       "default": "[]",
       "generated?": false,
       "precision": null,
@@ -223,7 +235,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "198F90A248DA8F8A0D33EC1FF369480D59A64880B8A89BC91E858F58E83DE807",
+  "hash": "0246D5F6D765659145FF21D1FA169DEEA57E2E1CCDCBD5469A6259B5401292D5",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
