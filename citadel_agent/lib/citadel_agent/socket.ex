@@ -33,6 +33,8 @@ defmodule CitadelAgent.Socket do
       new_socket()
       |> assign(:workspace_id, workspace_id)
       |> assign(:agent_name, agent_name)
+      |> assign(:status, "idle")
+      |> assign(:current_task_id, nil)
       |> connect!(uri: ws_uri())
 
     {:ok, socket}
@@ -42,7 +44,12 @@ defmodule CitadelAgent.Socket do
   def handle_connect(socket) do
     Logger.info("Connected to Citadel WebSocket, joining agent channel")
 
-    {:ok, join(socket, "agents:lobby", %{"agent_name" => socket.assigns.agent_name})}
+    {:ok,
+     join(socket, "agents:lobby", %{
+       "agent_name" => socket.assigns.agent_name,
+       "status" => socket.assigns.status,
+       "current_task_id" => socket.assigns.current_task_id
+     })}
   end
 
   @impl true
@@ -70,6 +77,11 @@ defmodule CitadelAgent.Socket do
       "status" => status,
       "current_task_id" => current_task_id
     }
+
+    socket =
+      socket
+      |> assign(:status, status)
+      |> assign(:current_task_id, current_task_id)
 
     push(socket, "agents:lobby", "update_status", payload)
     {:noreply, socket}
