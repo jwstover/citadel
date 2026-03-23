@@ -142,6 +142,7 @@ defmodule CitadelWeb.Router do
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",
+                on_mount: [{CitadelWeb.LiveUserAuth, :set_reset_page_title}],
                 overrides: [CitadelWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
     # Remove this if you do not use the confirmation strategy
