@@ -34,6 +34,17 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           state
       end
 
+    backlog_state =
+      case Citadel.Tasks.TaskState
+           |> Ash.Query.filter(name == "Backlog")
+           |> Ash.read_one(authorize?: false) do
+        {:ok, nil} ->
+          Tasks.create_task_state!(%{name: "Backlog", order: 0, is_complete: false})
+
+        {:ok, state} ->
+          state
+      end
+
     done_state =
       Tasks.create_task_state!(%{
         name: "Done #{System.unique_integer([:positive])}",
@@ -47,6 +58,7 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
      todo_state: todo_state,
      in_progress_state: in_progress_state,
      in_review_state: in_review_state,
+     backlog_state: backlog_state,
      done_state: done_state}
   end
 
@@ -103,6 +115,26 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
           %{
             title: "Done Task #{System.unique_integer([:positive])}",
             task_state_id: done_state.id,
+            agent_eligible: true
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      work_items = list_work_items_for_task(task.id, workspace.id)
+      assert work_items == []
+    end
+
+    test "does not create work item when task state is Backlog", %{
+      user: user,
+      workspace: workspace,
+      backlog_state: backlog_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Backlog Task #{System.unique_integer([:positive])}",
+            task_state_id: backlog_state.id,
             agent_eligible: true
           },
           actor: user,
@@ -179,6 +211,34 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
       assert list_work_items_for_task(task.id, workspace.id) == []
 
       Tasks.update_task!(task.id, %{task_state_id: in_progress_state.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      work_items = list_work_items_for_task(task.id, workspace.id)
+      assert length(work_items) == 1
+    end
+
+    test "creates work item when state changed from Backlog to workable", %{
+      user: user,
+      workspace: workspace,
+      backlog_state: backlog_state,
+      todo_state: todo_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Backlog to Todo #{System.unique_integer([:positive])}",
+            task_state_id: backlog_state.id,
+            agent_eligible: true
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      assert list_work_items_for_task(task.id, workspace.id) == []
+
+      Tasks.update_task!(task.id, %{task_state_id: todo_state.id},
         actor: user,
         tenant: workspace.id
       )

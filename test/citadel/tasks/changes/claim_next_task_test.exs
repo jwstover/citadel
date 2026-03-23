@@ -27,6 +27,17 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           state
       end
 
+    backlog_state =
+      case Citadel.Tasks.TaskState
+           |> Ash.Query.filter(name == "Backlog")
+           |> Ash.read_one(authorize?: false) do
+        {:ok, nil} ->
+          Tasks.create_task_state!(%{name: "Backlog", order: 0, is_complete: false})
+
+        {:ok, state} ->
+          state
+      end
+
     done_state =
       Tasks.create_task_state!(%{
         name: "Done #{System.unique_integer([:positive])}",
@@ -39,6 +50,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
      workspace: workspace,
      todo_state: todo_state,
      in_review_state: in_review_state,
+     backlog_state: backlog_state,
      done_state: done_state}
   end
 
@@ -107,6 +119,64 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           actor: user,
           tenant: workspace.id
         )
+
+      assert_raise Ash.Error.Invalid, ~r/no tasks available/, fn ->
+        Tasks.claim_next_task!(actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "skips work items for tasks in Backlog state", %{
+      user: user,
+      workspace: workspace,
+      backlog_state: backlog_state
+    } do
+      _backlog_task =
+        Tasks.create_task!(
+          %{
+            title: "Backlog Task #{System.unique_integer([:positive])}",
+            task_state_id: backlog_state.id,
+            agent_eligible: true
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      # Backlog prevents work item creation, but even if one existed via
+      # a state transition, the claim query should still exclude it.
+      # Since no work item is created for Backlog tasks, claiming should fail.
+      assert_raise Ash.Error.Invalid, ~r/no tasks available/, fn ->
+        Tasks.claim_next_task!(actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "skips Backlog tasks even when work item exists from prior state", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state,
+      backlog_state: backlog_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Regressed Task #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            agent_eligible: true
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      work_items =
+        Citadel.Tasks.AgentWorkItem
+        |> Ash.Query.filter(task_id == ^task.id)
+        |> Ash.read!(authorize?: false, tenant: workspace.id)
+
+      assert length(work_items) == 1
+
+      Tasks.update_task!(task.id, %{task_state_id: backlog_state.id},
+        actor: user,
+        tenant: workspace.id
+      )
 
       assert_raise Ash.Error.Invalid, ~r/no tasks available/, fn ->
         Tasks.claim_next_task!(actor: user, tenant: workspace.id)
