@@ -14,7 +14,41 @@ defmodule CitadelWeb.AgentChannelTest do
         "agent_name" => agent_name
       })
 
-    %{socket: socket, workspace_id: workspace_id}
+    %{socket: socket, workspace_id: workspace_id, agent_name: agent_name}
+  end
+
+  describe "join" do
+    test "defaults to idle status when no status provided", %{agent_name: agent_name} do
+      workspace_id = Ash.UUID.generate()
+
+      {:ok, _reply, socket} =
+        CitadelWeb.AgentSocket
+        |> socket("agent_socket:#{workspace_id}", %{workspace_id: workspace_id})
+        |> subscribe_and_join(AgentChannel, "agents:#{workspace_id}", %{
+          "agent_name" => agent_name
+        })
+
+      assert socket.assigns.status == "idle"
+      assert socket.assigns.current_task_id == nil
+    end
+
+    test "uses status from join payload when provided" do
+      workspace_id = Ash.UUID.generate()
+      agent_name = "test-agent-#{System.unique_integer([:positive])}"
+      task_id = Ash.UUID.generate()
+
+      {:ok, _reply, socket} =
+        CitadelWeb.AgentSocket
+        |> socket("agent_socket:#{workspace_id}", %{workspace_id: workspace_id})
+        |> subscribe_and_join(AgentChannel, "agents:#{workspace_id}", %{
+          "agent_name" => agent_name,
+          "status" => "working",
+          "current_task_id" => task_id
+        })
+
+      assert socket.assigns.status == "working"
+      assert socket.assigns.current_task_id == task_id
+    end
   end
 
   describe "stream_output" do

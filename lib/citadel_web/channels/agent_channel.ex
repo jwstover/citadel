@@ -8,8 +8,13 @@ defmodule CitadelWeb.AgentChannel do
   alias CitadelWeb.AgentPresence
 
   @impl true
-  def join("agents:" <> _, %{"agent_name" => agent_name}, socket) do
-    socket = assign(socket, :agent_name, agent_name)
+  def join("agents:" <> _, %{"agent_name" => agent_name} = payload, socket) do
+    socket =
+      socket
+      |> assign(:agent_name, agent_name)
+      |> assign(:status, payload["status"] || "idle")
+      |> assign(:current_task_id, payload["current_task_id"])
+
     send(self(), :after_join)
     {:ok, %{workspace_id: socket.assigns.workspace_id}, socket}
   end
@@ -21,8 +26,8 @@ defmodule CitadelWeb.AgentChannel do
     topic = presence_topic(socket)
 
     AgentPresence.track(self(), topic, socket.assigns.agent_name, %{
-      status: "idle",
-      current_task_id: nil,
+      status: socket.assigns.status,
+      current_task_id: socket.assigns.current_task_id,
       agent_name: socket.assigns.agent_name,
       joined_at: DateTime.utc_now() |> DateTime.to_iso8601()
     })
