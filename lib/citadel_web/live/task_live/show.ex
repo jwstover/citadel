@@ -6,7 +6,13 @@ defmodule CitadelWeb.TaskLive.Show do
   alias Citadel.Tasks
 
   import CitadelWeb.Components.TaskComponents,
-    only: [task_state_icon: 1, user_avatar: 1, priority_badge: 1]
+    only: [
+      task_state_icon: 1,
+      user_avatar: 1,
+      priority_badge: 1,
+      agent_run_status_classes: 1,
+      agent_run_dot_class: 1
+    ]
 
   alias CitadelWeb.Components.TaskActivitySection
 
@@ -494,7 +500,7 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info(
-        %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id},
+        %Phoenix.Socket.Broadcast{topic: "tasks:agent_runs:" <> _task_id} = broadcast,
         socket
       ) do
     agent_runs =
@@ -502,6 +508,11 @@ defmodule CitadelWeb.TaskLive.Show do
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )
+
+    send_update(TaskActivitySection,
+      id: "task-activities-#{socket.assigns.task.id}",
+      agent_run_updated: broadcast
+    )
 
     {:noreply, assign(socket, :agent_runs, agent_runs)}
   end
@@ -516,6 +527,10 @@ defmodule CitadelWeb.TaskLive.Show do
     )
 
     {:noreply, socket}
+  end
+
+  def handle_info({:request_cancel_agent_run, run_id}, socket) do
+    {:noreply, assign(socket, :cancel_run_id, run_id)}
   end
 
   defp reload_task_with_dependencies(socket) do
@@ -626,20 +641,6 @@ defmodule CitadelWeb.TaskLive.Show do
         {"Pull Request", "View PR"}
     end
   end
-
-  defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
-  defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
-  defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
-  defp agent_run_status_classes(:failed), do: "bg-red-500/15 text-red-400"
-  defp agent_run_status_classes(:cancelled), do: "bg-orange-500/15 text-orange-400"
-  defp agent_run_status_classes(_), do: "bg-base-300/50 text-base-content/60"
-
-  defp agent_run_dot_class(:pending), do: "bg-base-content/40"
-  defp agent_run_dot_class(:running), do: "bg-yellow-400 animate-pulse"
-  defp agent_run_dot_class(:completed), do: "bg-emerald-400"
-  defp agent_run_dot_class(:failed), do: "bg-red-400"
-  defp agent_run_dot_class(:cancelled), do: "bg-orange-400"
-  defp agent_run_dot_class(_), do: "bg-base-content/40"
 
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
     unless Enum.empty?(sub_tasks) do
@@ -1019,6 +1020,7 @@ defmodule CitadelWeb.TaskLive.Show do
             task={@task}
             current_user={@current_user}
             current_workspace={@current_workspace}
+            can_edit={@can_edit}
           />
         </div>
       </div>
