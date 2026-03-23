@@ -1,3 +1,12 @@
+# [0.40.0](https://github.com/jwstover/citadel/compare/v0.39.0...v0.40.0) (2026-03-23)
+
+
+### Features
+
+* **agent:** support CITADEL_AGENT_NAME env var in runtime config ([9696828](https://github.com/jwstover/citadel/commit/9696828ef63d48ba30bbd2cd87ccee219e371417))
+
+
+
 # [0.39.0](https://github.com/jwstover/citadel/compare/v0.38.0...v0.39.0) (2026-03-23)
 
 
@@ -36,15 +45,6 @@
 ### Features
 
 * **agent:** generate descriptive PR titles via Claude CLI ([889fe2c](https://github.com/jwstover/citadel/commit/889fe2c18b17abd29fac5dead13d84582dc585c6))
-
-
-
-## [0.35.1](https://github.com/jwstover/citadel/compare/v0.35.0...v0.35.1) (2026-03-23)
-
-
-### Bug Fixes
-
-* correct Pro plan price on landing page from $12 to $19/month ([0b08d1c](https://github.com/jwstover/citadel/commit/0b08d1c86af42935bd6e7f8996d25d14da7c03a5))
 
 
 
