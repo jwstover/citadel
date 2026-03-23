@@ -1,3 +1,17 @@
+# [0.35.0](https://github.com/jwstover/citadel/compare/v0.34.4...v0.35.0) (2026-03-23)
+
+
+### Bug Fixes
+
+* redirect new registrations to /dashboard instead of / ([b4c27c5](https://github.com/jwstover/citadel/commit/b4c27c5a387db7a952eb8b2348ee2b896c46a963))
+
+
+### Features
+
+* show password requirements on registration form before submission ([eb71a87](https://github.com/jwstover/citadel/commit/eb71a8725229ee705bcf6abbd14fdd6d2a1c51e8))
+
+
+
 ## [0.34.4](https://github.com/jwstover/citadel/compare/v0.34.3...v0.34.4) (2026-03-23)
 
 
@@ -36,18 +50,6 @@
 * format show.ex template ([b879a33](https://github.com/jwstover/citadel/commit/b879a3308a9d3c53909baa985d131caff2f3e5f2))
 * scope capture_commits to only current agent run ([03724dd](https://github.com/jwstover/citadel/commit/03724dd101ba5230ab7f87abde0a45ae3966ff68))
 * update tests and migration for {:array, :map} commits attribute ([20985e9](https://github.com/jwstover/citadel/commit/20985e9226c869386267e4f415f4f27db19d1cb0))
-
-
-
-# [0.34.0](https://github.com/jwstover/citadel/compare/v0.33.0...v0.34.0) (2026-03-16)
-
-
-### Features
-
-* **agent:** replace diff field with commits on AgentRun ([e31aa31](https://github.com/jwstover/citadel/commit/e31aa318234168b186035adbfaa6213992dbe436))
-* **agent:** wire PR creation to set forge_pr on parent task ([2ed0139](https://github.com/jwstover/citadel/commit/2ed0139b6bfe210b2f54d78c06bbc2744df1e906))
-* **api:** expose forge_pr in agent API for reading and updating tasks ([8cee8a4](https://github.com/jwstover/citadel/commit/8cee8a4e8745c8ad8447ad0451a9edbe0bff378c))
-* **tasks:** add forge_pr attribute to store associated PR URL ([db32361](https://github.com/jwstover/citadel/commit/db323616ab2bbcc26f0c560f0aafd000aa2db53c))
 
 
 
