@@ -52,6 +52,13 @@ config :ash,
   read_action_after_action_hooks_in_order?: true,
   bulk_actions_default_to_errors?: true
 
+config :citadel, Citadel.Tasks.StallDetector,
+  check_interval: :timer.seconds(60),
+  suspect_threshold: 3 * 60,
+  stall_threshold: 10 * 60,
+  timeout_threshold: 30 * 60,
+  db_debounce_interval: 30
+
 config :spark,
   formatter: [
     remove_parens?: true,

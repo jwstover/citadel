@@ -92,14 +92,41 @@ defmodule Citadel.Tasks do
       define :list_agent_work_items, action: :read
     end
 
+    resource Citadel.Tasks.RefinementCycle do
+      define :create_refinement_cycle, action: :create
+      define :get_refinement_cycle, action: :read, get_by: [:id]
+      define :get_refinement_cycle_by_agent_run, action: :get_by_agent_run, args: [:agent_run_id]
+      define :update_refinement_cycle, action: :update
+      define :complete_refinement_cycle, action: :complete
+      define :fail_refinement_cycle, action: :fail
+    end
+
+    resource Citadel.Tasks.RefinementIteration do
+      define :create_refinement_iteration, action: :create
+      define :list_refinement_iterations, action: :list_by_cycle, args: [:refinement_cycle_id]
+      define :update_refinement_iteration, action: :update
+    end
+
     resource Citadel.Tasks.AgentRun do
       define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
       define :update_agent_run, action: :update
+      define :update_agent_run_stall_status, action: :update_stall_status, get_by: [:id]
       define :cancel_agent_run, action: :cancel
       define :list_agent_runs_by_task, action: :list_by_task, args: [:task_id]
       define :get_agent_run, action: :read, get_by: [:id]
+      define :list_running_agent_runs, action: :read
       define :destroy_agent_run, action: :destroy
+    end
+
+    resource Citadel.Tasks.ModelConfig do
+      define :create_model_config, action: :create
+      define :list_model_configs, action: :list
+      define :get_model_config, action: :read, get_by: [:id]
+      define :update_model_config, action: :update
+      define :set_model_config_default, action: :set_default
+      define :get_workspace_default_model_config, action: :get_workspace_default
+      define :destroy_model_config, action: :destroy
     end
 
     resource Citadel.Tasks.TaskSummary do

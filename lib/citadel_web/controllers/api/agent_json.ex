@@ -122,6 +122,40 @@ defmodule CitadelWeb.Api.AgentJSON do
     }
   end
 
+  def refinement_cycle(%{cycle: cycle}) do
+    %{
+      data: %{
+        id: cycle.id,
+        agent_run_id: cycle.agent_run_id,
+        status: cycle.status,
+        max_iterations: cycle.max_iterations,
+        current_iteration: cycle.current_iteration,
+        evaluator_config: cycle.evaluator_config,
+        final_score: cycle.final_score,
+        inserted_at: cycle.inserted_at,
+        updated_at: cycle.updated_at
+      }
+    }
+  end
+
+  def refinement_iteration(%{iteration: iteration}) do
+    %{
+      data: %{
+        id: iteration.id,
+        refinement_cycle_id: iteration.refinement_cycle_id,
+        iteration_number: iteration.iteration_number,
+        score: iteration.score,
+        evaluation_result: iteration.evaluation_result,
+        feedback: iteration.feedback,
+        status: iteration.status,
+        started_at: iteration.started_at,
+        completed_at: iteration.completed_at,
+        inserted_at: iteration.inserted_at,
+        updated_at: iteration.updated_at
+      }
+    }
+  end
+
   def error(%{error: error}) do
     %{
       errors:
