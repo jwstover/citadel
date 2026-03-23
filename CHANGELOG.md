@@ -1,3 +1,17 @@
+# [0.39.0](https://github.com/jwstover/citadel/compare/v0.38.0...v0.39.0) (2026-03-23)
+
+
+### Bug Fixes
+
+* **agent:** rejoin channel on close instead of reconnecting WebSocket ([4c15f3b](https://github.com/jwstover/citadel/commit/4c15f3bd40327d2d5c7cdd4e385bdd24b20a22d9))
+
+
+### Features
+
+* **agent:** generate unique default name to prevent presence collisions ([f15652c](https://github.com/jwstover/citadel/commit/f15652c2637c01db351d8745371fbb7757c76401))
+
+
+
 # [0.38.0](https://github.com/jwstover/citadel/compare/v0.37.0...v0.38.0) (2026-03-23)
 
 
@@ -31,20 +45,6 @@
 ### Bug Fixes
 
 * correct Pro plan price on landing page from $12 to $19/month ([0b08d1c](https://github.com/jwstover/citadel/commit/0b08d1c86af42935bd6e7f8996d25d14da7c03a5))
-
-
-
-# [0.35.0](https://github.com/jwstover/citadel/compare/v0.34.4...v0.35.0) (2026-03-23)
-
-
-### Bug Fixes
-
-* redirect new registrations to /dashboard instead of / ([b4c27c5](https://github.com/jwstover/citadel/commit/b4c27c5a387db7a952eb8b2348ee2b896c46a963))
-
-
-### Features
-
-* show password requirements on registration form before submission ([eb71a87](https://github.com/jwstover/citadel/commit/eb71a8725229ee705bcf6abbd14fdd6d2a1c51e8))
 
 
 
