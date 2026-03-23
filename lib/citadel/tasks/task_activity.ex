@@ -51,7 +51,7 @@ defmodule Citadel.Tasks.TaskActivity do
 
     create :create_agent_question do
       accept [:body, :task_id, :agent_run_id]
-
+      validate present(:agent_run_id)
       change set_attribute(:type, :question)
       change set_attribute(:actor_type, :ai)
       change relate_actor(:user)
