@@ -1,3 +1,12 @@
+# [0.36.0](https://github.com/jwstover/citadel/compare/v0.35.1...v0.36.0) (2026-03-23)
+
+
+### Features
+
+* **agent:** generate descriptive PR titles via Claude CLI ([889fe2c](https://github.com/jwstover/citadel/commit/889fe2c18b17abd29fac5dead13d84582dc585c6))
+
+
+
 ## [0.35.1](https://github.com/jwstover/citadel/compare/v0.35.0...v0.35.1) (2026-03-23)
 
 
@@ -38,16 +47,6 @@
 * remove workspace_id from task create accept list ([b8e0667](https://github.com/jwstover/citadel/commit/b8e0667f8efcab86ef36d4267552cbe2afe15e83))
 * remove workspace_id from task create calls in tests ([f20937e](https://github.com/jwstover/citadel/commit/f20937e41126b226d341d4735fb908add7168c0d))
 * use context.tenant for workspace_id in assignee validation ([2b34e44](https://github.com/jwstover/citadel/commit/2b34e44f50225318dd00aeb035a279265d1e5f9c))
-
-
-
-## [0.34.2](https://github.com/jwstover/citadel/compare/v0.34.1...v0.34.2) (2026-03-19)
-
-
-### Bug Fixes
-
-* remove duplicate Home nav item from sidebar ([ec66b5f](https://github.com/jwstover/citadel/commit/ec66b5f8ad7dd410ac1d6fda1bbb85ce53e52498))
-* use dynamic workspace task_prefix in dependency input placeholder ([cc392ab](https://github.com/jwstover/citadel/commit/cc392abd860a179fb4543e441f3a0f2742245037))
 
 
 
