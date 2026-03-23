@@ -609,6 +609,13 @@ defmodule CitadelWeb.TaskLive.Show do
   defp execution_status_dot_class(:cancelled), do: "bg-orange-400"
   defp execution_status_dot_class(_), do: "bg-base-content/40"
 
+  defp extract_pr_number(url) when is_binary(url) do
+    case Regex.run(~r"/pull/(\d+)", url) do
+      [_, number] -> "##{number}"
+      _ -> "View PR"
+    end
+  end
+
   defp agent_run_status_classes(:pending), do: "bg-base-300/50 text-base-content/60"
   defp agent_run_status_classes(:running), do: "bg-yellow-500/15 text-yellow-400"
   defp agent_run_status_classes(:completed), do: "bg-emerald-500/15 text-emerald-400"
@@ -849,19 +856,21 @@ defmodule CitadelWeb.TaskLive.Show do
                     </span>
                   <% end %>
                 </div>
-              </div>
-              <div :if={@task.forge_pr} class="flex items-center justify-between gap-4">
-                <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                  Pull Request
-                </label>
-                <a
-                  href={@task.forge_pr}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="text-base-content/60 hover:text-primary transition-colors"
-                >
-                  <.icon name="hero-arrow-top-right-on-square" class="size-4" />
-                </a>
+
+                <div :if={@task.forge_pr} class="flex items-center justify-between gap-4">
+                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+                    Pull Request
+                  </label>
+                  <a
+                    href={@task.forge_pr}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1.5 text-sm text-base-content/80 hover:text-primary transition-colors"
+                  >
+                    #{extract_pr_number(@task.forge_pr)}
+                    <.icon name="hero-arrow-top-right-on-square" class="size-3.5" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
