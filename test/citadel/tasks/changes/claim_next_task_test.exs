@@ -9,6 +9,17 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
     user = generate(user())
     workspace = generate(workspace([], actor: user))
 
+    backlog_state =
+      case Citadel.Tasks.TaskState
+           |> Ash.Query.filter(name == "Backlog")
+           |> Ash.read_one(authorize?: false) do
+        {:ok, nil} ->
+          Tasks.create_task_state!(%{name: "Backlog", order: 0, is_complete: false})
+
+        {:ok, state} ->
+          state
+      end
+
     todo_state =
       Tasks.create_task_state!(%{
         name: "To Do #{System.unique_integer([:positive])}",
@@ -39,6 +50,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
      workspace: workspace,
      todo_state: todo_state,
      in_review_state: in_review_state,
+     backlog_state: backlog_state,
      done_state: done_state}
   end
 
@@ -107,6 +119,34 @@ defmodule Citadel.Tasks.Changes.ClaimNextTaskTest do
           actor: user,
           tenant: workspace.id
         )
+
+      assert_raise Ash.Error.Invalid, ~r/no tasks available/, fn ->
+        Tasks.claim_next_task!(actor: user, tenant: workspace.id)
+      end
+    end
+
+    test "skips work items for tasks in Backlog state", %{
+      user: user,
+      workspace: workspace,
+      backlog_state: backlog_state
+    } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Backlog Task #{System.unique_integer([:positive])}",
+            task_state_id: backlog_state.id,
+            agent_eligible: false
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Citadel.Tasks.AgentWorkItem
+      |> Ash.Changeset.for_create(:create, %{type: :new_task, task_id: task.id},
+        authorize?: false,
+        tenant: workspace.id
+      )
+      |> Ash.create!()
 
       assert_raise Ash.Error.Invalid, ~r/no tasks available/, fn ->
         Tasks.claim_next_task!(actor: user, tenant: workspace.id)
