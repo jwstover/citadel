@@ -456,7 +456,7 @@ defmodule CitadelWeb.LandingLive do
                 </div>
 
                 <div class="mb-6">
-                  <span class="text-4xl font-bold">$12</span>
+                  <span class="text-4xl font-bold">$19</span>
                   <span class="text-base-content/60 ml-1">/per month</span>
                 </div>
 
