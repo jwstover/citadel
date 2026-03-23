@@ -1,3 +1,19 @@
+# [0.42.0](https://github.com/jwstover/citadel/compare/v0.41.0...v0.42.0) (2026-03-23)
+
+
+### Bug Fixes
+
+* polish auth page visuals — background, headings, forgot-password link ([812c61d](https://github.com/jwstover/citadel/commit/812c61d6d19f307bebaec226a024d568cc752481))
+* remove "Forgot your password?" from register form and add reset form heading ([0e51d7b](https://github.com/jwstover/citadel/commit/0e51d7bd738fc17aec8a1e5a04042a0e3f0c0828))
+* set meaningful page titles on auth pages to prevent "Pyllar · Pyllar" ([46f7df3](https://github.com/jwstover/citadel/commit/46f7df367dec83d6e92bb57a9ab28ece6e787cf3))
+
+
+### Features
+
+* show password requirements on registration form before submission ([f08ac26](https://github.com/jwstover/citadel/commit/f08ac26f0ef58e8399ec1abd9dedd58ab8738431))
+
+
+
 # [0.41.0](https://github.com/jwstover/citadel/compare/v0.40.0...v0.41.0) (2026-03-23)
 
 
@@ -43,15 +59,6 @@
 ### Features
 
 * **agent:** exclude Backlog tasks from agent work items ([4ad18d0](https://github.com/jwstover/citadel/commit/4ad18d0761f20de5ca01dd3f685fbff12a702539))
-
-
-
-# [0.37.0](https://github.com/jwstover/citadel/compare/v0.36.0...v0.37.0) (2026-03-23)
-
-
-### Features
-
-* add status selector to new task modal ([c3895a1](https://github.com/jwstover/citadel/commit/c3895a1118978068a6156f2383bc329165484ef1))
 
 
 
