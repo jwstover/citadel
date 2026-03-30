@@ -1,4 +1,4 @@
-defmodule Citadel.Repo.Migrations.MigrateResources3 do
+defmodule Citadel.Repo.Migrations.TaskActivityQuestionsAndResponses do
   @moduledoc """
   Updates resources based on their most recent snapshots.
 
@@ -27,9 +27,17 @@ defmodule Citadel.Repo.Migrations.MigrateResources3 do
             on_delete: :nilify_all
           )
     end
+
+    alter table(:agent_work_items) do
+      add :session_id, :text
+    end
   end
 
   def down do
+    alter table(:agent_work_items) do
+      remove :session_id
+    end
+
     drop constraint(:task_activities, "task_activities_agent_run_id_fkey")
 
     drop constraint(:task_activities, "task_activities_parent_activity_id_fkey")
