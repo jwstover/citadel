@@ -97,6 +97,11 @@ defmodule CitadelWeb.Router do
     end
   end
 
+  scope "/.well-known" do
+    get "/oauth-protected-resource/mcp", CitadelWeb.McpOAuthDiscoveryController, :show
+    get "/oauth-protected-resource", CitadelWeb.McpOAuthDiscoveryController, :show
+  end
+
   scope "/mcp" do
     pipe_through :mcp
 
