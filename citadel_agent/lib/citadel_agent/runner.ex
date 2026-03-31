@@ -17,6 +17,7 @@ defmodule CitadelAgent.Runner do
     human_id = task["human_id"]
     run_id = Keyword.get(opts, :run_id)
     feedback = Keyword.get(opts, :feedback)
+    resume_session_id = Keyword.get(opts, :resume_session_id)
     branch_name = "citadel/task-#{human_id}"
     worktree_path = Path.join(project_path, ".worktrees/task-#{human_id}")
     base_branch = base_branch_for(task)
@@ -28,16 +29,24 @@ defmodule CitadelAgent.Runner do
 
       result =
         try do
-          with {:ok, claude_result} <- run_claude(task, worktree_path, run_id: run_id, feedback: feedback),
+          with {:ok, claude_result} <-
+                 run_claude(task, worktree_path,
+                   run_id: run_id,
+                   feedback: feedback,
+                   resume_session_id: resume_session_id
+                 ),
                :ok <- maybe_commit_and_push(claude_result, task, worktree_path, branch_name),
                {:ok, commits} <- capture_commits(worktree_path, starting_sha) do
+            session_id = extract_session_id_from_stream_json(claude_result.output)
+
             {:ok,
              %{
                status: determine_status(claude_result),
                commits: commits,
                logs: claude_result.output,
                test_output: nil,
-               error_message: nil
+               error_message: nil,
+               session_id: session_id
              }}
           else
             {:error, reason} ->
@@ -426,7 +435,8 @@ defmodule CitadelAgent.Runner do
            working_dir: worktree_path,
            label: "commit:#{task["human_id"]}",
            timeout: @commit_stall_timeout,
-           model: "sonnet"
+           model: "sonnet",
+           allowed_tools: ["Bash"]
          ) do
       {:ok, %{exit_code: 0}} ->
         :ok
@@ -513,6 +523,21 @@ defmodule CitadelAgent.Runner do
   end
 
   @doc false
+  def extract_session_id_from_stream_json(output) do
+    output
+    |> String.split("\n", trim: true)
+    |> Enum.reduce(nil, fn line, acc ->
+      case Jason.decode(line) do
+        {:ok, %{"type" => "result", "session_id" => session_id}} when is_binary(session_id) ->
+          session_id
+
+        _ ->
+          acc
+      end
+    end)
+  end
+
+  @doc false
   def extract_text_from_stream_json(output) do
     output
     |> String.split("\n", trim: true)
@@ -558,12 +583,14 @@ defmodule CitadelAgent.Runner do
     human_id = task["human_id"]
     run_id = Keyword.get(opts, :run_id)
     feedback = Keyword.get(opts, :feedback)
+    resume_session_id = Keyword.get(opts, :resume_session_id)
 
-    run_claude_cli(build_prompt(task, feedback),
+    run_claude_cli(build_prompt(task, feedback, run_id),
       working_dir: worktree_path,
       label: human_id,
       timeout: stall_timeout(),
-      run_id: run_id
+      run_id: run_id,
+      resume_session_id: resume_session_id
     )
   end
 
@@ -573,6 +600,8 @@ defmodule CitadelAgent.Runner do
     timeout = Keyword.get(opts, :timeout, stall_timeout())
     model = Keyword.get(opts, :model)
     run_id = Keyword.get(opts, :run_id)
+    resume_session_id = Keyword.get(opts, :resume_session_id)
+    allowed_tools = Keyword.get(opts, :allowed_tools)
 
     Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
@@ -582,9 +611,11 @@ defmodule CitadelAgent.Runner do
       {:error, "Claude Code CLI not found in PATH"}
     else
       model_flag = if model, do: " --model #{model}", else: ""
+      resume_flag = if resume_session_id, do: " --resume #{escape_shell(resume_session_id)}", else: ""
+      tools_flag = if allowed_tools, do: " --allowedTools #{Enum.join(allowed_tools, ",")}", else: ""
 
       cmd =
-        "#{claude_path} -p #{escape_shell(prompt)}#{model_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag}#{tools_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
@@ -656,7 +687,7 @@ defmodule CitadelAgent.Runner do
     CitadelAgent.config(:stall_timeout_ms) || @default_stall_timeout
   end
 
-  defp build_prompt(task, feedback \\ nil) do
+  defp build_prompt(task, feedback \\ nil, run_id \\ nil) do
     title = task["title"] || ""
     description = task["description"] || ""
 
@@ -668,16 +699,31 @@ defmodule CitadelAgent.Runner do
       """
       |> String.trim()
 
-    case feedback do
-      nil ->
-        base
+    base =
+      case feedback do
+        nil ->
+          base
 
-      body ->
-        base <>
-          "\n\n## Feedback - Changes Requested\n" <>
-          "The following feedback was provided on your previous work. Address these changes:\n\n" <>
-          body
-    end
+        body ->
+          base <>
+            "\n\n## Feedback - Changes Requested\n" <>
+            "The following feedback was provided on your previous work. Address these changes:\n\n" <>
+            body
+      end
+
+    base =
+      if run_id do
+        base <> "\n\n## Agent Run ID\n#{run_id}"
+      else
+        base
+      end
+
+    base <>
+      "\n\n## Asking for User Input\n" <>
+      "If you reach a point where you cannot continue without clarification from the user, use\n" <>
+      "the ask_question MCP tool with your agent_run_id and the task_id. Provide all your\n" <>
+      "questions clearly in the body. After calling ask_question, you MUST exit immediately\n" <>
+      "without making any further tool calls or code changes."
   end
 
   defp capture_head_sha(worktree_path) do

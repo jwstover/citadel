@@ -30,6 +30,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         |> assign(:activities_loaded, true)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
         |> assign(:request_changes, false)
+        |> assign(:reply_to_activity_id, nil)
       end
 
     {:ok, socket}
@@ -39,7 +40,12 @@ defmodule CitadelWeb.Components.TaskActivitySection do
          %Phoenix.Socket.Broadcast{event: event, payload: %{data: activity}},
          socket
        )
-       when event in ["create_comment", "create_request_changes_comment"] do
+       when event in [
+              "create_comment",
+              "create_request_changes_comment",
+              "create_agent_question",
+              "create_question_response"
+            ] do
     activity =
       Ash.load!(activity, [:user],
         tenant: socket.assigns.current_workspace.id,
@@ -60,20 +66,44 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     {:noreply, assign(socket, :request_changes, !socket.assigns.request_changes)}
   end
 
+  def handle_event("toggle-reply", %{"id" => id}, socket) do
+    reply_to =
+      if socket.assigns.reply_to_activity_id == id do
+        nil
+      else
+        id
+      end
+
+    {:noreply, assign(socket, :reply_to_activity_id, reply_to)}
+  end
+
   def handle_event("submit-comment", %{"comment" => %{"body" => body}}, socket) do
     body = String.trim(body)
 
     if body == "" do
       {:noreply, socket}
     else
-      params = %{body: body, task_id: socket.assigns.task.id}
       opts = [actor: socket.assigns.current_user, tenant: socket.assigns.current_workspace.id]
 
       activity =
-        if socket.assigns.request_changes do
-          Tasks.create_request_changes_comment!(params, opts)
-        else
-          Tasks.create_comment!(params, opts)
+        cond do
+          socket.assigns.reply_to_activity_id ->
+            params = %{
+              body: body,
+              task_id: socket.assigns.task.id,
+              parent_activity_id: socket.assigns.reply_to_activity_id
+            }
+
+            Tasks.create_question_response!(params, opts)
+
+          socket.assigns.request_changes ->
+            Tasks.create_request_changes_comment!(
+              %{body: body, task_id: socket.assigns.task.id},
+              opts
+            )
+
+          true ->
+            Tasks.create_comment!(%{body: body, task_id: socket.assigns.task.id}, opts)
         end
 
       activity =
@@ -87,6 +117,7 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         |> stream_insert(:activities, activity)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
         |> assign(:request_changes, false)
+        |> assign(:reply_to_activity_id, nil)
 
       {:noreply, socket}
     end
@@ -121,7 +152,9 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           id={dom_id}
           class={[
             "flex gap-2 group rounded-lg p-2 -ml-2",
-            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning"
+            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning",
+            activity.type == :question && "bg-purple-500/5 border-l-2 border-purple-400",
+            activity.type == :question_response && "ml-8 bg-base-200/50 rounded-lg"
           ]}
         >
           <div class="flex-shrink-0 pt-0.5">
@@ -138,6 +171,18 @@ defmodule CitadelWeb.Components.TaskActivitySection do
               >
                 <.icon name="hero-arrow-path" class="size-3" /> Changes Requested
               </span>
+              <span
+                :if={activity.type == :question}
+                class="inline-flex items-center gap-1 text-xs font-medium text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded"
+              >
+                <.icon name="hero-question-mark-circle" class="size-3" /> Agent Question
+              </span>
+              <span
+                :if={activity.type == :question_response}
+                class="inline-flex items-center gap-1 text-xs font-medium text-base-content/50 bg-base-200 px-1.5 py-0.5 rounded"
+              >
+                In Reply
+              </span>
               <span class="text-xs text-base-content/40">
                 {relative_time(activity.inserted_at)}
               </span>
@@ -150,6 +195,15 @@ defmodule CitadelWeb.Components.TaskActivitySection do
                 data-confirm="Delete this comment?"
               >
                 <.icon name="hero-trash" class="size-3" />
+              </button>
+              <button
+                :if={activity.type == :question}
+                phx-click="toggle-reply"
+                phx-target={@myself}
+                phx-value-id={activity.id}
+                class="text-xs text-purple-400 hover:text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <.icon name="hero-chat-bubble-left" class="size-3" /> Reply
               </button>
             </div>
             <p class="text-sm text-base-content/80 mt-1">
@@ -170,22 +224,42 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           <.user_avatar user={@current_user} />
         </div>
         <div class="flex-1">
+          <div
+            :if={@reply_to_activity_id}
+            class="flex items-center justify-between bg-purple-500/10 text-purple-400 text-xs px-3 py-1.5 rounded-t-lg border border-b-0 border-purple-400/20"
+          >
+            <span>Replying to agent question</span>
+            <button
+              type="button"
+              phx-click="toggle-reply"
+              phx-target={@myself}
+              phx-value-id={@reply_to_activity_id}
+              class="hover:text-purple-300"
+            >
+              <.icon name="hero-x-mark" class="size-3.5" />
+            </button>
+          </div>
           <textarea
             name={@form[:body].name}
             value={@form[:body].value}
             rows="2"
             placeholder={
-              if(@request_changes,
-                do: "Describe what changes are needed...",
-                else: "Add a comment..."
-              )
+              cond do
+                @reply_to_activity_id -> "Type your reply to the agent's question..."
+                @request_changes -> "Describe what changes are needed..."
+                true -> "Add a comment..."
+              end
             }
-            class="textarea textarea-bordered w-full text-sm resize-none"
+            class={[
+              "textarea textarea-bordered w-full text-sm resize-none",
+              @reply_to_activity_id && "rounded-t-none"
+            ]}
             id={"#{@id}-body"}
             phx-hook="CmdEnterSubmit"
           />
           <div class="flex items-center justify-between mt-2">
             <label
+              :if={!@reply_to_activity_id}
               class="flex items-center gap-2 cursor-pointer select-none"
               id={"#{@id}-request-changes-toggle"}
             >
@@ -203,14 +277,23 @@ defmodule CitadelWeb.Components.TaskActivitySection do
                 Request changes
               </span>
             </label>
+            <div :if={@reply_to_activity_id} />
             <button
               type="submit"
               class={[
                 "btn btn-sm",
-                if(@request_changes, do: "btn-warning", else: "btn-primary")
+                cond do
+                  @reply_to_activity_id -> "btn-primary"
+                  @request_changes -> "btn-warning"
+                  true -> "btn-primary"
+                end
               ]}
             >
-              {if(@request_changes, do: "Request Changes", else: "Comment")}
+              {cond do
+                @reply_to_activity_id -> "Reply"
+                @request_changes -> "Request Changes"
+                true -> "Comment"
+              end}
             </button>
           </div>
         </div>

@@ -114,7 +114,8 @@ defmodule CitadelWeb.Router do
         :get_task_details,
         :list_task_states,
         :create_task_dependency,
-        :delete_task_dependency
+        :delete_task_dependency,
+        :ask_question
       ],
       # For many tools, you will need to set the `protocol_version_statement` to the older version.
       protocol_version_statement: "2024-11-05",

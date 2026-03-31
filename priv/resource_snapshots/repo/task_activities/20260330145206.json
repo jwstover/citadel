@@ -14,41 +14,14 @@
     },
     {
       "allow_nil?": false,
-      "default": "\"pending\"",
+      "default": "\"comment\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "status",
-      "type": "text"
-    },
-    {
-      "allow_nil?": true,
-      "default": "[]",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "commits",
-      "type": [
-        "array",
-        "map"
-      ]
-    },
-    {
-      "allow_nil?": true,
-      "default": "nil",
-      "generated?": false,
-      "precision": null,
-      "primary_key?": false,
-      "references": null,
-      "scale": null,
-      "size": null,
-      "source": "test_output",
+      "source": "type",
       "type": "text"
     },
     {
@@ -60,7 +33,31 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "logs",
+      "source": "body",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "%{}",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "metadata",
+      "type": "map"
+    },
+    {
+      "allow_nil?": false,
+      "default": "\"user\"",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "actor_type",
       "type": "text"
     },
     {
@@ -72,7 +69,7 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "error_message",
+      "source": "actor_display_name",
       "type": "text"
     },
     {
@@ -81,11 +78,30 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": null,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "workspace_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "task_activities_agent_run_id_fkey",
+        "on_delete": "nilify",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "agent_runs"
+      },
       "scale": null,
       "size": null,
-      "source": "started_at",
-      "type": "utc_datetime_usec"
+      "source": "agent_run_id",
+      "type": "uuid"
     },
     {
       "allow_nil?": true,
@@ -93,11 +109,30 @@
       "generated?": false,
       "precision": null,
       "primary_key?": false,
-      "references": null,
+      "references": {
+        "deferrable": false,
+        "destination_attribute": "id",
+        "destination_attribute_default": null,
+        "destination_attribute_generated": null,
+        "index?": false,
+        "match_type": null,
+        "match_with": null,
+        "multitenancy": {
+          "attribute": "workspace_id",
+          "global": false,
+          "strategy": "attribute"
+        },
+        "name": "task_activities_parent_activity_id_fkey",
+        "on_delete": "nilify",
+        "on_update": null,
+        "primary_key?": true,
+        "schema": "public",
+        "table": "task_activities"
+      },
       "scale": null,
       "size": null,
-      "source": "completed_at",
-      "type": "utc_datetime_usec"
+      "source": "parent_activity_id",
+      "type": "uuid"
     },
     {
       "allow_nil?": false,
@@ -142,7 +177,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "agent_runs_workspace_id_fkey",
+        "name": "task_activities_workspace_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -173,7 +208,7 @@
           "global": false,
           "strategy": "attribute"
         },
-        "name": "agent_runs_task_id_fkey",
+        "name": "task_activities_task_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -204,7 +239,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "agent_runs_user_id_fkey",
+        "name": "task_activities_user_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -223,7 +258,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "198F90A248DA8F8A0D33EC1FF369480D59A64880B8A89BC91E858F58E83DE807",
+  "hash": "DB7E8E9D65AF92301F0BB173D1CDA127BEA33706FD9A14F8A7528652BFEFD750",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
@@ -232,5 +267,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "agent_runs"
+  "table": "task_activities"
 }

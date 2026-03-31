@@ -18,6 +18,7 @@ defmodule Citadel.Tasks.Changes.SyncWorkItemStatus do
         :completed -> :complete
         :failed -> :complete
         :cancelled -> :cancel
+        :input_requested -> :complete
         _ -> nil
       end
 
