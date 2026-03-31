@@ -1,3 +1,12 @@
+## [0.43.3](https://github.com/jwstover/citadel/compare/v0.43.2...v0.43.3) (2026-03-31)
+
+
+### Bug Fixes
+
+* **mcp:** add OAuth protected resource discovery endpoint ([d675e63](https://github.com/jwstover/citadel/commit/d675e6322fbe3fb831bfc74b021a16b9d55c20b4))
+
+
+
 ## [0.43.2](https://github.com/jwstover/citadel/compare/v0.43.1...v0.43.2) (2026-03-23)
 
 
@@ -39,22 +48,6 @@
 ### Features
 
 * show password requirements on registration form before submission ([f08ac26](https://github.com/jwstover/citadel/commit/f08ac26f0ef58e8399ec1abd9dedd58ab8738431))
-
-
-
-# [0.41.0](https://github.com/jwstover/citadel/compare/v0.40.0...v0.41.0) (2026-03-23)
-
-
-### Bug Fixes
-
-* use icon instead of text label for forge_pr link in task sidebar ([46d7996](https://github.com/jwstover/citadel/commit/46d7996cc79b7a96d13f9a04b6c33fad240a8856))
-
-
-### Features
-
-* display forge_pr link in task detail sidebar ([c79c153](https://github.com/jwstover/citadel/commit/c79c15323c7db9b351f81aee42eb740b32b83904)), closes [#123](https://github.com/jwstover/citadel/issues/123)
-* display forge_pr link in task detail sidebar ([d138246](https://github.com/jwstover/citadel/commit/d13824667724a56403c2b66c0b3638fbc7bebfff))
-* support GitLab merge request URLs in forge_pr link label ([ec83e76](https://github.com/jwstover/citadel/commit/ec83e76f5987dd214ca562f1a801fc61fb2f1fae))
 
 
 
