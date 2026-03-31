@@ -375,6 +375,12 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
             <% end %>
           </div>
         </.card>
+        <.live_component
+          module={CitadelWeb.Components.ModelConfigSection}
+          id="model-config-section"
+          workspace={@workspace}
+          current_user={@current_user}
+        />
       </div>
 
       <.live_component

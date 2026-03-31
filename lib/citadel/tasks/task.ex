@@ -24,6 +24,7 @@ defmodule Citadel.Tasks.Task do
     references do
       reference :parent_task, index?: true, on_delete: :delete
       reference :project, index?: true, on_delete: :nilify
+      reference :model_config, index?: true, on_delete: :nilify
       reference :active_agent_run, index?: true, on_delete: :nilify
     end
   end
@@ -49,7 +50,9 @@ defmodule Citadel.Tasks.Task do
         :project_id,
         :due_date,
         :priority,
-        :agent_eligible
+        :agent_eligible,
+        :model_config_id,
+        :refinement_config
       ]
 
       argument :assignees, {:array, :uuid}
@@ -82,7 +85,9 @@ defmodule Citadel.Tasks.Task do
         :project_id,
         :active_agent_run_id,
         :agent_eligible,
-        :forge_pr
+        :forge_pr,
+        :model_config_id,
+        :refinement_config
       ]
 
       argument :assignees, {:array, :uuid}
@@ -319,6 +324,8 @@ defmodule Citadel.Tasks.Task do
 
     attribute :forge_pr, :string, public?: true
 
+    attribute :refinement_config, :map, public?: true
+
     timestamps()
   end
 
@@ -328,6 +335,7 @@ defmodule Citadel.Tasks.Task do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: false
     belongs_to :project, Citadel.Projects.Project, public?: true, allow_nil?: true
     belongs_to :active_agent_run, Citadel.Tasks.AgentRun, public?: true, allow_nil?: true
+    belongs_to :model_config, Citadel.Tasks.ModelConfig, public?: true, allow_nil?: true
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
     has_many :agent_runs, Citadel.Tasks.AgentRun

@@ -273,7 +273,8 @@ defmodule Citadel.Generator do
             title: sequence(:task_title, &"Task #{&1}"),
             description: "Test task description",
             parent_task_id: nil,
-            project_id: nil
+            project_id: nil,
+            model_config_id: nil
           ],
           overrides: overrides
         ],
@@ -314,6 +315,72 @@ defmodule Citadel.Generator do
   end
 
   @doc """
+  Generates a refinement cycle.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [agent_run_id: run_id])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      cycle = generate(refinement_cycle(
+        [agent_run_id: agent_run.id],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def refinement_cycle(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.RefinementCycle,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            max_iterations: 3,
+            evaluator_config: %{}
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates a refinement iteration.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [refinement_cycle_id: cycle_id, iteration_number: 1])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      iteration = generate(refinement_iteration(
+        [refinement_cycle_id: cycle.id, iteration_number: 1],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def refinement_iteration(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.RefinementIteration,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            iteration_number: 1,
+            status: :evaluated,
+            evaluation_result: %{},
+            started_at: DateTime.utc_now()
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
   Generates an agent work item.
 
   ## Parameters
@@ -336,6 +403,39 @@ defmodule Citadel.Generator do
         [
           defaults: [
             type: :new_task
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates a model config.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [workspace_id: workspace_id, provider: :anthropic])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      model_config = generate(model_config(
+        [workspace_id: workspace.id],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def model_config(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.ModelConfig,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            name: sequence(:model_config_name, &"Model Config #{&1}"),
+            provider: :anthropic,
+            model: "claude-sonnet-4-20250514"
           ],
           overrides: overrides
         ],

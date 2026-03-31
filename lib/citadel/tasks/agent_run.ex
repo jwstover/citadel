@@ -33,6 +33,11 @@ defmodule Citadel.Tasks.AgentRun do
       change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
+    update :update_stall_status do
+      require_atomic? false
+      accept [:stall_status, :last_activity_at]
+    end
+
     update :cancel do
       require_atomic? false
       accept []
@@ -88,11 +93,13 @@ defmodule Citadel.Tasks.AgentRun do
     publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
     publish :cancel, ["agent_runs", :task_id]
+    publish :update_stall_status, ["agent_runs", :task_id]
   end
 
   multitenancy do
     strategy :attribute
     attribute :workspace_id
+    global? true
   end
 
   attributes do
@@ -111,6 +118,13 @@ defmodule Citadel.Tasks.AgentRun do
     attribute :error_message, :string, public?: true
     attribute :started_at, :utc_datetime_usec, public?: true
     attribute :completed_at, :utc_datetime_usec, public?: true
+    attribute :last_activity_at, :utc_datetime_usec, public?: true
+
+    attribute :stall_status, :atom do
+      constraints one_of: [:suspect, :stalled, :timed_out]
+      allow_nil? true
+      public? true
+    end
 
     timestamps()
   end
@@ -121,6 +135,7 @@ defmodule Citadel.Tasks.AgentRun do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
 
     has_one :work_item, Citadel.Tasks.AgentWorkItem
+    has_one :refinement_cycle, Citadel.Tasks.RefinementCycle
     has_many :events, Citadel.Tasks.AgentRunEvent
   end
 end

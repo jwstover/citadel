@@ -5,6 +5,7 @@ defmodule CitadelWeb.AgentChannel do
 
   require Logger
 
+  alias Citadel.Tasks.StallDetector
   alias CitadelWeb.AgentPresence
 
   @impl true
@@ -50,6 +51,8 @@ defmodule CitadelWeb.AgentChannel do
   end
 
   def handle_in("stream_output", %{"run_id" => run_id, "event" => event_data}, socket) do
+    StallDetector.record_activity(run_id)
+
     CitadelWeb.Endpoint.broadcast("agent_run_output:#{run_id}", "stream_event", %{
       event: event_data
     })
