@@ -1,3 +1,12 @@
+## [0.43.4](https://github.com/jwstover/citadel/compare/v0.43.3...v0.43.4) (2026-03-31)
+
+
+### Bug Fixes
+
+* **mcp:** return 404 instead of 401 for OAuth discovery under /mcp ([7664451](https://github.com/jwstover/citadel/commit/7664451f6b97c514d7f4280db2c8ff9d3480aca9))
+
+
+
 ## [0.43.3](https://github.com/jwstover/citadel/compare/v0.43.2...v0.43.3) (2026-03-31)
 
 
@@ -32,22 +41,6 @@
 ### Features
 
 * prevent child tasks from depending on their parent task ([6bd73c7](https://github.com/jwstover/citadel/commit/6bd73c78428e0781b54d59a2477ba597438952ca))
-
-
-
-# [0.42.0](https://github.com/jwstover/citadel/compare/v0.41.0...v0.42.0) (2026-03-23)
-
-
-### Bug Fixes
-
-* polish auth page visuals — background, headings, forgot-password link ([812c61d](https://github.com/jwstover/citadel/commit/812c61d6d19f307bebaec226a024d568cc752481))
-* remove "Forgot your password?" from register form and add reset form heading ([0e51d7b](https://github.com/jwstover/citadel/commit/0e51d7bd738fc17aec8a1e5a04042a0e3f0c0828))
-* set meaningful page titles on auth pages to prevent "Pyllar · Pyllar" ([46f7df3](https://github.com/jwstover/citadel/commit/46f7df367dec83d6e92bb57a9ab28ece6e787cf3))
-
-
-### Features
-
-* show password requirements on registration form before submission ([f08ac26](https://github.com/jwstover/citadel/commit/f08ac26f0ef58e8399ec1abd9dedd58ab8738431))
 
 
 
