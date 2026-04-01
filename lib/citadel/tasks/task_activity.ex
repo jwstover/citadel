@@ -89,7 +89,7 @@ defmodule Citadel.Tasks.TaskActivity do
   end
 
   policies do
-    bypass action(:create_agent_run_activity) do
+    bypass action :create_agent_run_activity do
       authorize_if always()
     end
 
