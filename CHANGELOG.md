@@ -1,3 +1,12 @@
+## [0.45.1](https://github.com/jwstover/citadel/compare/v0.45.0...v0.45.1) (2026-04-01)
+
+
+### Bug Fixes
+
+* resolve duplicate agent_run_id migration failure in prod ([3893051](https://github.com/jwstover/citadel/commit/3893051175acc67e34438a18592365aa81f5172a))
+
+
+
 # [0.45.0](https://github.com/jwstover/citadel/compare/v0.44.0...v0.45.0) (2026-04-01)
 
 
@@ -51,15 +60,6 @@
 ### Bug Fixes
 
 * **mcp:** add OAuth protected resource discovery endpoint ([d675e63](https://github.com/jwstover/citadel/commit/d675e6322fbe3fb831bfc74b021a16b9d55c20b4))
-
-
-
-## [0.43.2](https://github.com/jwstover/citadel/compare/v0.43.1...v0.43.2) (2026-03-23)
-
-
-### Bug Fixes
-
-* preserve agent status across server redeploys ([5e5d54d](https://github.com/jwstover/citadel/commit/5e5d54d482d8dec44b5efe651261c137fcea285e))
 
 
 
