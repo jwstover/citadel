@@ -1,3 +1,20 @@
+# [0.45.0](https://github.com/jwstover/citadel/compare/v0.44.0...v0.45.0) (2026-04-01)
+
+
+### Bug Fixes
+
+* remove duplicate agent_run_id column from migration ([681f337](https://github.com/jwstover/citadel/commit/681f337ccea885cedee03fccb7bdf38573aea33a))
+* update agent run tests to match activity-based UI ([80d977b](https://github.com/jwstover/citadel/commit/80d977bb27a598dc1d868ef0ec1855ed1cea46f4))
+
+
+### Features
+
+* add :agent_run activity type and relationship to TaskActivity ([5605c54](https://github.com/jwstover/citadel/commit/5605c542c392e0885106b2b12be348947043bede))
+* add backfill migration and tests for agent run task activities ([4cce8db](https://github.com/jwstover/citadel/commit/4cce8db186d8214c3c6593d702c6e31cb5b7a328))
+* render agent run activities in TaskActivitySection with full detail ([47b57e0](https://github.com/jwstover/citadel/commit/47b57e027289ac889f4f185398ba73d78b35ddda))
+
+
+
 # [0.44.0](https://github.com/jwstover/citadel/compare/v0.43.4...v0.44.0) (2026-03-31)
 
 
@@ -43,16 +60,6 @@
 ### Bug Fixes
 
 * preserve agent status across server redeploys ([5e5d54d](https://github.com/jwstover/citadel/commit/5e5d54d482d8dec44b5efe651261c137fcea285e))
-
-
-
-## [0.43.1](https://github.com/jwstover/citadel/compare/v0.43.0...v0.43.1) (2026-03-23)
-
-
-### Bug Fixes
-
-* expose create_task_dependency as MCP tool ([ab2c21d](https://github.com/jwstover/citadel/commit/ab2c21d12acf8cb586f3998ea9a0cea6e9c6c132))
-* pass AshAi pre-check in TaskWorkspaceMember ([30f101c](https://github.com/jwstover/citadel/commit/30f101cf16b7146e2107cd34c89627498e709a5f))
 
 
 
