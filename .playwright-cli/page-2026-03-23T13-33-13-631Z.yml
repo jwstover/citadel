@@ -1,0 +1,66 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e37]: Agents
+        - generic [ref=e38]: No agents connected
+      - generic [ref=e41]:
+        - button [ref=e43] [cursor=pointer]
+        - button [ref=e45] [cursor=pointer]
+        - button [ref=e47] [cursor=pointer]
+  - main [ref=e49]:
+    - generic [ref=e51]:
+      - button "New" [ref=e54] [cursor=pointer]: New
+      - table [ref=e58]:
+        - rowgroup [ref=e59]:
+          - row "In Review 1" [ref=e60]:
+            - cell "In Review 1" [ref=e61]:
+              - generic [ref=e62]:
+                - heading "In Review" [level=2] [ref=e63]
+                - generic [ref=e64]: "1"
+          - row "ID Name Priority Due Date Assignee" [ref=e65]:
+            - columnheader [ref=e66]
+            - columnheader [ref=e67]
+            - columnheader "ID" [ref=e68]
+            - columnheader "Name" [ref=e69]
+            - columnheader "Priority" [ref=e70]
+            - columnheader "Due Date" [ref=e71]
+            - columnheader "Assignee" [ref=e72]
+        - rowgroup [ref=e73]:
+          - 'row "P-1 UAT Test: Agent Question Flow medium — —" [ref=e74]':
+            - cell [ref=e75]
+            - cell [ref=e78]:
+              - button [ref=e82] [cursor=pointer]
+            - cell "P-1" [ref=e84]:
+              - link "P-1" [ref=e85] [cursor=pointer]:
+                - /url: /tasks/P-1
+            - 'cell "UAT Test: Agent Question Flow" [ref=e86]':
+              - 'link "UAT Test: Agent Question Flow" [ref=e87] [cursor=pointer]':
+                - /url: /tasks/P-1
+            - cell "medium" [ref=e88]:
+              - button "medium" [ref=e90] [cursor=pointer]:
+                - generic [ref=e91]: medium
+            - cell "—" [ref=e92]
+            - cell "—" [ref=e93]:
+              - generic [ref=e95]: —

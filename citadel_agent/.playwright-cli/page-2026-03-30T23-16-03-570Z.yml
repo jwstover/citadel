@@ -1,0 +1,70 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e37]: Agents
+          - generic [ref=e38]: "1"
+        - generic [ref=e43]:
+          - generic [ref=e44]: citadel-agent
+          - generic [ref=e45]: Idle
+      - generic [ref=e48]:
+        - button [ref=e50] [cursor=pointer]
+        - button [ref=e52] [cursor=pointer]
+        - button [ref=e54] [cursor=pointer]
+  - main [ref=e56]:
+    - generic [ref=e58]:
+      - button "New" [ref=e61] [cursor=pointer]: New
+      - table [ref=e96]:
+        - rowgroup [ref=e97]:
+          - row "In Progress 1" [ref=e98]:
+            - cell "In Progress 1" [ref=e99]:
+              - generic [ref=e100]:
+                - heading "In Progress" [level=2] [ref=e101]
+                - generic [ref=e102]: "1"
+          - row "ID Name Priority Due Date Assignee" [ref=e103]:
+            - columnheader [ref=e104]
+            - columnheader [ref=e105]
+            - columnheader "ID" [ref=e106]
+            - columnheader "Name" [ref=e107]
+            - columnheader "Priority" [ref=e108]
+            - columnheader "Due Date" [ref=e109]
+            - columnheader "Assignee" [ref=e110]
+        - rowgroup [ref=e111]:
+          - 'row "P-1 UAT: Ask Question Retest medium — —" [ref=e112]':
+            - cell [ref=e113]
+            - cell [ref=e116]:
+              - button [ref=e120] [cursor=pointer]
+            - cell "P-1" [ref=e122]:
+              - link "P-1" [ref=e123] [cursor=pointer]:
+                - /url: /tasks/P-1
+            - 'cell "UAT: Ask Question Retest" [ref=e124]':
+              - 'link "UAT: Ask Question Retest" [ref=e125] [cursor=pointer]':
+                - /url: /tasks/P-1
+            - cell "medium" [ref=e126]:
+              - button "medium" [ref=e128] [cursor=pointer]:
+                - generic [ref=e129]: medium
+            - cell "—" [ref=e130]
+            - cell "—" [ref=e131]:
+              - generic [ref=e133]: —

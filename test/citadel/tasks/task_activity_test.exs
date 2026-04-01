@@ -316,6 +316,173 @@ defmodule Citadel.Tasks.TaskActivityTest do
     end
   end
 
+  describe "create_agent_run_activity" do
+    test "creates an agent_run type activity linked to an agent run", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      activity =
+        Tasks.create_agent_run_activity!(
+          %{task_id: task.id, agent_run_id: agent_run.id},
+          tenant: workspace.id,
+          authorize?: false
+        )
+
+      assert activity.type == :agent_run
+      assert activity.actor_type == :ai
+      assert activity.actor_display_name == "Agent"
+      assert activity.task_id == task.id
+      assert activity.agent_run_id == agent_run.id
+      assert activity.workspace_id == workspace.id
+    end
+
+    test "inherits workspace from task", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      activity =
+        Tasks.create_agent_run_activity!(
+          %{task_id: task.id, agent_run_id: agent_run.id},
+          tenant: workspace.id,
+          authorize?: false
+        )
+
+      assert activity.workspace_id == workspace.id
+      assert activity.workspace_id == task.workspace_id
+    end
+
+    test "can load agent_run relationship", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      activity =
+        Tasks.create_agent_run_activity!(
+          %{task_id: task.id, agent_run_id: agent_run.id},
+          tenant: workspace.id,
+          authorize?: false
+        )
+
+      loaded = Ash.load!(activity, :agent_run, authorize?: false, tenant: workspace.id)
+      assert loaded.agent_run.id == agent_run.id
+      assert loaded.agent_run.status == :pending
+    end
+
+    test "bypasses authorization policy", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      activity =
+        Tasks.create_agent_run_activity!(
+          %{task_id: task.id, agent_run_id: agent_run.id},
+          tenant: workspace.id
+        )
+
+      assert activity.type == :agent_run
+    end
+
+    test "agent_run_id is nilified when agent run is deleted", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      activity =
+        Tasks.create_agent_run_activity!(
+          %{task_id: task.id, agent_run_id: agent_run.id},
+          tenant: workspace.id,
+          authorize?: false
+        )
+
+      assert activity.agent_run_id == agent_run.id
+
+      Ash.destroy!(agent_run, authorize?: false)
+
+      reloaded =
+        Tasks.get_task_activity!(activity.id,
+          authorize?: false,
+          tenant: workspace.id
+        )
+
+      assert is_nil(reloaded.agent_run_id)
+    end
+
+    test "broadcasts PubSub message on create", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
+
+      Tasks.create_agent_run_activity!(
+        %{task_id: task.id, agent_run_id: agent_run.id},
+        tenant: workspace.id,
+        authorize?: false
+      )
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "tasks:task_activities:" <> _,
+        event: "create_agent_run_activity"
+      }
+    end
+  end
+
   describe "cascade delete" do
     test "activities are deleted when task is destroyed", %{
       user: user,

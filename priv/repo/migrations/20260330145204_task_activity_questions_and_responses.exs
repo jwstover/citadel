@@ -9,15 +9,6 @@ defmodule Citadel.Repo.Migrations.TaskActivityQuestionsAndResponses do
 
   def up do
     alter table(:task_activities) do
-      add :agent_run_id,
-          references(:agent_runs,
-            column: :id,
-            name: "task_activities_agent_run_id_fkey",
-            type: :uuid,
-            prefix: "public",
-            on_delete: :nilify_all
-          )
-
       add :parent_activity_id,
           references(:task_activities,
             column: :id,
@@ -38,13 +29,10 @@ defmodule Citadel.Repo.Migrations.TaskActivityQuestionsAndResponses do
       remove :session_id
     end
 
-    drop constraint(:task_activities, "task_activities_agent_run_id_fkey")
-
     drop constraint(:task_activities, "task_activities_parent_activity_id_fkey")
 
     alter table(:task_activities) do
       remove :parent_activity_id
-      remove :agent_run_id
     end
   end
 end

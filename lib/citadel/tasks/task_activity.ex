@@ -49,6 +49,15 @@ defmodule Citadel.Tasks.TaskActivity do
       change Citadel.Tasks.Changes.RequestChanges
     end
 
+    create :create_agent_run_activity do
+      accept [:task_id, :agent_run_id]
+
+      change set_attribute(:type, :agent_run)
+      change set_attribute(:actor_type, :ai)
+      change set_attribute(:actor_display_name, "Agent")
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+    end
+
     create :create_agent_question do
       accept [:body, :task_id, :agent_run_id]
       validate present(:agent_run_id)
@@ -80,6 +89,10 @@ defmodule Citadel.Tasks.TaskActivity do
   end
 
   policies do
+    bypass action :create_agent_run_activity do
+      authorize_if always()
+    end
+
     policy action_type(:read) do
       authorize_if expr(
                      workspace.owner_id == ^actor(:id) or
@@ -102,6 +115,7 @@ defmodule Citadel.Tasks.TaskActivity do
 
     publish :create_comment, ["task_activities", :task_id]
     publish :create_request_changes_comment, ["task_activities", :task_id]
+    publish :create_agent_run_activity, ["task_activities", :task_id]
     publish :create_agent_question, ["task_activities", :task_id]
     publish :create_question_response, ["task_activities", :task_id]
     publish :destroy_comment, ["task_activities", :task_id]
@@ -144,6 +158,7 @@ defmodule Citadel.Tasks.TaskActivity do
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
 
     belongs_to :agent_run, Citadel.Tasks.AgentRun,
+      public?: true,
       allow_nil?: true,
       attribute_writable?: true,
       define_attribute?: false

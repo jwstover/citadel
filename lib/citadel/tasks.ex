@@ -78,6 +78,7 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.TaskActivity do
       define :create_comment, action: :create_comment
       define :create_request_changes_comment, action: :create_request_changes_comment
+      define :create_agent_run_activity, action: :create_agent_run_activity
       define :create_agent_question, action: :create_agent_question
       define :create_question_response, action: :create_question_response
       define :get_task_activity, action: :read, get_by: [:id]
