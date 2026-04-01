@@ -1114,51 +1114,25 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       %{task: task, task_state: task_state}
     end
 
-    test "shows agent runs section when task is agent eligible", %{conn: conn, task: task} do
-      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
-
-      assert html =~ "Agent Runs"
-      assert html =~ "No agent runs yet"
-    end
-
-    test "does not show agent runs section when not eligible and no runs", %{
-      conn: conn,
-      user: user,
-      workspace: workspace,
-      task_state: task_state
-    } do
-      task =
-        generate(
-          task(
-            [
-              task_state_id: task_state.id,
-              title: "Non-Agent Task",
-              agent_eligible: false
-            ],
-            actor: user,
-            tenant: workspace.id
-          )
-        )
-
-      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
-
-      refute html =~ "Agent Runs"
-    end
-
-    test "displays agent run with status badge", %{
+    test "displays agent run activity with status badge", %{
       conn: conn,
       task: task,
       user: user,
       workspace: workspace
     } do
-      Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
-        actor: user,
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
         tenant: workspace.id
       )
 
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Agent Runs (1)"
       assert html =~ "completed"
     end
 
@@ -1186,6 +1160,11 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         tenant: workspace.id
       )
 
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
+        tenant: workspace.id
+      )
+
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       assert html =~ "Commits (2)"
@@ -1206,6 +1185,11 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       Tasks.update_agent_run!(run.id, %{error_message: "Tests failed"},
         actor: user,
+        tenant: workspace.id
+      )
+
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
         tenant: workspace.id
       )
 
@@ -1244,14 +1228,14 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      Tasks.create_agent_run!(%{task_id: task.id},
-        actor: user,
-        tenant: workspace.id
-      )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      assert has_element?(
+               view,
+               ~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|
+             )
     end
 
     test "shows cancel button on running run", %{
@@ -1260,11 +1244,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :running, started_at: DateTime.utc_now()},
         actor: user,
@@ -1273,7 +1253,10 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      assert has_element?(
+               view,
+               ~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|
+             )
     end
 
     test "does not show cancel button on completed run", %{
@@ -1282,11 +1265,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :completed, completed_at: DateTime.utc_now()},
         actor: user,
@@ -1295,7 +1274,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
 
     test "does not show cancel button on failed run", %{
@@ -1304,11 +1283,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :failed, error_message: "broke"},
         actor: user,
@@ -1317,7 +1292,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
 
     test "clicking cancel button shows confirmation modal", %{
@@ -1326,18 +1301,15 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      html =
-        view
-        |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
-        |> render_click()
+      view
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
+      |> render_click()
+
+      html = render(view)
 
       assert html =~ "Cancel Agent Run"
       assert html =~ "Are you sure you want to cancel this agent run?"
@@ -1349,16 +1321,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
       |> render_click()
 
       html =
@@ -1380,16 +1348,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
       |> render_click()
 
       html =
@@ -1417,5 +1381,20 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       foreground_color: "#ffffff",
       background_color: "#3b82f6"
     })
+  end
+
+  defp create_agent_run_with_activity(task, user, workspace) do
+    run =
+      Tasks.create_agent_run!(%{task_id: task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+    Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+      authorize?: false,
+      tenant: workspace.id
+    )
+
+    run
   end
 end
