@@ -1,0 +1,163 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - link "Citadel" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e10]: Citadel
+        - generic [ref=e11]:
+          - link "Features" [ref=e12] [cursor=pointer]:
+            - /url: "#features"
+          - link "Pricing" [ref=e13] [cursor=pointer]:
+            - /url: "#pricing"
+        - generic [ref=e14]:
+          - generic [ref=e16]:
+            - button [ref=e18] [cursor=pointer]
+            - button [ref=e20] [cursor=pointer]
+            - button [ref=e22] [cursor=pointer]
+          - link "Go to Dashboard" [ref=e24] [cursor=pointer]:
+            - /url: /dashboard
+            - text: Go to Dashboard
+  - main [ref=e26]:
+    - generic [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]: AI-native project management
+        - heading "Project management for the AI era" [level=1] [ref=e38]:
+          - generic [ref=e39]: Project management
+          - generic [ref=e40]: for the AI era
+        - paragraph [ref=e41]: AI-native project management for developers. Describe what you're building—Citadel creates the plan.
+        - link "Go to Dashboard" [ref=e43] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e44]: Go to Dashboard
+      - generic [ref=e46]:
+        - generic [ref=e49]: Free forever plan
+        - generic [ref=e52]: MCP integration
+        - generic [ref=e55]: Works with Claude & Cursor
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]: The Problem
+        - heading "Project management wasn't built for how you work" [level=2] [ref=e62]:
+          - text: Project management wasn't built
+          - text: for how you work
+      - generic [ref=e63]:
+        - generic [ref=e70]:
+          - heading "Too Much Process Jira" [level=3] [ref=e71]:
+            - text: Too Much Process
+            - generic [ref=e72]: Jira
+          - paragraph [ref=e73]: Drowning in tickets, sprint ceremonies, and story points. More time managing work than doing it.
+        - generic [ref=e80]:
+          - heading "Too Little Structure Docs" [level=3] [ref=e81]:
+            - text: Too Little Structure
+            - generic [ref=e82]: Docs
+          - paragraph [ref=e83]: Messy docs and spreadsheets that are already out of date. Things fall through the cracks.
+      - generic [ref=e84]:
+        - paragraph [ref=e85]: Meanwhile, AI has changed everything about how you code—
+        - paragraph [ref=e86]:
+          - text: but your project management is stuck in
+          - generic [ref=e87]: "2015"
+        - paragraph [ref=e88]: You shouldn't need a PM certification to track what you're building.
+    - generic [ref=e91]:
+      - generic [ref=e92]:
+        - generic [ref=e93]: The Solution
+        - heading "Meet your AI planning partner" [level=2] [ref=e95]
+        - paragraph [ref=e96]: Citadel is project management that actually understands what you're building.
+      - generic [ref=e97]:
+        - generic [ref=e100]:
+          - heading "Describe in plain English" [level=3] [ref=e103]
+          - paragraph [ref=e104]: Tell Citadel what you want to build and watch it become an actionable plan.
+        - generic [ref=e107]:
+          - heading "Manage from your IDE" [level=3] [ref=e110]
+          - paragraph [ref=e111]: Work with tasks directly from Claude, Cursor, or any MCP-enabled tool.
+        - generic [ref=e114]:
+          - heading "Get smart insights" [level=3] [ref=e117]
+          - paragraph [ref=e118]: AI-powered prioritization, progress reports, and retrospectives.
+      - paragraph [ref=e120]: No bloat. No busywork. Just build.
+    - generic [ref=e123]:
+      - generic [ref=e124]:
+        - generic [ref=e125]: Why Citadel
+        - heading "Built for how developers actually work" [level=2] [ref=e127]
+        - paragraph [ref=e128]: Three pillars that make Citadel different from everything else.
+      - generic [ref=e129]:
+        - generic [ref=e132]:
+          - generic [ref=e135]: AI-Native
+          - heading "AI that does, not just suggests." [level=3] [ref=e136]
+          - paragraph [ref=e137]: Describe a feature and Citadel creates the plan. AI executes—not just recommends.
+        - generic [ref=e140]:
+          - generic [ref=e143]: Right-Sized
+          - heading "Everything you need. Nothing you don't." [level=3] [ref=e144]
+          - paragraph [ref=e145]: Built for solo devs and small teams. No enterprise bloat, no learning curve.
+        - generic [ref=e148]:
+          - generic [ref=e151]: Flow-First
+          - heading "Never leave your workflow." [level=3] [ref=e152]
+          - paragraph [ref=e153]: Manage projects from Claude, Cursor, or your favorite AI tools via MCP integration.
+    - generic [ref=e156]:
+      - generic [ref=e157]:
+        - generic [ref=e158]: Pricing
+        - heading "Simple, transparent pricing" [level=2] [ref=e160]
+        - paragraph [ref=e161]: Start for free, upgrade when you need more. No hidden fees, no surprises.
+      - generic [ref=e162]:
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - heading "Free" [level=3] [ref=e167]
+            - paragraph [ref=e168]: Perfect for individuals getting started.
+          - generic [ref=e169]: $0 /forever
+          - list [ref=e170]:
+            - listitem [ref=e171]:
+              - generic [ref=e173]: Up to 3 workspaces
+            - listitem [ref=e174]:
+              - generic [ref=e176]: Unlimited tasks
+            - listitem [ref=e177]:
+              - generic [ref=e179]: Basic AI task creation
+            - listitem [ref=e180]:
+              - generic [ref=e182]: Sub-task hierarchies
+            - listitem [ref=e183]:
+              - generic [ref=e185]: Email support
+          - link "Start Planning" [ref=e186] [cursor=pointer]:
+            - /url: /register
+        - generic [ref=e187]:
+          - generic [ref=e189]: Most Popular
+          - generic [ref=e190]:
+            - generic [ref=e191]:
+              - heading "Pro" [level=3] [ref=e192]
+              - paragraph [ref=e193]: For power users and teams.
+            - generic [ref=e194]: $12 /per month
+            - list [ref=e195]:
+              - listitem [ref=e196]:
+                - generic [ref=e198]: Unlimited workspaces
+              - listitem [ref=e199]:
+                - generic [ref=e201]: Advanced AI features
+              - listitem [ref=e202]:
+                - generic [ref=e204]: Priority AI processing
+              - listitem [ref=e205]:
+                - generic [ref=e207]: Team collaboration
+              - listitem [ref=e208]:
+                - generic [ref=e210]: API access & integrations
+              - listitem [ref=e211]:
+                - generic [ref=e213]: Priority support
+            - link "Start Free Trial" [ref=e214] [cursor=pointer]:
+              - /url: /register
+      - paragraph [ref=e215]: All plans include a 14-day free trial of Pro features. No credit card required.
+    - generic [ref=e218]:
+      - heading "Stop managing. Start building." [level=2] [ref=e219]
+      - paragraph [ref=e220]: Join developers who've reclaimed their focus with AI-native project management.
+      - link "Start Planning Free" [ref=e221] [cursor=pointer]:
+        - /url: /register
+        - generic [ref=e222]: Start Planning Free
+    - generic [ref=e226]:
+      - generic [ref=e228]: Citadel
+      - navigation [ref=e229]:
+        - link "Features" [ref=e230] [cursor=pointer]:
+          - /url: "#features"
+        - link "Pricing" [ref=e231] [cursor=pointer]:
+          - /url: "#pricing"
+        - link "Terms of Service" [ref=e232] [cursor=pointer]:
+          - /url: /terms
+        - link "Privacy Policy" [ref=e233] [cursor=pointer]:
+          - /url: /privacy
+        - link "Contact" [ref=e234] [cursor=pointer]:
+          - /url: mailto:support@citadel.app
+      - generic [ref=e235]: © 2026 Citadel. All rights reserved.
+  - alert [ref=e236]:
+    - generic [ref=e237]:
+      - paragraph [ref=e240]: You are now signed in
+      - button "close" [ref=e241] [cursor=pointer]

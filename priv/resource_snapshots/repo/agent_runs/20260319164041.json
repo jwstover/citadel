@@ -14,14 +14,14 @@
     },
     {
       "allow_nil?": false,
-      "default": "\"comment\"",
+      "default": "\"pending\"",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "type",
+      "source": "status",
       "type": "text"
     },
     {
@@ -33,31 +33,34 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "body",
+      "source": "session_id",
       "type": "text"
     },
     {
       "allow_nil?": true,
-      "default": "%{}",
+      "default": "[]",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "metadata",
-      "type": "map"
+      "source": "commits",
+      "type": [
+        "array",
+        "map"
+      ]
     },
     {
-      "allow_nil?": false,
-      "default": "\"user\"",
+      "allow_nil?": true,
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
       "size": null,
-      "source": "actor_type",
+      "source": "test_output",
       "type": "text"
     },
     {
@@ -69,8 +72,44 @@
       "references": null,
       "scale": null,
       "size": null,
-      "source": "actor_display_name",
+      "source": "logs",
       "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "error_message",
+      "type": "text"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "started_at",
+      "type": "utc_datetime_usec"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "completed_at",
+      "type": "utc_datetime_usec"
     },
     {
       "allow_nil?": false,
@@ -115,7 +154,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "task_activities_workspace_id_fkey",
+        "name": "agent_runs_workspace_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -146,7 +185,7 @@
           "global": false,
           "strategy": "attribute"
         },
-        "name": "task_activities_task_id_fkey",
+        "name": "agent_runs_task_id_fkey",
         "on_delete": "delete",
         "on_update": null,
         "primary_key?": true,
@@ -177,7 +216,7 @@
           "global": null,
           "strategy": null
         },
-        "name": "task_activities_user_id_fkey",
+        "name": "agent_runs_user_id_fkey",
         "on_delete": null,
         "on_update": null,
         "primary_key?": true,
@@ -196,7 +235,7 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "8D285663D8C684F6B8DB287F57A5C4CC5A597FC639BAA66D22048A2AD43D9822",
+  "hash": "0246D5F6D765659145FF21D1FA169DEEA57E2E1CCDCBD5469A6259B5401292D5",
   "identities": [],
   "multitenancy": {
     "attribute": "workspace_id",
@@ -205,5 +244,5 @@
   },
   "repo": "Elixir.Citadel.Repo",
   "schema": null,
-  "table": "task_activities"
+  "table": "agent_runs"
 }

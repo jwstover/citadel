@@ -1,0 +1,26 @@
+- generic [ref=e4]:
+  - generic [ref=e9]:
+    - generic [ref=e10]:
+      - generic [ref=e11]: Email
+      - textbox "Email" [ref=e12]: test@example.com
+    - generic [ref=e13]:
+      - generic [ref=e14]: Password
+      - textbox "Password" [ref=e15]
+      - list [ref=e35]:
+        - listitem [ref=e36]: must contain at least one uppercase letter
+    - generic [ref=e16]:
+      - generic [ref=e17]: Password Confirmation
+      - textbox "Password Confirmation" [ref=e18]: different456
+      - list [ref=e37]:
+        - listitem [ref=e38]: does not match
+    - generic [ref=e20]:
+      - link "Forgot your password?" [ref=e21] [cursor=pointer]:
+        - /url: /reset
+      - link "Already have an account?" [ref=e22] [cursor=pointer]:
+        - /url: /sign-in
+    - button "Register" [active] [ref=e23] [cursor=pointer]
+  - generic [ref=e25]: or
+  - link "Sign in with Google" [ref=e28] [cursor=pointer]:
+    - /url: /auth/user/google
+    - img [ref=e29]
+    - text: Sign in with Google

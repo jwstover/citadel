@@ -1,0 +1,39 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e37]: Agents
+          - generic [ref=e38]: "1"
+        - generic [ref=e43]:
+          - generic [ref=e44]: citadel-agent
+          - generic [ref=e45]: Idle
+      - generic [ref=e48]:
+        - button [ref=e50] [cursor=pointer]
+        - button [ref=e52] [cursor=pointer]
+        - button [ref=e54] [cursor=pointer]
+  - main [ref=e56]:
+    - generic [ref=e58]:
+      - button "New" [ref=e61] [cursor=pointer]: New
+      - paragraph [ref=e67]: No tasks yet. Create one to get started!

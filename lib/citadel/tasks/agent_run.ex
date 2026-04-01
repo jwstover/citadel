@@ -28,8 +28,40 @@ defmodule Citadel.Tasks.AgentRun do
 
     update :update do
       require_atomic? false
-      accept [:status, :commits, :test_output, :logs, :error_message, :started_at, :completed_at]
 
+      accept [
+        :status,
+        :session_id,
+        :commits,
+        :test_output,
+        :logs,
+        :error_message,
+        :started_at,
+        :completed_at
+      ]
+
+      change fn changeset, _ ->
+        incoming = Ash.Changeset.get_attribute(changeset, :status)
+        current = changeset.data.status
+
+        if current == :input_requested and incoming in [:completed, :failed] do
+          Ash.Changeset.force_change_attribute(changeset, :status, :input_requested)
+        else
+          changeset
+        end
+      end
+
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
+    end
+
+    update :request_input do
+      require_atomic? false
+      accept []
+
+      validate attribute_equals(:status, :running)
+
+      change set_attribute(:status, :input_requested)
+      change set_attribute(:completed_at, &DateTime.utc_now/0)
       change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
@@ -88,6 +120,7 @@ defmodule Citadel.Tasks.AgentRun do
     publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
     publish :cancel, ["agent_runs", :task_id]
+    publish :request_input, ["agent_runs", :task_id]
   end
 
   multitenancy do
@@ -99,12 +132,13 @@ defmodule Citadel.Tasks.AgentRun do
     uuid_v7_primary_key :id
 
     attribute :status, :atom do
-      constraints one_of: [:pending, :running, :completed, :failed, :cancelled]
+      constraints one_of: [:pending, :running, :completed, :failed, :cancelled, :input_requested]
       default :pending
       allow_nil? false
       public? true
     end
 
+    attribute :session_id, :string, public?: true
     attribute :commits, {:array, :map}, public?: true, default: []
     attribute :test_output, :string, public?: true
     attribute :logs, :string, public?: true

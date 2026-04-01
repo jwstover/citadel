@@ -1,0 +1,123 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary
+    - banner [ref=e3]:
+      - heading "Ash.Error.Unknown at GET /tasks/P-1" [level=5] [ref=e4]
+      - code [ref=e5]:
+        - generic [ref=e6]: "Bread Crumbs: > Error returned from: Citadel.Tasks.TaskActivity.list_by_task Unknown Error * ** (ArgumentError) cannot load `<<147, 108, 80, 179, 159, 9, 69, 233, 151, 134, 228, 139, 49, 151, 82, 77>>` as type #Ash.Type.UUIDv7.EctoType<[]> for field :id in %Citadel.Tasks.TaskActivity{id: nil, type: :comment, body: nil, metadata: %{}, actor_type: :user, actor_display_name: nil, inserted_at: nil, updated_at: nil, workspace_id: nil, task_id: nil, user_id: nil, agent_run_id: nil, workspace: #Ash.NotLoaded<:relationship, field: :workspace>, task: #Ash.NotLoaded<:relationship, field: :task>, user: #Ash.NotLoaded<:relationship, field: :user>, agent_run: #Ash.NotLoaded<:relationship, field: :agent_run>, __meta__: #Ecto.Schema.Metadata<:loaded, \"task_activities\">} (ecto 3.13.5) lib/ecto/repo/queryable.ex:441: Ecto.Repo.Queryable.struct_load!/6 (ecto 3.13.5) lib/ecto/repo/queryable.ex:255: anonymous fn/5 in Ecto.Repo.Queryable.preprocessor/3 (elixir 1.19.1) lib/enum.ex:1688: Enum.\"-map/2-lists^map/1-1-\"/2 (ecto 3.13.5) lib/ecto/repo/queryable.ex:246: Ecto.Repo.Queryable.execute/4 (ecto 3.13.5) lib/ecto/repo/queryable.ex:19: Ecto.Repo.Queryable.all/3 (ash_postgres 2.8.0) lib/data_layer.ex:853: anonymous fn/3 in AshPostgres.DataLayer.run_query/2 (ash_postgres 2.8.0) lib/data_layer.ex:852: AshPostgres.DataLayer.run_query/2 (ash 3.20.0) lib/ash/actions/read/read.ex:88: Ash.Actions.Read.run/3 (ash 3.20.0) lib/ash.ex:2826: Ash.read/2 (ash 3.20.0) lib/ash.ex:2761: Ash.read!/2 (citadel 0.43.4) lib/citadel_web/live/components/task_activity_section.ex:27: CitadelWeb.Components.TaskActivitySection.update/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/utils.ex:502: Phoenix.LiveView.Utils.maybe_call_update!/3 (elixir 1.19.1) lib/enum.ex:1688: Enum.\"-map/2-lists^map/1-1-\"/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:859: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6 (telemetry 1.3.0) /Users/jacob.stover/code/personal/citadel/deps/telemetry/src/telemetry.erl:324: :telemetry.span/3"
+    - generic [ref=e7]:
+      - textbox [ref=e8]: "# Ash.Error.Unknown at GET /tasks/P-1 Exception: ** (Ash.Error.Unknown) Bread Crumbs: > Error returned from: Citadel.Tasks.TaskActivity.list_by_task Unknown Error * ** (ArgumentError) cannot load `<<147, 108, 80, 179, 159, 9, 69, 233, 151, 134, 228, 139, 49, 151, 82, 77>>` as type #Ash.Type.UUIDv7.EctoType<[]> for field :id in %Citadel.Tasks.TaskActivity{id: nil, type: :comment, body: nil, metadata: %{}, actor_type: :user, actor_display_name: nil, inserted_at: nil, updated_at: nil, workspace_id: nil, task_id: nil, user_id: nil, agent_run_id: nil, workspace: #Ash.NotLoaded<:relationship, field: :workspace>, task: #Ash.NotLoaded<:relationship, field: :task>, user: #Ash.NotLoaded<:relationship, field: :user>, agent_run: #Ash.NotLoaded<:relationship, field: :agent_run>, __meta__: #Ecto.Schema.Metadata<:loaded, \"task_activities\">} (ecto 3.13.5) lib/ecto/repo/queryable.ex:441: Ecto.Repo.Queryable.struct_load!/6 (ecto 3.13.5) lib/ecto/repo/queryable.ex:255: anonymous fn/5 in Ecto.Repo.Queryable.preprocessor/3 (elixir 1.19.1) lib/enum.ex:1688: Enum.\"-map/2-lists^map/1-1-\"/2 (ecto 3.13.5) lib/ecto/repo/queryable.ex:246: Ecto.Repo.Queryable.execute/4 (ecto 3.13.5) lib/ecto/repo/queryable.ex:19: Ecto.Repo.Queryable.all/3 (ash_postgres 2.8.0) lib/data_layer.ex:853: anonymous fn/3 in AshPostgres.DataLayer.run_query/2 (ash_postgres 2.8.0) lib/data_layer.ex:852: AshPostgres.DataLayer.run_query/2 (ash 3.20.0) lib/ash/actions/read/read.ex:88: Ash.Actions.Read.run/3 (ash 3.20.0) lib/ash.ex:2826: Ash.read/2 (ash 3.20.0) lib/ash.ex:2761: Ash.read!/2 (citadel 0.43.4) lib/citadel_web/live/components/task_activity_section.ex:27: CitadelWeb.Components.TaskActivitySection.update/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/utils.ex:502: Phoenix.LiveView.Utils.maybe_call_update!/3 (elixir 1.19.1) lib/enum.ex:1688: Enum.\"-map/2-lists^map/1-1-\"/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:859: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6 (telemetry 1.3.0) /Users/jacob.stover/code/personal/citadel/deps/telemetry/src/telemetry.erl:324: :telemetry.span/3 (ash 3.20.0) lib/ash/actions/read/read.ex:88: Ash.Actions.Read.run/3 (ash 3.20.0) lib/ash.ex:2826: Ash.read/2 (ash 3.20.0) lib/ash.ex:2761: Ash.read!/2 (citadel 0.43.4) lib/citadel_web/live/components/task_activity_section.ex:27: CitadelWeb.Components.TaskActivitySection.update/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/utils.ex:502: Phoenix.LiveView.Utils.maybe_call_update!/3 (elixir 1.19.1) lib/enum.ex:1688: Enum.\"-map/2-lists^map/1-1-\"/2 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:859: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6 (telemetry 1.3.0) /Users/jacob.stover/code/personal/citadel/deps/telemetry/src/telemetry.erl:324: :telemetry.span/3 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:854: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6 (stdlib 7.1) maps.erl:894: :maps.fold_1/4 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:813: Phoenix.LiveView.Diff.render_pending_components/6 (phoenix_live_view 1.1.27) lib/phoenix_live_view/diff.ex:153: Phoenix.LiveView.Diff.render/4 ## Connection details ### Params %{\"id\" => \"P-1\"} ### Request info * URI: http://localhost:4002/tasks/P-1 * Query string: ### Session %{\"_csrf_token\" => \"O2G74gsJNTAqEtI710Onx-FA\", \"current_workspace_id\" => \"019d44b9-3c12-7a2b-89d0-56d86376e58e\", \"user_token\" => \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ-PiA0LjEzIiwiZXhwIjoxNzc2MTkxMTg1LCJpYXQiOjE3NzQ5ODE1ODUsImlzcyI6IkFzaEF1dGhlbnRpY2F0aW9uIHY0LjEzLjciLCJqdGkiOiIzMmgwMG03OXI2dHRrbWxiOTQwMDBkYzIiLCJuYmYiOjE3NzQ5ODE1ODUsInN1YiI6InVzZXI_aWQ9NTIyOGQ3YzgtNWE3MS00ZTgwLTgzOWYtMmIzNDZjM2U5NGNkIn0.HWhqALWzT4R3v8n5dWDMAR9dlA7C0g0Y5UROGcE1FLc\"}"
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - link "lib/ash/actions/read/read.ex" [ref=e12] [cursor=pointer]:
+            - /url: ""
+          - generic [ref=e13]:
+            - generic [ref=e14]: 83 Ash.Tracer.telemetry_span [:ash, Ash.Domain.Info.short_name(query.domain), :read],
+            - generic [ref=e15]: 84 metadata,
+            - generic [ref=e16]: "85 skip?: !!opts[:initial_data] do"
+            - generic [ref=e17]: 86 Ash.Tracer.set_metadata(tracer, :action, metadata)
+            - generic [ref=e18]: "87"
+            - generic [ref=e19]: 88 run_around_transaction_hooks(query, fn query ->
+            - generic [ref=e20]: 89 case do_run(query, action, opts) do
+            - generic [ref=e21]: "90 {:error, error} ->"
+            - generic [ref=e22]: 91 error =
+            - generic [ref=e23]: 92 Ash.Error.to_error_class(
+            - generic [ref=e24]: 93 error,
+          - generic [ref=e26]:
+            - text: Ash.Actions.Read.run/3
+            - generic [ref=e27]: ash
+        - text: · · ·
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - checkbox "Show only app frames" [ref=e31]
+            - text: Show only app frames
+          - button "Copy markdown" [ref=e32]:
+            - generic [ref=e33]: Copy markdown
+            - img [ref=e34]
+        - list [ref=e37]:
+          - listitem [ref=e38]:
+            - button "ash· lib/ash/actions/read/read.ex:88 Ash.Actions.Read.run/3" [ref=e39] [cursor=pointer]:
+              - generic [ref=e40]:
+                - text: ash·
+                - generic [ref=e41]: lib/ash/actions/read/read.ex:88
+              - generic [ref=e42]: Ash.Actions.Read.run/3
+          - listitem [ref=e43]:
+            - button "ash· lib/ash.ex:2826 Ash.read/2" [ref=e44] [cursor=pointer]:
+              - generic [ref=e45]:
+                - text: ash·
+                - generic [ref=e46]: lib/ash.ex:2826
+              - generic [ref=e47]: Ash.read/2
+          - listitem [ref=e48]:
+            - button "ash· lib/ash.ex:2761 Ash.read!/2" [ref=e49] [cursor=pointer]:
+              - generic [ref=e50]:
+                - text: ash·
+                - generic [ref=e51]: lib/ash.ex:2761
+              - generic [ref=e52]: Ash.read!/2
+          - listitem [ref=e53]:
+            - button "lib/citadel_web/live/components/task_activity_section.ex:27 CitadelWeb.Components.TaskActivitySection.update/2" [ref=e54] [cursor=pointer]:
+              - generic [ref=e55]:
+                - text: ·
+                - generic [ref=e56]: lib/citadel_web/live/components/task_activity_section.ex:27
+              - generic [ref=e57]: CitadelWeb.Components.TaskActivitySection.update/2
+          - listitem [ref=e58]:
+            - button "phoenix_live_view· lib/phoenix_live_view/utils.ex:502 Phoenix.LiveView.Utils.maybe_call_update!/3" [ref=e59] [cursor=pointer]:
+              - generic [ref=e60]:
+                - text: phoenix_live_view·
+                - generic [ref=e61]: lib/phoenix_live_view/utils.ex:502
+              - generic [ref=e62]: Phoenix.LiveView.Utils.maybe_call_update!/3
+          - listitem [ref=e63]:
+            - button "elixir· lib/enum.ex:1688 Enum.\"-map/2-lists^map/1-1-\"/2" [ref=e64] [cursor=pointer]:
+              - generic [ref=e65]:
+                - text: elixir·
+                - generic [ref=e66]: lib/enum.ex:1688
+              - generic [ref=e67]: Enum."-map/2-lists^map/1-1-"/2
+          - listitem [ref=e68]:
+            - button "phoenix_live_view· lib/phoenix_live_view/diff.ex:859 anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6" [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]:
+                - text: phoenix_live_view·
+                - generic [ref=e71]: lib/phoenix_live_view/diff.ex:859
+              - generic [ref=e72]: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6
+          - listitem [ref=e73]:
+            - button "telemetry· /Users/jacob.stover/code/personal/citadel/deps/telemetry/src/telemetry.erl:324 :telemetry.span/3" [ref=e74] [cursor=pointer]:
+              - generic [ref=e75]:
+                - text: telemetry·
+                - generic [ref=e76]: /Users/jacob.stover/code/personal/citadel/deps/telemetry/src/telemetry.erl:324
+              - generic [ref=e77]: :telemetry.span/3
+          - listitem [ref=e78]:
+            - button "phoenix_live_view· lib/phoenix_live_view/diff.ex:854 anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6" [ref=e79] [cursor=pointer]:
+              - generic [ref=e80]:
+                - text: phoenix_live_view·
+                - generic [ref=e81]: lib/phoenix_live_view/diff.ex:854
+              - generic [ref=e82]: anonymous fn/4 in Phoenix.LiveView.Diff.render_pending_components/6
+          - listitem [ref=e83]:
+            - button "stdlib· maps.erl:894 :maps.fold_1/4" [ref=e84] [cursor=pointer]:
+              - generic [ref=e85]:
+                - text: stdlib·
+                - generic [ref=e86]: maps.erl:894
+              - generic [ref=e87]: :maps.fold_1/4
+          - listitem [ref=e88]:
+            - button "phoenix_live_view· lib/phoenix_live_view/diff.ex:813 Phoenix.LiveView.Diff.render_pending_components/6" [ref=e89] [cursor=pointer]:
+              - generic [ref=e90]:
+                - text: phoenix_live_view·
+                - generic [ref=e91]: lib/phoenix_live_view/diff.ex:813
+              - generic [ref=e92]: Phoenix.LiveView.Diff.render_pending_components/6
+          - listitem [ref=e93]:
+            - button "phoenix_live_view· lib/phoenix_live_view/diff.ex:153 Phoenix.LiveView.Diff.render/4" [ref=e94] [cursor=pointer]:
+              - generic [ref=e95]:
+                - text: phoenix_live_view·
+                - generic [ref=e96]: lib/phoenix_live_view/diff.ex:153
+              - generic [ref=e97]: Phoenix.LiveView.Diff.render/4
+  - generic [ref=e98]:
+    - group [ref=e99]:
+      - generic "Params" [ref=e100] [cursor=pointer]
+      - generic [ref=e101]:
+        - term [ref=e102]: id
+        - definition [ref=e103]:
+          - generic [ref=e104]: "\"P-1\""
+    - group [ref=e105]:
+      - generic "Request info" [ref=e106] [cursor=pointer]
+    - group [ref=e107]:
+      - generic "Headers" [ref=e108] [cursor=pointer]
+    - group [ref=e109]:
+      - generic "Session" [ref=e110] [cursor=pointer]

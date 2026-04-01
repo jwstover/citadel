@@ -15,6 +15,7 @@ defmodule Citadel.Tasks.TaskActivity do
 
     references do
       reference :task, on_delete: :delete
+      reference :parent_activity, on_delete: :nilify
       reference :agent_run, on_delete: :nilify
     end
   end
@@ -57,6 +58,26 @@ defmodule Citadel.Tasks.TaskActivity do
       change Citadel.Tasks.Changes.InheritTaskWorkspace
     end
 
+    create :create_agent_question do
+      accept [:body, :task_id, :agent_run_id]
+      validate present(:agent_run_id)
+      change set_attribute(:type, :question)
+      change set_attribute(:actor_type, :ai)
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.RequestInput
+    end
+
+    create :create_question_response do
+      accept [:body, :task_id, :parent_activity_id]
+
+      change set_attribute(:type, :question_response)
+      change set_attribute(:actor_type, :user)
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.CreateQuestionAnswer
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -95,6 +116,8 @@ defmodule Citadel.Tasks.TaskActivity do
     publish :create_comment, ["task_activities", :task_id]
     publish :create_request_changes_comment, ["task_activities", :task_id]
     publish :create_agent_run_activity, ["task_activities", :task_id]
+    publish :create_agent_question, ["task_activities", :task_id]
+    publish :create_question_response, ["task_activities", :task_id]
     publish :destroy_comment, ["task_activities", :task_id]
   end
 
@@ -123,6 +146,8 @@ defmodule Citadel.Tasks.TaskActivity do
     end
 
     attribute :actor_display_name, :string
+    attribute :agent_run_id, :uuid, public?: true
+    attribute :parent_activity_id, :uuid, public?: true
 
     timestamps()
   end
@@ -131,6 +156,16 @@ defmodule Citadel.Tasks.TaskActivity do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
-    belongs_to :agent_run, Citadel.Tasks.AgentRun, public?: true, allow_nil?: true
+
+    belongs_to :agent_run, Citadel.Tasks.AgentRun,
+      public?: true,
+      allow_nil?: true,
+      attribute_writable?: true,
+      define_attribute?: false
+
+    belongs_to :parent_activity, Citadel.Tasks.TaskActivity,
+      allow_nil?: true,
+      attribute_writable?: true,
+      define_attribute?: false
   end
 end

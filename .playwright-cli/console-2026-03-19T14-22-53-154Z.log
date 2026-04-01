@@ -1,0 +1,2 @@
+[   26735ms] [WARNING] %c📡 [warning] navigate event to "http://localhost:4100/sign-in" failed because you are redirecting across live_sessions. A full page reload will be performed instead
+ color: inherit; @ http://localhost:4100/phoenix/live_reload/frame:1821

@@ -1,0 +1,92 @@
+- generic [ref=e130]:
+  - generic [ref=e131]:
+    - generic "close sidebar"
+    - generic [ref=e132]:
+      - heading "Pyllar" [level=2] [ref=e134]
+      - button "Personal" [ref=e137] [cursor=pointer]:
+        - generic [ref=e139]: Personal
+      - list [ref=e141]:
+        - listitem [ref=e142]:
+          - link "Home" [ref=e143] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e145]: Home
+        - listitem [ref=e146]:
+          - link "Dashboard" [ref=e147] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e149]: Dashboard
+        - listitem [ref=e150]:
+          - link "Billing" [ref=e151] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e153]: Billing
+        - listitem [ref=e154]:
+          - link "Preferences" [ref=e155] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e157]: Preferences
+      - generic [ref=e159]:
+        - generic [ref=e162]: Agents
+        - generic [ref=e163]: No agents connected
+      - generic [ref=e166]:
+        - button [ref=e168] [cursor=pointer]
+        - button [ref=e170] [cursor=pointer]
+        - button [ref=e172] [cursor=pointer]
+  - main [ref=e174]:
+    - generic [ref=e177]:
+      - list [ref=e179]:
+        - listitem [ref=e180]:
+          - link "Tasks" [ref=e181] [cursor=pointer]:
+            - /url: /dashboard
+        - listitem [ref=e182]:
+          - generic [ref=e183] [cursor=pointer]: P-1
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - button [ref=e188] [cursor=pointer]
+          - textbox [ref=e190]: Build authentication system
+        - button "Delete" [ref=e192] [cursor=pointer]: Delete
+      - generic [ref=e195]:
+        - generic [ref=e196]:
+          - heading "Description" [level=2] [ref=e197]
+          - textbox [ref=e200]:
+            - paragraph [ref=e201]: Implement OAuth2 login with Google and email/password
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - generic [ref=e205]: Priority
+            - button "medium" [ref=e207] [cursor=pointer]:
+              - generic [ref=e208]: medium
+          - generic [ref=e209]:
+            - generic [ref=e210]: Assignees
+            - generic [ref=e213] [cursor=pointer]: None
+          - generic [ref=e215]:
+            - generic [ref=e216]: Due Date
+            - textbox "None" [ref=e217]
+          - generic [ref=e218]:
+            - generic [ref=e219]: Project
+            - generic [ref=e220]: None
+          - generic [ref=e221]:
+            - generic [ref=e222]: Agent
+            - button "Not eligible" [ref=e223] [cursor=pointer]: Not eligible
+      - generic [ref=e233]:
+        - generic [ref=e234]:
+          - heading "Sub-tasks (0)" [level=2] [ref=e235]
+          - button "Add" [ref=e236] [cursor=pointer]: Add
+        - paragraph [ref=e238]: No sub-tasks
+      - generic [ref=e239]:
+        - heading "Activity" [level=2] [ref=e240]
+        - generic [ref=e279]:
+          - generic "qatest@example.com" [ref=e281]:
+            - generic [ref=e282]: Q
+          - generic [ref=e283]:
+            - generic [ref=e284]:
+              - generic [ref=e285]: qatest@example.com
+              - generic [ref=e286]: just now
+              - button [ref=e287]
+            - paragraph [ref=e289]: This is a QA test comment to check activity logging.
+        - generic [ref=e243]:
+          - generic "qatest@example.com" [ref=e245]:
+            - generic [ref=e246]: Q
+          - generic [ref=e247]:
+            - textbox "Add a comment..." [ref=e248]
+            - generic [ref=e249]:
+              - generic [ref=e250] [cursor=pointer]:
+                - checkbox "Request changes" [ref=e251]
+                - generic [ref=e252]: Request changes
+              - button "Comment" [active] [ref=e253] [cursor=pointer]
