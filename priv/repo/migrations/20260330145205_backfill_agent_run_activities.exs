@@ -11,7 +11,7 @@ defmodule Citadel.Repo.Migrations.BackfillAgentRunActivities do
   def up do
     execute("""
     INSERT INTO task_activities (id, type, actor_type, actor_display_name, task_id, workspace_id, agent_run_id, inserted_at, updated_at)
-    SELECT gen_random_uuid(), 'agent_run', 'ai', 'Agent', task_id, workspace_id, id, inserted_at, inserted_at
+    SELECT uuid_generate_v7(), 'agent_run', 'ai', 'Agent', task_id, workspace_id, id, inserted_at, inserted_at
     FROM agent_runs
     WHERE NOT EXISTS (
       SELECT 1 FROM task_activities WHERE task_activities.agent_run_id = agent_runs.id
