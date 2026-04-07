@@ -1,0 +1,10 @@
+{
+  "name": "pyllar",
+  "version": "0.1.0",
+  "description": "AI-powered project management for Claude Code. Proactive task tracking, smart breakdown, blocker detection, and daily standups.",
+  "author": {
+    "name": "Pyllar"
+  },
+  "homepage": "https://pyllar.dev",
+  "keywords": ["project-management", "tasks", "productivity", "ai-pm"]
+}
