@@ -79,23 +79,29 @@ defmodule CitadelWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="fixed top-4 right-4 z-50"
       {@rest}
     >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
+      <div class="flex items-center gap-3 w-80 sm:w-96 rounded-lg bg-base-200 border border-base-300 px-4 py-3 text-base-content shadow-lg shadow-black/20">
+        <.icon
+          :if={@kind == :info}
+          name="hero-check-circle-solid"
+          class="size-5 shrink-0 text-success"
+        />
+        <.icon
+          :if={@kind == :error}
+          name="hero-exclamation-circle-solid"
+          class="size-5 shrink-0 text-error"
+        />
+        <div class="flex-1 min-w-0 text-wrap">
+          <p :if={@title} class="font-semibold text-sm">{@title}</p>
+          <p class="text-sm text-base-content/80">{msg}</p>
         </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
+        <button type="button" class="group shrink-0 cursor-pointer" aria-label={gettext("close")}>
+          <.icon
+            name="hero-x-mark"
+            class="size-4 text-base-content/40 group-hover:text-base-content/70 transition-colors"
+          />
         </button>
       </div>
     </div>
