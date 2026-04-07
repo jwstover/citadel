@@ -1,3 +1,12 @@
+## [0.45.2](https://github.com/jwstover/citadel/compare/v0.45.1...v0.45.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* use uuid_generate_v7() for backfilled activity records ([7ec2272](https://github.com/jwstover/citadel/commit/7ec227255011dc3eb52a5382db08b5887ca311cd))
+
+
+
 ## [0.45.1](https://github.com/jwstover/citadel/compare/v0.45.0...v0.45.1) (2026-04-01)
 
 
@@ -51,15 +60,6 @@
 ### Bug Fixes
 
 * **mcp:** return 404 instead of 401 for OAuth discovery under /mcp ([7664451](https://github.com/jwstover/citadel/commit/7664451f6b97c514d7f4280db2c8ff9d3480aca9))
-
-
-
-## [0.43.3](https://github.com/jwstover/citadel/compare/v0.43.2...v0.43.3) (2026-03-31)
-
-
-### Bug Fixes
-
-* **mcp:** add OAuth protected resource discovery endpoint ([d675e63](https://github.com/jwstover/citadel/commit/d675e6322fbe3fb831bfc74b021a16b9d55c20b4))
 
 
 
