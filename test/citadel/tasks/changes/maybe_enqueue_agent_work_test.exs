@@ -300,11 +300,12 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
       assert list_work_items_for_task(task.id, workspace.id) == []
     end
 
-    test "creates new work item when toggling agent_eligible after claimed work item is cancelled", %{
-      user: user,
-      workspace: workspace,
-      todo_state: todo_state
-    } do
+    test "creates new work item when toggling agent_eligible after claimed work item is cancelled",
+         %{
+           user: user,
+           workspace: workspace,
+           todo_state: todo_state
+         } do
       task =
         Tasks.create_task!(
           %{
