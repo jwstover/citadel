@@ -299,6 +299,59 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
 
       assert list_work_items_for_task(task.id, workspace.id) == []
     end
+
+    test "creates new work item when toggling agent_eligible after claimed work item is cancelled",
+         %{
+           user: user,
+           workspace: workspace,
+           todo_state: todo_state
+         } do
+      task =
+        Tasks.create_task!(
+          %{
+            title: "Cancelled Run Task #{System.unique_integer([:positive])}",
+            task_state_id: todo_state.id,
+            agent_eligible: true
+          },
+          actor: user,
+          tenant: workspace.id
+        )
+
+      work_items = list_work_items_for_task(task.id, workspace.id)
+      assert length(work_items) == 1
+      original_work_item = hd(work_items)
+
+      # Simulate the claim flow: create agent run and claim the work item
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      original_work_item
+      |> Ash.Changeset.for_update(:claim, %{agent_run_id: agent_run.id},
+        authorize?: false,
+        tenant: workspace.id
+      )
+      |> Ash.update!()
+
+      # Cancel the agent run (which cancels the claimed work item via SyncWorkItemStatus)
+      Tasks.cancel_agent_run!(agent_run, actor: user, tenant: workspace.id)
+
+      # Verify work item was cancelled
+      work_items = list_work_items_for_task(task.id, workspace.id)
+      assert Enum.all?(work_items, &(&1.status == :cancelled))
+
+      # Toggle agent_eligible off then on - should create a new pending work item
+      Tasks.update_task!(task.id, %{agent_eligible: false}, actor: user, tenant: workspace.id)
+      Tasks.update_task!(task.id, %{agent_eligible: true}, actor: user, tenant: workspace.id)
+
+      work_items = list_work_items_for_task(task.id, workspace.id)
+      pending_items = Enum.filter(work_items, &(&1.status == :pending))
+      assert length(pending_items) == 1
+      assert hd(pending_items).id != original_work_item.id
+    end
   end
 
   describe "dependency-blocked tasks" do
