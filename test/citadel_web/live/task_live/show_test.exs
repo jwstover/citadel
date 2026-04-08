@@ -1384,17 +1384,9 @@ defmodule CitadelWeb.TaskLive.ShowTest do
   end
 
   defp create_agent_run_with_activity(task, user, workspace) do
-    run =
-      Tasks.create_agent_run!(%{task_id: task.id},
-        actor: user,
-        tenant: workspace.id
-      )
-
-    Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
-      authorize?: false,
+    Tasks.create_agent_run!(%{task_id: task.id},
+      actor: user,
       tenant: workspace.id
     )
-
-    run
   end
 end

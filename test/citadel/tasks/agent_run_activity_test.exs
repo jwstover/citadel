@@ -26,6 +26,72 @@ defmodule Citadel.Tasks.AgentRunActivityTest do
     {:ok, user: user, workspace: workspace, task: task}
   end
 
+  describe "auto-creation of agent run activity" do
+    test "creating an agent run auto-creates a linked TaskActivity", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      activities =
+        Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
+
+      assert length(activities) == 1
+      activity = hd(activities)
+      assert activity.type == :agent_run
+      assert activity.actor_type == :ai
+      assert activity.actor_display_name == "Agent"
+      assert activity.task_id == task.id
+      assert activity.agent_run_id == agent_run.id
+      assert activity.workspace_id == workspace.id
+    end
+
+    test "auto-created activity broadcasts PubSub message", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
+
+      Tasks.create_agent_run!(
+        %{task_id: task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "tasks:task_activities:" <> _,
+        event: "create_agent_run_activity"
+      }
+    end
+
+    test "auto-created activity can load agent_run relationship", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      activities =
+        Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
+
+      activity = hd(activities)
+      loaded = Ash.load!(activity, :agent_run, authorize?: false, tenant: workspace.id)
+      assert loaded.agent_run.id == agent_run.id
+    end
+  end
+
   describe "create_agent_run_activity/2" do
     test "creates an agent run activity with correct attributes", %{
       user: user,
@@ -86,27 +152,6 @@ defmodule Citadel.Tasks.AgentRunActivityTest do
       assert loaded.agent_run.status == :pending
     end
 
-    test "broadcasts PubSub message on create", %{
-      user: user,
-      workspace: workspace,
-      task: task
-    } do
-      agent_run =
-        generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
-
-      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
-
-      Tasks.create_agent_run_activity!(
-        %{task_id: task.id, agent_run_id: agent_run.id},
-        tenant: workspace.id
-      )
-
-      assert_receive %Phoenix.Socket.Broadcast{
-        topic: "tasks:task_activities:" <> _,
-        event: "create_agent_run_activity"
-      }
-    end
-
     test "bypasses authorization (no actor required)", %{
       user: user,
       workspace: workspace,
@@ -137,13 +182,7 @@ defmodule Citadel.Tasks.AgentRunActivityTest do
         tenant: workspace.id
       )
 
-      agent_run =
-        generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
-
-      Tasks.create_agent_run_activity!(
-        %{task_id: task.id, agent_run_id: agent_run.id},
-        tenant: workspace.id
-      )
+      generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
 
       Tasks.create_comment!(
         %{body: "Second comment", task_id: task.id},
@@ -167,13 +206,7 @@ defmodule Citadel.Tasks.AgentRunActivityTest do
       workspace: workspace,
       task: task
     } do
-      agent_run =
-        generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
-
-      Tasks.create_agent_run_activity!(
-        %{task_id: task.id, agent_run_id: agent_run.id},
-        tenant: workspace.id
-      )
+      generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
 
       activities =
         Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
@@ -192,11 +225,6 @@ defmodule Citadel.Tasks.AgentRunActivityTest do
     } do
       agent_run =
         generate(agent_run([task_id: task.id], actor: user, tenant: workspace.id))
-
-      Tasks.create_agent_run_activity!(
-        %{task_id: task.id, agent_run_id: agent_run.id},
-        tenant: workspace.id
-      )
 
       Ash.destroy!(agent_run, authorize?: false, tenant: workspace.id)
 
