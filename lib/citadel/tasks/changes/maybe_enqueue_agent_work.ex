@@ -20,11 +20,25 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWork do
   end
 
   defp should_enqueue?(task) do
-    task.agent_eligible == true &&
-      workable_state?(task.task_state_id) &&
-      !blocked?(task) &&
-      !active_run_exists?(task.id, task.workspace_id) &&
-      !active_work_item_exists?(task.id, task.workspace_id)
+    require Logger
+
+    eligible = task.agent_eligible == true
+    workable = workable_state?(task.task_state_id)
+    blocked = blocked?(task)
+    active_run = active_run_exists?(task.id, task.workspace_id)
+    active_work_item = active_work_item_exists?(task.id, task.workspace_id)
+
+    result = eligible && workable && !blocked && !active_run && !active_work_item
+
+    unless result do
+      Logger.warning(
+        "MaybeEnqueueAgentWork: skipping task #{task.id} — " <>
+          "eligible=#{eligible}, workable=#{workable}, blocked=#{blocked}, " <>
+          "active_run=#{active_run}, active_work_item=#{active_work_item}"
+      )
+    end
+
+    result
   end
 
   defp blocked?(task) do
