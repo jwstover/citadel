@@ -1,9 +1,15 @@
 {
   "private": true,
   "dependencies": {
+    "@dagrejs/dagre": "^3.0.0",
     "@milkdown/kit": "^7.6.0",
     "@milkdown/plugin-highlight": "^7.6.0",
+    "@xyflow/svelte": "^1.5.2",
+    "@xyflow/system": "^0.0.76",
+    "esbuild": "^0.28.0",
+    "esbuild-svelte": "^0.9.4",
     "highlight.js": "^11.9.0",
-    "lowlight": "^3.0.0"
+    "lowlight": "^3.0.0",
+    "svelte": "^5.55.2"
   }
 }
