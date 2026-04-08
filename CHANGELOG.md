@@ -1,3 +1,12 @@
+## [0.45.3](https://github.com/jwstover/citadel/compare/v0.45.2...v0.45.3) (2026-04-08)
+
+
+### Bug Fixes
+
+* upgrade Oban migration to v14 to add suspended job state ([8f78b13](https://github.com/jwstover/citadel/commit/8f78b132e44e37cd20b2053155577779a363ed8b))
+
+
+
 ## [0.45.2](https://github.com/jwstover/citadel/compare/v0.45.1...v0.45.2) (2026-04-07)
 
 
@@ -51,15 +60,6 @@
 * **task_activity:** add question/response types, parent linking, and domain actions ([3fb0cf6](https://github.com/jwstover/citadel/commit/3fb0cf638803acb8c276a9da04d5320b27357fec))
 * **task_activity:** render agent questions and reply form in activity feed ([1673056](https://github.com/jwstover/citadel/commit/1673056b0ae1da3388e3cec5a4930382b747624d))
 * **task_activity:** require agent_run_id in create_agent_question ([f914fd2](https://github.com/jwstover/citadel/commit/f914fd2948a24c1a938e4d0c8f8299d597720df8))
-
-
-
-## [0.43.4](https://github.com/jwstover/citadel/compare/v0.43.3...v0.43.4) (2026-03-31)
-
-
-### Bug Fixes
-
-* **mcp:** return 404 instead of 401 for OAuth discovery under /mcp ([7664451](https://github.com/jwstover/citadel/commit/7664451f6b97c514d7f4280db2c8ff9d3480aca9))
 
 
 
