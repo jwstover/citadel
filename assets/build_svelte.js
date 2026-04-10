@@ -1,3 +1,4 @@
+const path = require("path");
 const esbuild = require("esbuild");
 const sveltePlugin = require("esbuild-svelte");
 
@@ -5,6 +6,7 @@ const isWatch = process.argv.includes("--watch");
 const isMinify = process.argv.includes("--minify");
 
 const buildOptions = {
+  absWorkingDir: path.resolve(__dirname),
   entryPoints: ["svelte/index.js"],
   bundle: true,
   outdir: "../priv/static/assets/js/svelte",
@@ -15,7 +17,10 @@ const buildOptions = {
   sourcemap: isWatch ? "inline" : false,
   plugins: [
     sveltePlugin({
-      compilerOptions: { css: "injected" },
+      compilerOptions: {
+        css: "injected",
+        compatibility: { componentApi: 4 },
+      },
     }),
   ],
   logLevel: "info",
