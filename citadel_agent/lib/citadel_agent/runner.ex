@@ -436,7 +436,8 @@ defmodule CitadelAgent.Runner do
            label: "commit:#{task["human_id"]}",
            timeout: @commit_stall_timeout,
            model: "sonnet",
-           allowed_tools: ["Bash"]
+           tools: ["Bash"],
+           no_mcp: true
          ) do
       {:ok, %{exit_code: 0}} ->
         :ok
@@ -469,7 +470,9 @@ defmodule CitadelAgent.Runner do
            working_dir: project_path,
            label: "pr-title:#{task["human_id"]}",
            timeout: @commit_stall_timeout,
-           model: "sonnet"
+           model: "sonnet",
+           tools: [],
+           no_mcp: true
          ) do
       {:ok, %{exit_code: 0, output: output}} ->
         case extract_text_from_stream_json(output) do
@@ -504,7 +507,9 @@ defmodule CitadelAgent.Runner do
            working_dir: project_path,
            label: "pr-desc:#{task["human_id"]}",
            timeout: @commit_stall_timeout,
-           model: "sonnet"
+           model: "sonnet",
+           tools: [],
+           no_mcp: true
          ) do
       {:ok, %{exit_code: 0, output: output}} ->
         case extract_text_from_stream_json(output) do
@@ -601,7 +606,8 @@ defmodule CitadelAgent.Runner do
     model = Keyword.get(opts, :model)
     run_id = Keyword.get(opts, :run_id)
     resume_session_id = Keyword.get(opts, :resume_session_id)
-    allowed_tools = Keyword.get(opts, :allowed_tools)
+    tools = Keyword.get(opts, :tools)
+    no_mcp = Keyword.get(opts, :no_mcp, false)
 
     Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
 
@@ -612,10 +618,16 @@ defmodule CitadelAgent.Runner do
     else
       model_flag = if model, do: " --model #{model}", else: ""
       resume_flag = if resume_session_id, do: " --resume #{escape_shell(resume_session_id)}", else: ""
-      tools_flag = if allowed_tools, do: " --allowedTools #{Enum.join(allowed_tools, ",")}", else: ""
+      tools_flag =
+        case tools do
+          nil -> ""
+          [] -> ~s( --tools "")
+          list -> " --tools #{Enum.join(list, ",")}"
+        end
+      mcp_flag = if no_mcp, do: " --strict-mcp-config", else: ""
 
       cmd =
-        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag}#{tools_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag}#{tools_flag}#{mcp_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
