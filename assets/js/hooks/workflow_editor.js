@@ -29,6 +29,7 @@ const WORKFLOW_NODES = [
       label: "Execute",
       nodeType: "action",
       description: "Implement the solution",
+      status: "running",
     },
   },
   {
