@@ -11,8 +11,8 @@ defmodule CitadelAgent.Application do
 
         [
           {Registry, keys: :unique, name: CitadelAgent.RunnerRegistry},
-          {DynamicSupervisor, name: CitadelAgent.RunnerSupervisor, strategy: :one_for_one},
           {CitadelAgent.Socket, []},
+          {DynamicSupervisor, name: CitadelAgent.TaskRunnerSupervisor, strategy: :one_for_one},
           {CitadelAgent.Scheduler, []}
         ]
       else
