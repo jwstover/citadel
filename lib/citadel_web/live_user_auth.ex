@@ -103,6 +103,21 @@ defmodule CitadelWeb.LiveUserAuth do
     end
   end
 
+  def on_mount(:require_workflow_editor_feature, _params, _session, socket) do
+    case FeatureFlags.get(:workflow_editor) do
+      {:ok, true} ->
+        {:cont, socket}
+
+      _ ->
+        socket =
+          socket
+          |> Phoenix.LiveView.put_flash(:error, "Workflow editor is not available")
+          |> Phoenix.LiveView.redirect(to: ~p"/dashboard")
+
+        {:halt, socket}
+    end
+  end
+
   def on_mount(:set_reset_page_title, _params, _session, socket) do
     {:cont, assign(socket, :page_title, "Reset Password")}
   end

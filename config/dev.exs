@@ -28,7 +28,12 @@ config :citadel, CitadelWeb.Endpoint,
   secret_key_base: "sYKL/CuV5x9ijCYkgRc3cL+NmSmfPCIBCCjN/AyoeIgxLMDI5oFrw/qK8uCJa69X",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:citadel, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:citadel, ~w(--watch)]}
+    tailwind: {Tailwind, :install_and_run, [:citadel, ~w(--watch)]},
+    node: [
+      Path.expand("../assets/build_svelte.js", __DIR__),
+      "--watch",
+      cd: Path.expand("../assets", __DIR__)
+    ]
   ]
 
 config :live_debugger, :disabled?, true
@@ -63,7 +68,8 @@ config :citadel, CitadelWeb.Endpoint,
     patterns: [
       ~r"priv/static/(?!uploads/).*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/citadel_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$"
+      ~r"lib/citadel_web/(?:controllers|live|components|router)/?.*\.(ex|heex)$",
+      ~r"assets/svelte/.*(svelte|js)$"
     ]
   ]
 

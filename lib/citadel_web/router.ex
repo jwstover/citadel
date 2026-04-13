@@ -198,6 +198,22 @@ defmodule CitadelWeb.Router do
   end
 
   if Application.compile_env(:citadel, :dev_routes) do
+    scope "/dev", CitadelWeb do
+      pipe_through :browser
+
+      ash_authentication_live_session :workflow_editor_routes,
+        on_mount: [
+          {CitadelWeb.LiveUserAuth, :live_user_required},
+          {CitadelWeb.LiveUserAuth, :load_workspace},
+          {CitadelWeb.AgentPresenceHook, :default},
+          {CitadelWeb.LiveUserAuth, :require_workflow_editor_feature}
+        ] do
+        live "/workflow-editor", WorkflowEditorLive
+      end
+    end
+  end
+
+  if Application.compile_env(:citadel, :dev_routes) do
     import AshAdmin.Router
 
     scope "/admin" do
