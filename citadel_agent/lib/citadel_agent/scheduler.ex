@@ -1,4 +1,4 @@
-defmodule CitadelAgent.Worker do
+defmodule CitadelAgent.Scheduler do
   @moduledoc """
   GenServer that polls Citadel for agent-eligible tasks and spawns a
   `CitadelAgent.TaskRunner` process for each claimed task.
@@ -17,7 +17,7 @@ defmodule CitadelAgent.Worker do
     poll_interval = CitadelAgent.config(:poll_interval) || 10_000
     send(self(), :poll)
 
-    Logger.info("CitadelAgent.Worker started, polling every #{poll_interval}ms")
+    Logger.info("CitadelAgent.Scheduler started, polling every #{poll_interval}ms")
 
     {:ok, %{poll_interval: poll_interval}}
   end
