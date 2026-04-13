@@ -1,3 +1,21 @@
+# [0.47.0](https://github.com/jwstover/citadel/compare/v0.46.1...v0.47.0) (2026-04-13)
+
+
+### Bug Fixes
+
+* resolve Svelte build pipeline path and API compatibility issues ([ba41fe9](https://github.com/jwstover/citadel/commit/ba41fe9f2e52788e96f828c6e87fe029c4e390c4))
+
+
+### Features
+
+* add custom node styling, detail panel, and active runner animation ([b53c5ba](https://github.com/jwstover/citadel/commit/b53c5ba35ce5361e9ccba60e565a988bf49d2467))
+* add Node-based Svelte build pipeline alongside esbuild ([fdbeb77](https://github.com/jwstover/citadel/commit/fdbeb77875397db030d2624098ee8132c39fdb57))
+* add Svelte and XYFlow npm dependencies ([7123af8](https://github.com/jwstover/citadel/commit/7123af8e987ff6429cbc5b402aa8726401b0a696))
+* add workflow_editor feature flag and gated dev route ([a0d9b72](https://github.com/jwstover/citadel/commit/a0d9b72787b28b07e4b55208dceea5dbb8df63d4))
+* add WorkflowGraph Svelte component and WorkflowEditor LiveView hook ([e59465d](https://github.com/jwstover/citadel/commit/e59465d0d77581ba67cdd45f5f5e4c7bf13bee4d))
+
+
+
 ## [0.46.1](https://github.com/jwstover/citadel/compare/v0.46.0...v0.46.1) (2026-04-10)
 
 
@@ -36,23 +54,6 @@
 ### Bug Fixes
 
 * resolve duplicate agent_run_id migration failure in prod ([3893051](https://github.com/jwstover/citadel/commit/3893051175acc67e34438a18592365aa81f5172a))
-
-
-
-# [0.45.0](https://github.com/jwstover/citadel/compare/v0.44.0...v0.45.0) (2026-04-01)
-
-
-### Bug Fixes
-
-* remove duplicate agent_run_id column from migration ([681f337](https://github.com/jwstover/citadel/commit/681f337ccea885cedee03fccb7bdf38573aea33a))
-* update agent run tests to match activity-based UI ([80d977b](https://github.com/jwstover/citadel/commit/80d977bb27a598dc1d868ef0ec1855ed1cea46f4))
-
-
-### Features
-
-* add :agent_run activity type and relationship to TaskActivity ([5605c54](https://github.com/jwstover/citadel/commit/5605c542c392e0885106b2b12be348947043bede))
-* add backfill migration and tests for agent run task activities ([4cce8db](https://github.com/jwstover/citadel/commit/4cce8db186d8214c3c6593d702c6e31cb5b7a328))
-* render agent run activities in TaskActivitySection with full detail ([47b57e0](https://github.com/jwstover/citadel/commit/47b57e027289ac889f4f185398ba73d78b35ddda))
 
 
 
