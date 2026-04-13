@@ -67,7 +67,7 @@ defmodule CitadelAgent.Scheduler do
           %{task: task, run: run, project_path: project_path}
         }
 
-        case DynamicSupervisor.start_child(CitadelAgent.RunnerSupervisor, child_spec) do
+        case DynamicSupervisor.start_child(CitadelAgent.TaskRunnerSupervisor, child_spec) do
           {:ok, pid} ->
             Logger.info("Started TaskRunner #{inspect(pid)} for task #{task["human_id"]}")
 
