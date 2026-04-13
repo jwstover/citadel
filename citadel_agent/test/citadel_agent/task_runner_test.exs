@@ -83,6 +83,60 @@ defmodule CitadelAgent.TaskRunnerTest do
     wait_for_exit(pid)
   end
 
+  describe "terminate/2" do
+    setup ctx do
+      Req.Test.set_req_test_to_shared()
+
+      original_req_opts = Application.get_env(:citadel_agent, :client_req_options)
+      Application.put_env(:citadel_agent, :client_req_options, plug: {Req.Test, :citadel_api})
+
+      on_exit(fn ->
+        Req.Test.set_req_test_to_private()
+
+        if original_req_opts do
+          Application.put_env(:citadel_agent, :client_req_options, original_req_opts)
+        else
+          Application.delete_env(:citadel_agent, :client_req_options)
+        end
+      end)
+
+      ctx
+    end
+
+    test "calls update_run with failed status when active_run is set", ctx do
+      test_pid = self()
+      run_id = ctx.run["id"]
+
+      Req.Test.stub(:citadel_api, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:update_run, conn.request_path, Jason.decode!(body)})
+
+        conn
+        |> Plug.Conn.put_resp_content_type("application/json")
+        |> Plug.Conn.send_resp(200, Jason.encode!(%{"data" => %{"id" => run_id}}))
+      end)
+
+      state = %{active_run: ctx.run, task: ctx.task, project_path: ctx.project_path}
+
+      CitadelAgent.TaskRunner.terminate(:test_crash, state)
+
+      assert_receive {:update_run, path, body}, 2_000
+      assert path == "/api/agent/runs/#{run_id}"
+      assert body["status"] == "failed"
+      assert body["error_message"] =~ "terminated"
+      assert body["completed_at"]
+    end
+
+    test "is a no-op for normal exit" do
+      assert :ok = CitadelAgent.TaskRunner.terminate(:normal, %{})
+    end
+
+    test "handles nil active_run on abnormal exit" do
+      state = %{active_run: nil, task: %{}, project_path: "/tmp"}
+      CitadelAgent.TaskRunner.terminate(:shutdown, state)
+    end
+  end
+
   defp start_task_runner(ctx) do
     CitadelAgent.TaskRunner.start_link(%{
       task: ctx.task,
@@ -99,5 +153,7 @@ defmodule CitadelAgent.TaskRunnerTest do
     after
       10_000 -> raise "TaskRunner did not exit in time"
     end
+
+    Process.sleep(10)
   end
 end

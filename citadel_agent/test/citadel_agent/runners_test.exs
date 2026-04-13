@@ -110,6 +110,8 @@ defmodule CitadelAgent.RunnersTest do
     after
       1_000 -> raise "Process did not stop in time"
     end
+
+    Process.sleep(10)
   end
 
   defp kill_and_wait(pid) do
