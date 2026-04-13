@@ -15,13 +15,15 @@
   function getLayoutedElements(rawNodes, rawEdges) {
     const g = new dagre.graphlib.Graph();
     g.setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: 'TB', nodesep: 60, ranksep: 100 });
+    g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 100 });
+
+    const forwardEdges = rawEdges.filter((e) => !e.sourceHandle);
 
     for (const node of rawNodes) {
       g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
     }
 
-    for (const edge of rawEdges) {
+    for (const edge of forwardEdges) {
       g.setEdge(edge.source, edge.target);
     }
 
@@ -41,24 +43,11 @@
     return { nodes: layoutedNodes, edges: rawEdges };
   }
 
-  function styleEdges(edges, nodes) {
-    const runningNodeIds = new Set(
-      nodes.filter((n) => n.data.status === 'running').map((n) => n.id)
-    );
-
-    return edges.map((edge) => {
-      if (runningNodeIds.has(edge.target)) {
-        return {
-          ...edge,
-          animated: true,
-          style: 'stroke: oklch(77% 0.152 181.912); stroke-width: 2px;',
-        };
-      }
-      return {
-        ...edge,
-        style: 'stroke: oklch(30% 0 0); stroke-width: 1.5px;',
-      };
-    });
+  function styleEdges(edges) {
+    return edges.map((edge) => ({
+      ...edge,
+      style: 'stroke: oklch(30% 0 0); stroke-width: 1px;',
+    }));
   }
 
   function handleNodeClick(_event, node) {
@@ -75,7 +64,7 @@
 
   const nodeTypes = { workflow: WorkflowNode };
   const layout = getLayoutedElements(initialNodes, initialEdges);
-  const styledEdges = styleEdges(layout.edges, initialNodes);
+  const styledEdges = styleEdges(layout.edges);
 </script>
 
 <div class="workflow-graph-container">
@@ -112,8 +101,8 @@
   }
 
   :global(.svelte-flow__edge-text) {
-    fill: oklch(60% 0 0) !important;
-    font-size: 11px !important;
+    fill: oklch(50% 0 0) !important;
+    font-size: 10px !important;
   }
 
   :global(.svelte-flow__edge-textbg) {
@@ -130,8 +119,8 @@
   :global(.svelte-flow__controls button) {
     background: oklch(15% 0 150) !important;
     border-color: oklch(25% 0 0) !important;
-    color: oklch(70% 0 0) !important;
-    fill: oklch(70% 0 0) !important;
+    color: oklch(60% 0 0) !important;
+    fill: oklch(60% 0 0) !important;
   }
 
   :global(.svelte-flow__controls button:hover) {
@@ -139,10 +128,10 @@
   }
 
   :global(.svelte-flow__controls button svg) {
-    fill: oklch(70% 0 0) !important;
+    fill: oklch(60% 0 0) !important;
   }
 
   :global(.svelte-flow__background pattern circle) {
-    fill: oklch(18% 0 0) !important;
+    fill: oklch(16% 0 0) !important;
   }
 </style>

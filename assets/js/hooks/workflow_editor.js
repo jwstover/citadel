@@ -97,10 +97,11 @@ const WORKFLOW_EDGES = [
   {
     id: "review-execute",
     source: "review",
+    sourceHandle: "bottom-source",
     target: "execute",
+    targetHandle: "bottom-target",
     type: "smoothstep",
     label: "Needs changes",
-    animated: true,
   },
 ];
 

@@ -6,29 +6,41 @@
   const showTarget = data.nodeType !== 'start';
   const showSource = data.nodeType !== 'end';
   const isRunning = data.status === 'running';
-
-  const typeIcons = {
-    start: '▶',
-    end: '■',
-    action: '⚡',
-    decision: '◆',
-  };
+  const isComplete = data.status === 'complete';
+  const isError = data.status === 'error';
 </script>
 
 {#if showTarget}
-  <Handle type="target" position={Position.Top} class="handle" />
+  <Handle id="left" type="target" position={Position.Left} class="handle" />
+  <Handle id="bottom-target" type="target" position={Position.Bottom} class="handle handle-loop" />
 {/if}
 
 <div
   class="workflow-node"
-  class:running={isRunning}
   data-type={data.nodeType}
 >
   <div class="node-header">
-    <span class="type-badge" data-type={data.nodeType}>
-      {typeIcons[data.nodeType] || '●'}
-    </span>
+    {#if data.nodeType === 'start'}
+      <span class="type-icon">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><polygon points="2,0 10,5 2,10" /></svg>
+      </span>
+    {:else if data.nodeType === 'end'}
+      <span class="type-icon">
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><rect x="0" y="0" width="8" height="8" rx="1" /></svg>
+      </span>
+    {:else if data.nodeType === 'decision'}
+      <span class="type-icon">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><polygon points="5,0 10,5 5,10 0,5" /></svg>
+      </span>
+    {/if}
     <span class="node-label">{data.label}</span>
+    {#if isRunning}
+      <span class="status-dot running"></span>
+    {:else if isComplete}
+      <span class="status-dot complete"></span>
+    {:else if isError}
+      <span class="status-dot error"></span>
+    {/if}
   </div>
   {#if data.description}
     <div class="node-desc">{data.description}</div>
@@ -36,22 +48,14 @@
 </div>
 
 {#if showSource}
-  <Handle type="source" position={Position.Bottom} class="handle" />
+  <Handle id="right" type="source" position={Position.Right} class="handle" />
+  <Handle id="bottom-source" type="source" position={Position.Bottom} class="handle handle-loop" />
 {/if}
 
 <style>
-  @keyframes runner-pulse {
-    0%, 100% {
-      box-shadow:
-        0 0 4px rgba(148, 226, 213, 0.3),
-        0 0 12px rgba(148, 226, 213, 0.15);
-    }
-    50% {
-      box-shadow:
-        0 0 8px rgba(148, 226, 213, 0.5),
-        0 0 24px rgba(148, 226, 213, 0.25),
-        0 0 40px rgba(148, 226, 213, 0.1);
-    }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
   }
 
   .workflow-node {
@@ -61,51 +65,23 @@
     text-align: left;
     font-family: system-ui, -apple-system, sans-serif;
     background: oklch(15% 0 150);
-    color: oklch(93% 0.005 50);
-    border: 1.5px solid oklch(25% 0 0);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    color: oklch(90% 0 0);
+    border: 1px solid oklch(25% 0 0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     cursor: pointer;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
 
   .workflow-node:hover {
     border-color: oklch(35% 0 0);
+    background: oklch(17% 0 150);
   }
 
-  .workflow-node[data-type='start'] {
-    border-color: oklch(77% 0.152 181.912);
-    border-radius: 9999px;
-    text-align: center;
-    padding: 10px 24px;
-  }
-  .workflow-node[data-type='start']:hover {
-    border-color: oklch(85% 0.152 181.912);
-  }
-
+  .workflow-node[data-type='start'],
   .workflow-node[data-type='end'] {
-    border-color: oklch(83.92% 0.0901 136.87);
     border-radius: 9999px;
     text-align: center;
     padding: 10px 24px;
-  }
-  .workflow-node[data-type='end']:hover {
-    border-color: oklch(90% 0.0901 136.87);
-  }
-
-  .workflow-node[data-type='action'] {
-    border-color: oklch(25% 0 0);
-  }
-
-  .workflow-node[data-type='decision'] {
-    border-color: oklch(80.39% 0.1148 241.68);
-  }
-  .workflow-node[data-type='decision']:hover {
-    border-color: oklch(88% 0.1148 241.68);
-  }
-
-  .workflow-node.running {
-    border-color: oklch(77% 0.152 181.912);
-    animation: runner-pulse 2.5s ease-in-out infinite;
   }
 
   .node-header {
@@ -119,37 +95,14 @@
     justify-content: center;
   }
 
-  .type-badge {
-    font-size: 10px;
-    width: 20px;
-    height: 20px;
+  .type-icon {
+    width: 16px;
+    height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
     flex-shrink: 0;
-    background: oklch(20% 0 150);
-    color: oklch(80% 0 0);
-  }
-
-  .type-badge[data-type='start'] {
-    background: oklch(77% 0.152 181.912 / 0.15);
-    color: oklch(77% 0.152 181.912);
-  }
-
-  .type-badge[data-type='end'] {
-    background: oklch(83.92% 0.0901 136.87 / 0.15);
-    color: oklch(83.92% 0.0901 136.87);
-  }
-
-  .type-badge[data-type='action'] {
-    background: oklch(25% 0 0);
-    color: oklch(80% 0 0);
-  }
-
-  .type-badge[data-type='decision'] {
-    background: oklch(80.39% 0.1148 241.68 / 0.15);
-    color: oklch(80.39% 0.1148 241.68);
+    color: oklch(55% 0 0);
   }
 
   .node-label {
@@ -158,24 +111,45 @@
     line-height: 1.2;
   }
 
-  .node-desc {
-    font-size: 11px;
-    opacity: 0.55;
-    margin-top: 4px;
-    line-height: 1.3;
-    padding-left: 26px;
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
-  [data-type='start'] .node-desc,
-  [data-type='end'] .node-desc {
-    padding-left: 0;
+  .status-dot.running {
+    background: oklch(75% 0.15 160);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status-dot.complete {
+    background: oklch(70% 0.12 145);
+  }
+
+  .status-dot.error {
+    background: oklch(65% 0.2 25);
+  }
+
+  .node-desc {
+    font-size: 11px;
+    color: oklch(55% 0 0);
+    margin-top: 4px;
+    line-height: 1.3;
   }
 
   :global(.handle) {
-    width: 8px !important;
-    height: 8px !important;
+    width: 6px !important;
+    height: 6px !important;
     background: oklch(25% 0 0) !important;
-    border: 1.5px solid oklch(40% 0 0) !important;
+    border: 1px solid oklch(40% 0 0) !important;
     border-radius: 50% !important;
+  }
+
+  :global(.handle-loop) {
+    width: 5px !important;
+    height: 5px !important;
+    opacity: 0.5;
   }
 </style>

@@ -9,10 +9,10 @@
   };
 
   const typeColors = {
-    start: 'oklch(77% 0.152 181.912)',
-    end: 'oklch(83.92% 0.0901 136.87)',
-    action: 'oklch(80% 0 0)',
-    decision: 'oklch(80.39% 0.1148 241.68)',
+    start: 'oklch(70% 0 0)',
+    end: 'oklch(70% 0 0)',
+    action: 'oklch(70% 0 0)',
+    decision: 'oklch(70% 0 0)',
   };
 
   function handleBackdropClick(e) {
