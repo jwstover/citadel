@@ -13,7 +13,7 @@ defmodule CitadelAgent.Application do
           {Registry, keys: :unique, name: CitadelAgent.RunnerRegistry},
           {DynamicSupervisor, name: CitadelAgent.RunnerSupervisor, strategy: :one_for_one},
           {CitadelAgent.Socket, []},
-          {CitadelAgent.Worker, []}
+          {CitadelAgent.Scheduler, []}
         ]
       else
         []
