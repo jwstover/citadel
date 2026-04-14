@@ -53,6 +53,7 @@ defmodule Citadel.Tasks.AgentRun do
       end
 
       change Citadel.Tasks.Changes.SyncWorkItemStatus
+      change Citadel.Tasks.Changes.MaybeRequeueAgentWork
     end
 
     update :request_input do
@@ -83,6 +84,7 @@ defmodule Citadel.Tasks.AgentRun do
 
       change set_attribute(:completed_at, &DateTime.utc_now/0)
       change Citadel.Tasks.Changes.SyncWorkItemStatus
+      change Citadel.Tasks.Changes.MaybeRequeueAgentWork
     end
 
     create :claim_next do
