@@ -206,7 +206,7 @@ defmodule CitadelAgent.RunnerPRTest do
       assert result.status == "completed"
     end
 
-    test "standalone task does not trigger PR creation", %{project_path: project_path} do
+    test "standalone task creates PR from task branch", %{project_path: project_path} do
       test_pid = self()
 
       Req.Test.stub(:github_pr, fn conn ->
@@ -238,7 +238,9 @@ defmodule CitadelAgent.RunnerPRTest do
       assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
       assert result.status == "completed"
 
-      refute_received {:pr_created, _}
+      assert_received {:pr_created, body}
+      assert body["head"] == "citadel/task-P-230"
+      assert body["base"] == "main"
     end
   end
 end
