@@ -34,12 +34,24 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
           existing
       end
 
+    in_progress_state =
+      case Citadel.Tasks.TaskState
+           |> Ash.Query.filter(name == "In Progress")
+           |> Ash.read_one(authorize?: false) do
+        {:ok, nil} ->
+          Tasks.create_task_state!(%{name: "In Progress", order: 2, is_complete: false})
+
+        {:ok, existing} ->
+          existing
+      end
+
     {:ok,
      user: user,
      workspace: workspace,
      todo_state: todo_state,
      done_state: done_state,
-     in_review_state: in_review_state}
+     in_review_state: in_review_state,
+     in_progress_state: in_progress_state}
   end
 
   defp create_eligible_task(ctx, opts \\ []) do
@@ -72,7 +84,7 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
       assert agent_run.workspace_id == ctx.workspace.id
       assert agent_run.user_id == ctx.user.id
       assert agent_run.task.id == task.id
-      assert agent_run.task.task_state.id == ctx.todo_state.id
+      assert agent_run.task.task_state.id == ctx.in_progress_state.id
     end
 
     test "returns error when no eligible tasks exist", ctx do
