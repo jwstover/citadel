@@ -1,3 +1,13 @@
+## [0.47.1](https://github.com/jwstover/citadel/compare/v0.47.0...v0.47.1) (2026-04-14)
+
+
+### Bug Fixes
+
+* recover orphaned agent runs and fail unconfigured runner claims ([d57f643](https://github.com/jwstover/citadel/commit/d57f643549b00bdfac904e67ff6437bca4d40bb7))
+* use agent presence to detect orphaned runs instead of time alone ([e0bb59b](https://github.com/jwstover/citadel/commit/e0bb59b2d1f59d6d49245fa200cf0e5ced972040))
+
+
+
 # [0.47.0](https://github.com/jwstover/citadel/compare/v0.46.1...v0.47.0) (2026-04-13)
 
 
@@ -45,15 +55,6 @@
 ### Bug Fixes
 
 * use uuid_generate_v7() for backfilled activity records ([7ec2272](https://github.com/jwstover/citadel/commit/7ec227255011dc3eb52a5382db08b5887ca311cd))
-
-
-
-## [0.45.1](https://github.com/jwstover/citadel/compare/v0.45.0...v0.45.1) (2026-04-01)
-
-
-### Bug Fixes
-
-* resolve duplicate agent_run_id migration failure in prod ([3893051](https://github.com/jwstover/citadel/commit/3893051175acc67e34438a18592365aa81f5172a))
 
 
 
