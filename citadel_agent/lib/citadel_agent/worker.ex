@@ -71,7 +71,14 @@ defmodule CitadelAgent.Worker do
   defp execute_task(task, run, feedback, resume_session_id, state) do
     case CitadelAgent.config(:project_path) do
       nil ->
-        Logger.error("No project_path configured, skipping task #{task["human_id"]}")
+        Logger.error("No project_path configured, failing task #{task["human_id"]}")
+
+        CitadelAgent.Client.update_run(run["id"], %{
+          "status" => "failed",
+          "error_message" => "No project_path configured on agent",
+          "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        })
+
         state
 
       project_path ->

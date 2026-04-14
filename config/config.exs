@@ -24,7 +24,8 @@ config :citadel, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 0 1 * *", Citadel.Workers.MonthlyCreditResetWorker},
-       {"0 3 * * *", Citadel.Workers.WebhookEventCleanupWorker}
+       {"0 3 * * *", Citadel.Workers.WebhookEventCleanupWorker},
+       {"*/5 * * * *", Citadel.Workers.StaleAgentRunReaperWorker}
      ]}
   ]
 
