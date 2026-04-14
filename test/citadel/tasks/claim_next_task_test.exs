@@ -34,12 +34,24 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
           existing
       end
 
+    in_progress_state =
+      case Citadel.Tasks.TaskState
+           |> Ash.Query.filter(name == "In Progress")
+           |> Ash.read_one(authorize?: false) do
+        {:ok, nil} ->
+          Tasks.create_task_state!(%{name: "In Progress", order: 2, is_complete: false})
+
+        {:ok, existing} ->
+          existing
+      end
+
     {:ok,
      user: user,
      workspace: workspace,
      todo_state: todo_state,
      done_state: done_state,
-     in_review_state: in_review_state}
+     in_review_state: in_review_state,
+     in_progress_state: in_progress_state}
   end
 
   defp create_eligible_task(ctx, opts \\ []) do
@@ -72,7 +84,7 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
       assert agent_run.workspace_id == ctx.workspace.id
       assert agent_run.user_id == ctx.user.id
       assert agent_run.task.id == task.id
-      assert agent_run.task.task_state.id == ctx.todo_state.id
+      assert agent_run.task.task_state.id == ctx.in_progress_state.id
     end
 
     test "returns error when no eligible tasks exist", ctx do
@@ -302,6 +314,159 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
         )
 
       assert agent_run.task_id == first.id
+    end
+  end
+
+  describe "state transitions on claim" do
+    defp reload_task(task, workspace_id) do
+      require Ash.Query
+
+      Citadel.Tasks.Task
+      |> Ash.Query.filter(id == ^task.id)
+      |> Ash.read_one!(authorize?: false, tenant: workspace_id)
+    end
+
+    test "claiming a task with no parent transitions only that task to In Progress", ctx do
+      task = create_eligible_task(ctx)
+
+      Tasks.claim_next_task!(
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      reloaded = reload_task(task, ctx.workspace.id)
+      assert reloaded.task_state_id == ctx.in_progress_state.id
+    end
+
+    test "claiming a task transitions its entire ancestor chain to In Progress", ctx do
+      grandparent =
+        Tasks.create_task!(
+          %{
+            title: "Grandparent #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id,
+            parent_task_id: grandparent.id
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id,
+            parent_task_id: parent.id,
+            agent_eligible: true
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      Tasks.claim_next_task!(
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      assert reload_task(child, ctx.workspace.id).task_state_id == ctx.in_progress_state.id
+      assert reload_task(parent, ctx.workspace.id).task_state_id == ctx.in_progress_state.id
+      assert reload_task(grandparent, ctx.workspace.id).task_state_id == ctx.in_progress_state.id
+    end
+
+    test "ancestors already In Progress are not redundantly updated", ctx do
+      grandparent =
+        Tasks.create_task!(
+          %{
+            title: "GP Already IP #{System.unique_integer([:positive])}",
+            task_state_id: ctx.in_progress_state.id
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent Already IP #{System.unique_integer([:positive])}",
+            task_state_id: ctx.in_progress_state.id,
+            parent_task_id: grandparent.id
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child To Claim #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id,
+            parent_task_id: parent.id,
+            agent_eligible: true
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      grandparent_before = reload_task(grandparent, ctx.workspace.id)
+      parent_before = reload_task(parent, ctx.workspace.id)
+
+      Tasks.claim_next_task!(
+        actor: ctx.user,
+        tenant: ctx.workspace.id
+      )
+
+      child_after = reload_task(child, ctx.workspace.id)
+      parent_after = reload_task(parent, ctx.workspace.id)
+      grandparent_after = reload_task(grandparent, ctx.workspace.id)
+
+      assert child_after.task_state_id == ctx.in_progress_state.id
+      assert parent_after.task_state_id == ctx.in_progress_state.id
+      assert grandparent_after.task_state_id == ctx.in_progress_state.id
+
+      assert grandparent_after.updated_at == grandparent_before.updated_at
+      assert parent_after.updated_at == parent_before.updated_at
+    end
+
+    test "claim failure does not change any task states", ctx do
+      parent =
+        Tasks.create_task!(
+          %{
+            title: "Parent No Claim #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      child =
+        Tasks.create_task!(
+          %{
+            title: "Child Not Eligible #{System.unique_integer([:positive])}",
+            task_state_id: ctx.todo_state.id,
+            parent_task_id: parent.id,
+            agent_eligible: false
+          },
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      assert {:error, _} =
+               Tasks.claim_next_task(
+                 actor: ctx.user,
+                 tenant: ctx.workspace.id
+               )
+
+      assert reload_task(parent, ctx.workspace.id).task_state_id == ctx.todo_state.id
+      assert reload_task(child, ctx.workspace.id).task_state_id == ctx.todo_state.id
     end
   end
 end

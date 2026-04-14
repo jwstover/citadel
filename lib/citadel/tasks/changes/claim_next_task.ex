@@ -2,6 +2,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
   @moduledoc false
   use Ash.Resource.Change
 
+  require Ash.Query
   import Ecto.Query
 
   @impl true
@@ -30,6 +31,7 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
     |> Ash.Changeset.force_change_attribute(:started_at, DateTime.utc_now())
     |> Ash.Changeset.after_action(fn _changeset, agent_run ->
       claim_work_item(work_item_id, agent_run.id, workspace_id)
+      transition_task_and_ancestors_to_in_progress(task_id, workspace_id)
       {:ok, agent_run}
     end)
   end
@@ -84,8 +86,6 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
   end
 
   defp claim_work_item(work_item_id, agent_run_id, workspace_id) do
-    require Ash.Query
-
     Citadel.Tasks.AgentWorkItem
     |> Ash.Query.filter(id == ^work_item_id)
     |> Ash.read_one!(authorize?: false, tenant: workspace_id)
@@ -94,5 +94,41 @@ defmodule Citadel.Tasks.Changes.ClaimNextTask do
       tenant: workspace_id
     )
     |> Ash.update!()
+  end
+
+  defp transition_task_and_ancestors_to_in_progress(task_id, workspace_id) do
+    case get_in_progress_state() do
+      {:ok, in_progress_state} ->
+        transition_chain(task_id, in_progress_state.id, workspace_id)
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp transition_chain(nil, _in_progress_id, _workspace_id), do: :ok
+
+  defp transition_chain(task_id, in_progress_id, workspace_id) do
+    task =
+      Citadel.Tasks.Task
+      |> Ash.Query.filter(id == ^task_id)
+      |> Ash.read_one!(authorize?: false, tenant: workspace_id)
+
+    if task.task_state_id != in_progress_id do
+      task
+      |> Ash.Changeset.for_update(:update, %{task_state_id: in_progress_id},
+        authorize?: false,
+        tenant: workspace_id
+      )
+      |> Ash.update!()
+    end
+
+    transition_chain(task.parent_task_id, in_progress_id, workspace_id)
+  end
+
+  defp get_in_progress_state do
+    Citadel.Tasks.TaskState
+    |> Ash.Query.filter(name == "In Progress")
+    |> Ash.read_one(authorize?: false)
   end
 end
