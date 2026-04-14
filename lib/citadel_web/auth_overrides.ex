@@ -6,15 +6,24 @@ defmodule CitadelWeb.AuthOverrides do
   use AshAuthentication.Phoenix.Overrides
 
   alias AshAuthentication.Phoenix.Components
+  alias CitadelWeb.AuthComponents.PasswordHint
 
   # Root container - dark background with centered content
   override AshAuthentication.Phoenix.SignInLive do
-    set :root_class, "grid h-screen place-items-center bg-base-100"
+    set :root_class,
+        "grid h-screen place-items-center bg-gradient-to-br from-base-100 via-base-200 to-base-300"
   end
 
   # Confirmation page - same styling as sign-in
   override AshAuthentication.Phoenix.ConfirmLive do
-    set :root_class, "grid h-screen place-items-center bg-base-100"
+    set :root_class,
+        "grid h-screen place-items-center bg-gradient-to-br from-base-100 via-base-200 to-base-300"
+  end
+
+  # Reset page - same background treatment
+  override AshAuthentication.Phoenix.ResetLive do
+    set :root_class,
+        "grid h-screen place-items-center bg-gradient-to-br from-base-100 via-base-200 to-base-300"
   end
 
   override Components.Confirm do
@@ -38,6 +47,22 @@ defmodule CitadelWeb.AuthOverrides do
     set :show_banner, false
   end
 
+  # Reset component - card styling
+  override Components.Reset do
+    set :root_class, "w-full max-w-md card bg-base-200 border border-base-300 p-6"
+    set :strategy_class, ""
+  end
+
+  # Banner for reset page heading
+  override Components.Banner do
+    set :root_class, "mb-6"
+    set :href_url, nil
+    set :image_url, nil
+    set :dark_image_url, nil
+    set :text_class, "text-2xl font-bold"
+    set :text, "Reset your password"
+  end
+
   # Password input fields - DaisyUI form styling
   override Components.Password.Input do
     set :input_class, "input input-bordered w-full"
@@ -52,25 +77,30 @@ defmodule CitadelWeb.AuthOverrides do
   # Sign-in form styling
   override Components.Password.SignInForm do
     set :slot_class, "flex justify-between text-sm mt-4"
-    set :label_class, "text-xl font-bold mb-4"
+    set :label_class, "text-2xl font-bold mb-6"
   end
 
   # Register form styling
   override Components.Password.RegisterForm do
-    set :slot_class, "flex justify-between text-sm mt-4"
-    set :label_class, "text-xl font-bold mb-4"
+    set :slot_class, "mt-4"
+    set :label_class, "text-2xl font-bold mb-6"
   end
 
   # Reset form styling
   override Components.Password.ResetForm do
     set :slot_class, "flex justify-between text-sm mt-4"
-    set :label_class, "text-xl font-bold mb-4"
+    set :label_class, "text-2xl font-bold mb-6"
   end
 
-  # Password component - toggler links with proper spacing
+  # Password component - use custom form modules for headings
   override Components.Password do
     set :toggler_class, "link link-primary"
     set :interstitial_class, "flex flex-row justify-between gap-4 text-sm mb-4"
+    set :reset_toggle_text, "Forgot your password?"
+    set :sign_in_form_module, CitadelWeb.Auth.SignInFormComponent
+    set :register_form_module, CitadelWeb.Auth.RegisterFormComponent
+    set :reset_form_module, CitadelWeb.Auth.ResetRequestFormComponent
+    set :register_extra_component, &PasswordHint.render/1
   end
 
   # OAuth2 button - ghost style for dark background

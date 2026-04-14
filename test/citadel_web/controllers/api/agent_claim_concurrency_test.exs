@@ -33,7 +33,7 @@ defmodule CitadelWeb.Api.AgentClaimConcurrencyTest do
   end
 
   defp create_task(workspace, user, task_state, attrs \\ []) do
-    defaults = [workspace_id: workspace.id, task_state_id: task_state.id, agent_eligible: true]
+    defaults = [task_state_id: task_state.id, agent_eligible: true]
     generate(task(Keyword.merge(defaults, attrs), actor: user, tenant: workspace.id))
   end
 

@@ -1,0 +1,266 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Pyllar" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: Pyllar
+      - link "Sign In" [ref=e8] [cursor=pointer]:
+        - /url: /sign-in
+  - main [ref=e9]:
+    - article [ref=e10]:
+      - heading "Terms of Service" [level=1] [ref=e11]
+      - paragraph [ref=e12]:
+        - strong [ref=e13]: "Last Updated:"
+        - text: December 27, 2024
+      - paragraph [ref=e14]:
+        - strong [ref=e15]: "Effective Date:"
+        - text: December 27, 2024
+      - separator [ref=e16]
+      - heading "1. Agreement to Terms" [level=2] [ref=e17]
+      - paragraph [ref=e18]: By accessing or using Citadel (“the Service”), you agree to be bound by these Terms of Service (“Terms”). If you do not agree to these Terms, you may not use the Service.
+      - paragraph [ref=e19]: These Terms constitute a legally binding agreement between you and Citadel (“we,” “us,” or “our”). Please read them carefully.
+      - separator [ref=e20]
+      - heading "2. Description of Service" [level=2] [ref=e21]
+      - paragraph [ref=e22]: "Citadel is a task management and AI-powered chat application that provides:"
+      - list [ref=e23]:
+        - listitem [ref=e24]:
+          - strong [ref=e25]: Workspace-based task management
+          - text: "- Create, organize, and track tasks within collaborative workspaces"
+        - listitem [ref=e26]:
+          - strong [ref=e27]: AI-powered chat
+          - text: "- Conversational AI assistance for productivity and task management"
+        - listitem [ref=e28]:
+          - strong [ref=e29]: Collaboration features
+          - text: "- Invite team members to workspaces and collaborate on projects"
+      - paragraph [ref=e30]: The Service may be updated, modified, or enhanced over time. We reserve the right to modify or discontinue features at any time.
+      - separator [ref=e31]
+      - heading "3. Account Registration and Security" [level=2] [ref=e32]
+      - heading "3.1 Account Creation" [level=3] [ref=e33]
+      - paragraph [ref=e34]: "To use Citadel, you must:"
+      - list [ref=e35]:
+        - listitem [ref=e36]: Sign in using Google OAuth authentication
+        - listitem [ref=e37]: Provide accurate and complete information
+        - listitem [ref=e38]: Be at least 18 years of age, or the age of majority in your jurisdiction
+      - heading "3.2 Account Security" [level=3] [ref=e39]
+      - paragraph [ref=e40]: "You are responsible for:"
+      - list [ref=e41]:
+        - listitem [ref=e42]: Maintaining the security of your Google account credentials
+        - listitem [ref=e43]: All activities that occur under your account
+        - listitem [ref=e44]: Notifying us immediately of any unauthorized access
+      - paragraph [ref=e45]: We are not liable for any loss or damage arising from unauthorized account access.
+      - separator [ref=e46]
+      - heading "4. Workspaces and Collaboration" [level=2] [ref=e47]
+      - heading "4.1 Personal Workspaces" [level=3] [ref=e48]
+      - paragraph [ref=e49]: Upon registration, a personal workspace is automatically created for you. You are the owner of this workspace.
+      - heading "4.2 Shared Workspaces" [level=3] [ref=e50]
+      - list [ref=e51]:
+        - listitem [ref=e52]: Workspace owners may invite other users to collaborate
+        - listitem [ref=e53]: All members of a workspace can view tasks, conversations, and other content within that workspace
+        - listitem [ref=e54]: Workspace owners are responsible for managing access and ensuring appropriate use by members
+      - heading "4.3 Data Visibility" [level=3] [ref=e55]
+      - paragraph [ref=e56]: Content you create within a workspace (tasks, conversations, messages) is visible to all members of that workspace. Only share sensitive information with trusted collaborators.
+      - separator [ref=e57]
+      - heading "5. AI Features and Limitations" [level=2] [ref=e58]
+      - heading "5.1 AI-Generated Content" [level=3] [ref=e59]
+      - paragraph [ref=e60]: "Citadel provides AI-powered features including chat assistance and task parsing. Regarding AI-generated content:"
+      - list [ref=e61]:
+        - listitem [ref=e62]:
+          - strong [ref=e63]: No Warranty
+          - text: ": AI responses are provided “as-is” without any warranty of accuracy, completeness, or fitness for any particular purpose"
+        - listitem [ref=e64]:
+          - strong [ref=e65]: Not Professional Advice
+          - text: ": AI responses do not constitute professional, legal, medical, financial, or any other specialized advice"
+        - listitem [ref=e66]:
+          - strong [ref=e67]: User Responsibility
+          - text: ": You are solely responsible for evaluating and acting upon AI-generated content"
+        - listitem [ref=e68]:
+          - strong [ref=e69]: Critical Decisions
+          - text: ": Do not rely solely on AI responses for critical decisions"
+      - heading "5.2 AI Data Usage" [level=3] [ref=e70]
+      - paragraph [ref=e71]: "To provide and improve the Service:"
+      - list [ref=e72]:
+        - listitem [ref=e73]: Your chat conversations are processed by third-party AI providers (Anthropic, OpenAI)
+        - listitem [ref=e74]: Anonymized and aggregated data may be used to improve our AI features
+        - listitem [ref=e75]: We do not sell your personal data to AI providers
+      - heading "5.3 Prohibited AI Uses" [level=3] [ref=e76]
+      - paragraph [ref=e77]: "You may not use AI features to:"
+      - list [ref=e78]:
+        - listitem [ref=e79]: Generate content that is illegal, harmful, threatening, abusive, or harassing
+        - listitem [ref=e80]: Create content that infringes intellectual property rights
+        - listitem [ref=e81]: Produce spam, phishing content, or malware
+        - listitem [ref=e82]: Bypass or circumvent safety filters or usage limits
+        - listitem [ref=e83]: Generate false information intended to deceive
+      - separator [ref=e84]
+      - heading "6. Usage Limits and Credits" [level=2] [ref=e85]
+      - heading "6.1 Credit System" [level=3] [ref=e86]
+      - paragraph [ref=e87]: "Citadel uses a credit system for AI features:"
+      - list [ref=e88]:
+        - listitem [ref=e89]: Users receive a monthly allocation of credits
+        - listitem [ref=e90]: Credits are consumed when using AI chat features
+        - listitem [ref=e91]: Unused credits do not roll over to the next month
+      - heading "6.2 Credit Exhaustion" [level=3] [ref=e92]
+      - paragraph [ref=e93]: "When your credits are exhausted:"
+      - list [ref=e94]:
+        - listitem [ref=e95]: AI features will be unavailable until credits refresh
+        - listitem [ref=e96]: Core task management features remain accessible
+        - listitem [ref=e97]: You may upgrade your plan for additional credits
+      - heading "6.3 Fair Use" [level=3] [ref=e98]
+      - paragraph [ref=e99]: We reserve the right to limit or suspend accounts that engage in excessive or automated usage that negatively impacts the Service or other users.
+      - separator [ref=e100]
+      - heading "7. Payment and Billing" [level=2] [ref=e101]
+      - heading "7.1 Paid Plans" [level=3] [ref=e102]
+      - paragraph [ref=e103]: "If you purchase a paid subscription:"
+      - list [ref=e104]:
+        - listitem [ref=e105]: Payments are processed by Stripe
+        - listitem [ref=e106]: Billing occurs at the start of each billing period
+        - listitem [ref=e107]: Prices are subject to change with notice
+      - heading "7.2 Cancellation" [level=3] [ref=e108]
+      - paragraph [ref=e109]: "You may cancel your subscription at any time. Upon cancellation:"
+      - list [ref=e110]:
+        - listitem [ref=e111]: You retain access until the end of the current billing period
+        - listitem [ref=e112]: No refunds are provided for partial billing periods
+        - listitem [ref=e113]: Your account will revert to the free tier
+      - heading "7.3 Refunds" [level=3] [ref=e114]
+      - paragraph [ref=e115]: Refunds may be issued at our sole discretion. Contact support for refund requests.
+      - separator [ref=e116]
+      - heading "8. Acceptable Use" [level=2] [ref=e117]
+      - paragraph [ref=e118]: "You agree not to:"
+      - list [ref=e119]:
+        - listitem [ref=e120]: Violate any applicable laws or regulations
+        - listitem [ref=e121]: Infringe the intellectual property rights of others
+        - listitem [ref=e122]: Upload malicious code or interfere with the Service
+        - listitem [ref=e123]: Attempt to gain unauthorized access to any part of the Service
+        - listitem [ref=e124]: Use automated tools to access the Service without permission
+        - listitem [ref=e125]: Resell, redistribute, or sublicense the Service
+        - listitem [ref=e126]: Harass, abuse, or harm other users
+        - listitem [ref=e127]: Impersonate any person or entity
+      - separator [ref=e128]
+      - heading "9. Intellectual Property" [level=2] [ref=e129]
+      - heading "9.1 Our Intellectual Property" [level=3] [ref=e130]
+      - paragraph [ref=e131]: Citadel and its content (excluding user content) are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
+      - heading "9.2 Your Content" [level=3] [ref=e132]
+      - paragraph [ref=e133]: "You retain ownership of content you create. By using the Service, you grant us a license to:"
+      - list [ref=e134]:
+        - listitem [ref=e135]: Store and process your content to provide the Service
+        - listitem [ref=e136]: Display your content to workspace members
+        - listitem [ref=e137]: Create backups for data protection purposes
+      - heading "9.3 Feedback" [level=3] [ref=e138]
+      - paragraph [ref=e139]: Any feedback or suggestions you provide may be used by us without obligation to you.
+      - separator [ref=e140]
+      - heading "10. Third-Party Services" [level=2] [ref=e141]
+      - paragraph [ref=e142]: "Citadel integrates with third-party services:"
+      - table [ref=e143]:
+        - rowgroup [ref=e144]:
+          - row "Service Purpose" [ref=e145]:
+            - columnheader "Service" [ref=e146]
+            - columnheader "Purpose" [ref=e147]
+        - rowgroup [ref=e148]:
+          - row "Google OAuth Authentication" [ref=e149]:
+            - cell "Google OAuth" [ref=e150]
+            - cell "Authentication" [ref=e151]
+          - row "Stripe Payment processing" [ref=e152]:
+            - cell "Stripe" [ref=e153]
+            - cell "Payment processing" [ref=e154]
+          - row "Anthropic (Claude) AI chat responses" [ref=e155]:
+            - cell "Anthropic (Claude)" [ref=e156]
+            - cell "AI chat responses" [ref=e157]
+          - row "OpenAI (GPT) AI chat responses" [ref=e158]:
+            - cell "OpenAI (GPT)" [ref=e159]
+            - cell "AI chat responses" [ref=e160]
+      - paragraph [ref=e161]: Your use of these services is subject to their respective terms and privacy policies.
+      - separator [ref=e162]
+      - heading "11. Privacy" [level=2] [ref=e163]
+      - paragraph [ref=e164]:
+        - text: Your privacy is important to us. Please review our
+        - link "Privacy Policy" [ref=e165] [cursor=pointer]:
+          - /url: /privacy
+        - text: to understand how we collect, use, and protect your information.
+      - separator [ref=e166]
+      - heading "12. Disclaimer of Warranties" [level=2] [ref=e167]
+      - paragraph [ref=e168]: "THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE” WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO:"
+      - list [ref=e169]:
+        - listitem [ref=e170]: MERCHANTABILITY
+        - listitem [ref=e171]: FITNESS FOR A PARTICULAR PURPOSE
+        - listitem [ref=e172]: NON-INFRINGEMENT
+        - listitem [ref=e173]: AVAILABILITY OR UPTIME
+        - listitem [ref=e174]: ACCURACY OF CONTENT
+      - paragraph [ref=e175]: WE DO NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, SECURE, OR ERROR-FREE.
+      - separator [ref=e176]
+      - heading "13. Limitation of Liability" [level=2] [ref=e177]
+      - paragraph [ref=e178]: "TO THE MAXIMUM EXTENT PERMITTED BY LAW:"
+      - list [ref=e179]:
+        - listitem [ref=e180]: WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
+        - listitem [ref=e181]: OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT YOU PAID US IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM, OR $100, WHICHEVER IS GREATER
+      - paragraph [ref=e182]: This limitation applies regardless of the theory of liability (contract, tort, or otherwise).
+      - separator [ref=e183]
+      - heading "14. Indemnification" [level=2] [ref=e184]
+      - paragraph [ref=e185]: "You agree to indemnify and hold harmless Citadel and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including reasonable attorneys’ fees) arising from:"
+      - list [ref=e186]:
+        - listitem [ref=e187]: Your use of the Service
+        - listitem [ref=e188]: Your violation of these Terms
+        - listitem [ref=e189]: Your violation of any third-party rights
+        - listitem [ref=e190]: Content you create or share
+      - separator [ref=e191]
+      - heading "15. Termination" [level=2] [ref=e192]
+      - heading "15.1 By You" [level=3] [ref=e193]
+      - paragraph [ref=e194]: You may terminate your account at any time by deleting your account in Settings.
+      - heading "15.2 By Us" [level=3] [ref=e195]
+      - paragraph [ref=e196]: "We may suspend or terminate your account if:"
+      - list [ref=e197]:
+        - listitem [ref=e198]: You violate these Terms
+        - listitem [ref=e199]: Your use poses a security risk
+        - listitem [ref=e200]: Required by law
+        - listitem [ref=e201]: At our discretion with notice
+      - heading "15.3 Effect of Termination" [level=3] [ref=e202]
+      - paragraph [ref=e203]: "Upon termination:"
+      - list [ref=e204]:
+        - listitem [ref=e205]: Your access to the Service will cease
+        - listitem [ref=e206]: Your data may be deleted after a retention period
+        - listitem [ref=e207]: Provisions that should survive (liability, indemnification) will survive
+      - separator [ref=e208]
+      - heading "16. Modifications to Terms" [level=2] [ref=e209]
+      - paragraph [ref=e210]: "We may update these Terms from time to time. We will notify you of material changes by:"
+      - list [ref=e211]:
+        - listitem [ref=e212]: Posting the updated Terms on the Service
+        - listitem [ref=e213]: Updating the “Last Updated” date
+        - listitem [ref=e214]: Sending an email notification for significant changes
+      - paragraph [ref=e215]: Your continued use after changes constitutes acceptance of the new Terms.
+      - separator [ref=e216]
+      - heading "17. Governing Law and Disputes" [level=2] [ref=e217]
+      - paragraph [ref=e218]: These Terms are governed by the laws of [Your Jurisdiction], without regard to conflict of law principles.
+      - paragraph [ref=e219]: "Any disputes arising from these Terms or the Service shall be resolved through:"
+      - list [ref=e220]:
+        - listitem [ref=e221]: Good faith negotiation
+        - listitem [ref=e222]: Binding arbitration (if negotiation fails)
+        - listitem [ref=e223]: Courts of [Your Jurisdiction] (if arbitration is not applicable)
+      - separator [ref=e224]
+      - heading "18. General Provisions" [level=2] [ref=e225]
+      - heading "18.1 Entire Agreement" [level=3] [ref=e226]
+      - paragraph [ref=e227]: These Terms, along with our Privacy Policy, constitute the entire agreement between you and Citadel.
+      - heading "18.2 Severability" [level=3] [ref=e228]
+      - paragraph [ref=e229]: If any provision is found unenforceable, the remaining provisions remain in effect.
+      - heading "18.3 Waiver" [level=3] [ref=e230]
+      - paragraph [ref=e231]: Failure to enforce any provision does not waive our right to enforce it later.
+      - heading "18.4 Assignment" [level=3] [ref=e232]
+      - paragraph [ref=e233]: You may not assign your rights under these Terms. We may assign our rights to any successor.
+      - separator [ref=e234]
+      - heading "19. Contact Us" [level=2] [ref=e235]
+      - paragraph [ref=e236]: "If you have questions about these Terms, please contact us:"
+      - list [ref=e237]:
+        - listitem [ref=e238]:
+          - strong [ref=e239]: "Email:"
+          - link "legal@citadel.app" [ref=e240] [cursor=pointer]:
+            - /url: mailto:legal@citadel.app
+        - listitem [ref=e241]:
+          - strong [ref=e242]: "Address:"
+          - text: "[Your Business Address]"
+      - separator [ref=e243]
+      - paragraph [ref=e244]:
+        - emphasis [ref=e245]: By using Citadel, you acknowledge that you have read, understood, and agree to these Terms of Service.
+  - contentinfo [ref=e246]:
+    - generic [ref=e247]:
+      - link "Terms of Service" [ref=e248] [cursor=pointer]:
+        - /url: /terms
+      - link "Privacy Policy" [ref=e249] [cursor=pointer]:
+        - /url: /privacy
+    - paragraph [ref=e250]: © 2026 Pyllar. All rights reserved.

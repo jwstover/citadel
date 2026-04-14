@@ -76,6 +76,7 @@ defmodule CitadelWeb.Router do
       live "/preferences/workspaces/:id/edit", PreferencesLive.WorkspaceForm, :edit
       live "/preferences/workspace/:id", PreferencesLive.Workspace, :show
       live "/preferences/api-keys/new", PreferencesLive.ApiKeyNew, :new
+      live "/agent-runs/:id", AgentRunLive
       # in each liveview, add one of the following at the top of the module:
       #
       # If an authenticated user must be present:
@@ -96,6 +97,10 @@ defmodule CitadelWeb.Router do
     end
   end
 
+  scope "/mcp/.well-known" do
+    get "/*path", CitadelWeb.McpOAuthDiscoveryController, :not_found
+  end
+
   scope "/mcp" do
     pipe_through :mcp
 
@@ -109,7 +114,8 @@ defmodule CitadelWeb.Router do
         :get_task_details,
         :list_task_states,
         :create_task_dependency,
-        :delete_task_dependency
+        :delete_task_dependency,
+        :ask_question
       ],
       # For many tools, you will need to set the `protocol_version_statement` to the older version.
       protocol_version_statement: "2024-11-05",
@@ -141,6 +147,7 @@ defmodule CitadelWeb.Router do
 
     # Remove this if you do not want to use the reset password feature
     reset_route auth_routes_prefix: "/auth",
+                on_mount: [{CitadelWeb.LiveUserAuth, :set_reset_page_title}],
                 overrides: [CitadelWeb.AuthOverrides, AshAuthentication.Phoenix.Overrides.Default]
 
     # Remove this if you do not use the confirmation strategy
@@ -159,6 +166,7 @@ defmodule CitadelWeb.Router do
     pipe_through :api
 
     get "/agent/task-states", AgentController, :list_task_states
+    get "/agent/comments/:id", AgentController, :get_comment
     post "/agent/tasks/claim", AgentController, :claim_task
     patch "/agent/tasks/:id", AgentController, :update_task
     patch "/agent/runs/:id", AgentController, :update_run
@@ -186,6 +194,22 @@ defmodule CitadelWeb.Router do
       pipe_through :browser
 
       oban_dashboard("/oban")
+    end
+  end
+
+  if Application.compile_env(:citadel, :dev_routes) do
+    scope "/dev", CitadelWeb do
+      pipe_through :browser
+
+      ash_authentication_live_session :workflow_editor_routes,
+        on_mount: [
+          {CitadelWeb.LiveUserAuth, :live_user_required},
+          {CitadelWeb.LiveUserAuth, :load_workspace},
+          {CitadelWeb.AgentPresenceHook, :default},
+          {CitadelWeb.LiveUserAuth, :require_workflow_editor_feature}
+        ] do
+        live "/workflow-editor", WorkflowEditorLive
+      end
     end
   end
 

@@ -1,6 +1,7 @@
 defmodule CitadelWeb.Api.AgentJSON do
   def claim(%{agent_run: agent_run}) do
     task = agent_run.task
+    work_item = agent_run.work_item
 
     %{
       data: %{
@@ -25,10 +26,17 @@ defmodule CitadelWeb.Api.AgentJSON do
           id: agent_run.id,
           task_id: agent_run.task_id,
           status: agent_run.status,
+          session_id: agent_run.session_id,
           started_at: agent_run.started_at,
           completed_at: agent_run.completed_at,
           inserted_at: agent_run.inserted_at,
           updated_at: agent_run.updated_at
+        },
+        work_item: %{
+          id: work_item.id,
+          type: work_item.type,
+          comment_id: work_item.comment_id,
+          session_id: work_item.session_id
         }
       }
     }
@@ -50,6 +58,7 @@ defmodule CitadelWeb.Api.AgentJSON do
           id: task.task_state.id,
           name: task.task_state.name
         },
+        forge_pr: task.forge_pr,
         inserted_at: task.inserted_at,
         updated_at: task.updated_at
       }
@@ -76,7 +85,8 @@ defmodule CitadelWeb.Api.AgentJSON do
         id: agent_run.id,
         task_id: agent_run.task_id,
         status: agent_run.status,
-        diff: agent_run.diff,
+        session_id: agent_run.session_id,
+        commits: agent_run.commits,
         test_output: agent_run.test_output,
         logs: agent_run.logs,
         error_message: agent_run.error_message,
@@ -98,6 +108,19 @@ defmodule CitadelWeb.Api.AgentJSON do
         metadata: event.metadata,
         inserted_at: event.inserted_at,
         updated_at: event.updated_at
+      }
+    }
+  end
+
+  def comment(%{comment: comment}) do
+    %{
+      data: %{
+        id: comment.id,
+        type: comment.type,
+        body: comment.body,
+        actor_type: comment.actor_type,
+        actor_display_name: comment.actor_display_name,
+        inserted_at: comment.inserted_at
       }
     }
   end

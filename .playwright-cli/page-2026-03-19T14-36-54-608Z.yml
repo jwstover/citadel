@@ -1,0 +1,93 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e37]: Agents
+        - generic [ref=e38]: No agents connected
+      - generic [ref=e41]:
+        - button [ref=e43] [cursor=pointer]
+        - button [ref=e45] [cursor=pointer]
+        - button [ref=e47] [cursor=pointer]
+  - main [ref=e49]:
+    - generic [ref=e52]:
+      - heading "Preferences" [level=1] [ref=e53]
+      - generic [ref=e54]:
+        - generic [ref=e57]:
+          - generic [ref=e60]: Organization
+          - generic [ref=e61]:
+            - generic [ref=e63]:
+              - heading "Personal" [level=3] [ref=e64]
+              - button [ref=e65] [cursor=pointer]
+            - generic [ref=e68]:
+              - heading "Members (1)" [level=4] [ref=e69]
+              - table [ref=e70]:
+                - rowgroup [ref=e71]:
+                  - row "Email Role Actions" [ref=e72]:
+                    - columnheader "Email" [ref=e73]
+                    - columnheader "Role" [ref=e74]
+                    - columnheader "Actions" [ref=e75]:
+                      - generic [ref=e76]: Actions
+                - rowgroup [ref=e77]:
+                  - row "qatest@example.com Owner" [ref=e78]:
+                    - cell "qatest@example.com" [ref=e79]
+                    - cell "Owner" [ref=e80]:
+                      - generic [ref=e81]: Owner
+                    - cell [ref=e82]
+        - generic [ref=e84]:
+          - generic [ref=e86]:
+            - generic [ref=e87]: Workspaces
+            - link "New Workspace" [ref=e88] [cursor=pointer]:
+              - /url: /preferences/workspaces/new
+              - button "New Workspace" [ref=e89]
+          - table [ref=e90]:
+            - rowgroup [ref=e91]:
+              - row "Name Role" [ref=e92]:
+                - columnheader "Name" [ref=e93]
+                - columnheader "Role" [ref=e94]
+            - rowgroup [ref=e95]:
+              - row "Personal Owner" [ref=e96]:
+                - cell "Personal" [ref=e97]
+                - cell "Owner" [ref=e98]
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - generic [ref=e104]: API Keys
+            - link "New API Key" [ref=e105] [cursor=pointer]:
+              - /url: /preferences/api-keys/new
+              - button "New API Key" [ref=e106]
+          - generic [ref=e107]: No API keys yet. Create one to access the API.
+        - generic [ref=e110]:
+          - generic [ref=e112]: Password
+          - paragraph [ref=e113]: Change your password. You'll need to enter your current password to make changes.
+          - generic [ref=e115]:
+            - generic [ref=e117]:
+              - generic [ref=e118]: Current Password
+              - textbox "Current Password" [ref=e119]
+            - generic [ref=e121]:
+              - generic [ref=e122]: New Password
+              - textbox "New Password" [ref=e123]
+            - paragraph [ref=e124]: At least 8 characters with uppercase, lowercase, and a number.
+            - generic [ref=e126]:
+              - generic [ref=e127]: Confirm New Password
+              - textbox "Confirm New Password" [ref=e128]
+            - button "Change Password" [ref=e129] [cursor=pointer]

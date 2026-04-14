@@ -1,0 +1,66 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e37]: Agents
+        - generic [ref=e38]: No agents connected
+      - generic [ref=e41]:
+        - button [ref=e43] [cursor=pointer]
+        - button [ref=e45] [cursor=pointer]
+        - button [ref=e47] [cursor=pointer]
+  - main [ref=e49]:
+    - generic [ref=e51]:
+      - button "New" [ref=e54] [cursor=pointer]: New
+      - table [ref=e89]:
+        - rowgroup [ref=e90]:
+          - row "Todo 1" [ref=e91]:
+            - cell "Todo 1" [ref=e92]:
+              - generic [ref=e93]:
+                - heading "Todo" [level=2] [ref=e94]
+                - generic [ref=e95]: "1"
+          - row "ID Name Priority Due Date Assignee" [ref=e96]:
+            - columnheader [ref=e97]
+            - columnheader [ref=e98]
+            - columnheader "ID" [ref=e99]
+            - columnheader "Name" [ref=e100]
+            - columnheader "Priority" [ref=e101]
+            - columnheader "Due Date" [ref=e102]
+            - columnheader "Assignee" [ref=e103]
+        - rowgroup [ref=e104]:
+          - row "P-1 Build authentication system medium — —" [ref=e105]:
+            - cell [ref=e106]
+            - cell [ref=e109]:
+              - button [ref=e113] [cursor=pointer]
+            - cell "P-1" [ref=e115]:
+              - link "P-1" [ref=e116] [cursor=pointer]:
+                - /url: /tasks/P-1
+            - cell "Build authentication system" [ref=e117]:
+              - link "Build authentication system" [ref=e118] [cursor=pointer]:
+                - /url: /tasks/P-1
+            - cell "medium" [ref=e119]:
+              - button "medium" [ref=e121] [cursor=pointer]:
+                - generic [ref=e122]: medium
+            - cell "—" [ref=e123]
+            - cell "—" [ref=e124]:
+              - generic [ref=e126]: —

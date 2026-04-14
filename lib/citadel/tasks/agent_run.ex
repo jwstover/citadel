@@ -24,13 +24,50 @@ defmodule Citadel.Tasks.AgentRun do
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.CreateAgentRunActivity
     end
 
     update :update do
-      accept [:status, :diff, :test_output, :logs, :error_message, :started_at, :completed_at]
+      require_atomic? false
+
+      accept [
+        :status,
+        :session_id,
+        :commits,
+        :test_output,
+        :logs,
+        :error_message,
+        :started_at,
+        :completed_at
+      ]
+
+      change fn changeset, _ ->
+        incoming = Ash.Changeset.get_attribute(changeset, :status)
+        current = changeset.data.status
+
+        if current == :input_requested and incoming in [:completed, :failed] do
+          Ash.Changeset.force_change_attribute(changeset, :status, :input_requested)
+        else
+          changeset
+        end
+      end
+
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
+    end
+
+    update :request_input do
+      require_atomic? false
+      accept []
+
+      validate attribute_equals(:status, :running)
+
+      change set_attribute(:status, :input_requested)
+      change set_attribute(:completed_at, &DateTime.utc_now/0)
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
     update :cancel do
+      require_atomic? false
       accept []
 
       validate attribute_in(:status, [:pending, :running])
@@ -38,6 +75,7 @@ defmodule Citadel.Tasks.AgentRun do
       change set_attribute(:status, :cancelled)
       change set_attribute(:error_message, "Manually cancelled by user")
       change set_attribute(:completed_at, &DateTime.utc_now/0)
+      change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
 
     create :claim_next do
@@ -45,6 +83,7 @@ defmodule Citadel.Tasks.AgentRun do
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.ClaimNextTask
+      change Citadel.Tasks.Changes.CreateAgentRunActivity
     end
 
     read :list_by_task do
@@ -83,6 +122,7 @@ defmodule Citadel.Tasks.AgentRun do
     publish :claim_next, ["agent_runs", :task_id]
     publish :update, ["agent_runs", :task_id]
     publish :cancel, ["agent_runs", :task_id]
+    publish :request_input, ["agent_runs", :task_id]
   end
 
   multitenancy do
@@ -94,13 +134,14 @@ defmodule Citadel.Tasks.AgentRun do
     uuid_v7_primary_key :id
 
     attribute :status, :atom do
-      constraints one_of: [:pending, :running, :completed, :failed, :cancelled]
+      constraints one_of: [:pending, :running, :completed, :failed, :cancelled, :input_requested]
       default :pending
       allow_nil? false
       public? true
     end
 
-    attribute :diff, :string, public?: true
+    attribute :session_id, :string, public?: true
+    attribute :commits, {:array, :map}, public?: true, default: []
     attribute :test_output, :string, public?: true
     attribute :logs, :string, public?: true
     attribute :error_message, :string, public?: true
@@ -115,6 +156,7 @@ defmodule Citadel.Tasks.AgentRun do
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
 
+    has_one :work_item, Citadel.Tasks.AgentWorkItem
     has_many :events, Citadel.Tasks.AgentRunEvent
   end
 end

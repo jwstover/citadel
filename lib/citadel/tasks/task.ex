@@ -45,7 +45,6 @@ defmodule Citadel.Tasks.Task do
         :title,
         :description,
         :task_state_id,
-        :workspace_id,
         :parent_task_id,
         :project_id,
         :due_date,
@@ -65,6 +64,8 @@ defmodule Citadel.Tasks.Task do
 
       validate Citadel.Tasks.Validations.NoCircularParent
       validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
+
+      change Citadel.Tasks.Changes.MaybeEnqueueAgentWork
     end
 
     update :update do
@@ -80,7 +81,8 @@ defmodule Citadel.Tasks.Task do
         :parent_task_id,
         :project_id,
         :active_agent_run_id,
-        :agent_eligible
+        :agent_eligible,
+        :forge_pr
       ]
 
       argument :assignees, {:array, :uuid}
@@ -89,6 +91,9 @@ defmodule Citadel.Tasks.Task do
 
       validate Citadel.Tasks.Validations.AssigneesWorkspaceMembers
       validate Citadel.Tasks.Validations.NoCircularParent
+
+      change Citadel.Tasks.Changes.MaybeEnqueueAgentWork
+      change Citadel.Tasks.Changes.MaybeCancelPendingWorkItems
     end
 
     action :get_task_details, :string do
@@ -193,7 +198,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -210,7 +216,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -233,7 +240,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -250,7 +258,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -267,7 +276,8 @@ defmodule Citadel.Tasks.Task do
           due_date: task.due_date,
           parent_task_id: task.parent_task_id,
           workspace_id: task.workspace_id,
-          agent_eligible: task.agent_eligible
+          agent_eligible: task.agent_eligible,
+          forge_pr: task.forge_pr
         }
       end
     end
@@ -307,6 +317,8 @@ defmodule Citadel.Tasks.Task do
       default false
     end
 
+    attribute :forge_pr, :string, public?: true
+
     timestamps()
   end
 
@@ -319,6 +331,7 @@ defmodule Citadel.Tasks.Task do
     belongs_to :parent_task, __MODULE__, public?: true, allow_nil?: true
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
     has_many :agent_runs, Citadel.Tasks.AgentRun
+    has_many :work_items, Citadel.Tasks.AgentWorkItem
 
     many_to_many :assignees, Citadel.Accounts.User do
       through Citadel.Tasks.TaskAssignment
@@ -388,7 +401,7 @@ defmodule Citadel.Tasks.Task do
   defp format_assignees(%Ash.NotLoaded{}), do: nil
 
   defp format_assignees(assignees) do
-    list = Enum.map_join(assignees, ", ", &"#{&1.name || &1.email}")
+    list = Enum.map_join(assignees, ", ", fn user -> user.name || to_string(user.email) end)
     "\nAssignees: #{list}"
   end
 

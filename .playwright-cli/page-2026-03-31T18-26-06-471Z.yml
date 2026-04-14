@@ -1,0 +1,21 @@
+- generic [ref=e4]:
+  - generic [ref=e8]:
+    - heading "Sign in to Pyllar" [level=2] [ref=e9]
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: Email
+        - textbox "Email" [active] [ref=e13]
+      - generic [ref=e14]:
+        - generic [ref=e15]: Password
+        - textbox "Password" [ref=e16]
+      - generic [ref=e18]:
+        - link "Forgot your password?" [ref=e19] [cursor=pointer]:
+          - /url: /reset
+        - link "Need an account?" [ref=e20] [cursor=pointer]:
+          - /url: /register
+      - button "Sign in" [ref=e21] [cursor=pointer]
+  - generic [ref=e23]: or
+  - link "Sign in with Google" [ref=e26] [cursor=pointer]:
+    - /url: /auth/user/google
+    - img [ref=e27]
+    - text: Sign in with Google

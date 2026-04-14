@@ -36,7 +36,7 @@ defmodule Citadel.Generator do
     seed_generator(
       {Citadel.Accounts.User,
        %{
-         email: sequence(:user_email, &"user-#{&1}@example.com"),
+         email: sequence(:user_email, &"user#{&1}@example.com"),
          hashed_password: "hashed_password_123"
        }},
       Keyword.merge([overrides: overrides], generator_opts)
@@ -305,6 +305,37 @@ defmodule Citadel.Generator do
         [
           defaults: [
             status: :pending
+          ],
+          overrides: overrides
+        ],
+        generator_opts
+      )
+    )
+  end
+
+  @doc """
+  Generates an agent work item.
+
+  ## Parameters
+
+    * `overrides` - Field values to override (e.g., [task_id: task_id, type: :new_task])
+    * `generator_opts` - Options passed to changeset_generator (e.g., [actor: user, tenant: workspace_id])
+
+  ## Examples
+
+      work_item = generate(agent_work_item(
+        [task_id: task.id, type: :new_task],
+        actor: user, tenant: workspace.id
+      ))
+  """
+  def agent_work_item(overrides \\ [], generator_opts \\ []) do
+    changeset_generator(
+      Citadel.Tasks.AgentWorkItem,
+      :create,
+      Keyword.merge(
+        [
+          defaults: [
+            type: :new_task
           ],
           overrides: overrides
         ],

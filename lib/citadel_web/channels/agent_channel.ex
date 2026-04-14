@@ -3,6 +3,8 @@ defmodule CitadelWeb.AgentChannel do
 
   use Phoenix.Channel
 
+  require Logger
+
   alias CitadelWeb.AgentPresence
 
   @impl true
@@ -43,6 +45,27 @@ defmodule CitadelWeb.AgentChannel do
       |> Map.put(:status, status)
       |> Map.put(:current_task_id, payload["current_task_id"])
     end)
+
+    {:noreply, socket}
+  end
+
+  def handle_in("stream_output", %{"run_id" => run_id, "event" => event_data}, socket) do
+    CitadelWeb.Endpoint.broadcast("agent_run_output:#{run_id}", "stream_event", %{
+      event: event_data
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_in("stream_complete", %{"run_id" => run_id}, socket) do
+    CitadelWeb.Endpoint.broadcast("agent_run_output:#{run_id}", "stream_complete", %{})
+    {:noreply, socket}
+  end
+
+  def handle_in(event, payload, socket) do
+    Logger.warning(
+      "AgentChannel received unrecognized event: #{event}, payload: #{inspect(payload)}"
+    )
 
     {:noreply, socket}
   end

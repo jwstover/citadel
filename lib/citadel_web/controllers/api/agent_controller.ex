@@ -10,7 +10,7 @@ defmodule CitadelWeb.Api.AgentController do
     case Tasks.claim_next_task(
            actor: actor,
            tenant: tenant,
-           load: [task: [:task_state, :parent_task]]
+           load: [:work_item, task: [:task_state, :parent_task]]
          ) do
       {:ok, agent_run} ->
         conn
@@ -30,7 +30,8 @@ defmodule CitadelWeb.Api.AgentController do
       params
       |> Map.take([
         "status",
-        "diff",
+        "session_id",
+        "commits",
         "test_output",
         "logs",
         "error_message",
@@ -102,6 +103,23 @@ defmodule CitadelWeb.Api.AgentController do
     end
   end
 
+  def get_comment(conn, %{"id" => id}) do
+    tenant = Ash.PlugHelpers.get_tenant(conn)
+    actor = conn.assigns.current_user
+
+    case Tasks.get_task_activity(id, actor: actor, tenant: tenant) do
+      {:ok, activity} ->
+        conn
+        |> put_status(:ok)
+        |> render(:comment, comment: activity)
+
+      {:error, _} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{errors: %{detail: "Not Found"}})
+    end
+  end
+
   def list_task_states(conn, _params) do
     task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
 
@@ -116,7 +134,7 @@ defmodule CitadelWeb.Api.AgentController do
 
     input =
       params
-      |> Map.take(["task_state_id"])
+      |> Map.take(["task_state_id", "forge_pr"])
       |> atomize_keys()
 
     case Tasks.update_task(id, input,

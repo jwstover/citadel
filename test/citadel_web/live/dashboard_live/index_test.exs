@@ -80,7 +80,7 @@ defmodule CitadelWeb.DashboardLive.IndexTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Test Task"],
+            [task_state_id: task_state.id, title: "Test Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -113,7 +113,7 @@ defmodule CitadelWeb.DashboardLive.IndexTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Test Task"],
+            [task_state_id: task_state.id, title: "Test Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -144,7 +144,6 @@ defmodule CitadelWeb.DashboardLive.IndexTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: todo_state.id,
               title: "Priority Test Task",
               priority: :high
@@ -190,7 +189,7 @@ defmodule CitadelWeb.DashboardLive.IndexTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Test Task"],
+            [task_state_id: task_state.id, title: "Test Task"],
             actor: user,
             tenant: workspace.id
           )

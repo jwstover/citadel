@@ -73,7 +73,9 @@ defmodule CitadelAgent.RunnerCommitTest do
 
       assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
       assert result.status == "completed"
-      assert result.diff =~ "task_output.txt"
+      assert is_list(result.commits)
+      assert length(result.commits) > 0
+      assert Enum.all?(result.commits, &(Map.has_key?(&1, "sha") and Map.has_key?(&1, "message")))
 
       {log, 0} =
         System.cmd("git", ["log", "--oneline", "citadel/task-CP-1"],
@@ -114,12 +116,13 @@ defmodule CitadelAgent.RunnerCommitTest do
       assert reason =~ "Commit step failed"
     end
 
-    test "capture_diff returns diff of branch commits vs main", %{project_path: project_path} do
+    test "capture_commits returns commits on branch vs main", %{project_path: project_path} do
       task = %{"human_id" => "CP-4", "title" => "Test task", "description" => "A test task"}
 
       assert {:ok, result} = CitadelAgent.Runner.execute(task, project_path)
 
-      assert result.diff =~ "+new content"
+      assert is_list(result.commits)
+      assert length(result.commits) > 0
     end
   end
 end

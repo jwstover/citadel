@@ -1,0 +1,101 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e37]: Agents
+          - generic [ref=e126]: "1"
+        - generic [ref=e131]:
+          - generic [ref=e132]: citadel-agent
+          - generic [ref=e133]:
+            - text: Working on
+            - link "P-1" [ref=e135] [cursor=pointer]:
+              - /url: /tasks/P-1
+      - generic [ref=e41]:
+        - button [ref=e43] [cursor=pointer]
+        - button [ref=e45] [cursor=pointer]
+        - button [ref=e47] [cursor=pointer]
+  - main [ref=e49]:
+    - generic [ref=e52]:
+      - list [ref=e54]:
+        - listitem [ref=e55]:
+          - link "Tasks" [ref=e56] [cursor=pointer]:
+            - /url: /dashboard
+        - listitem [ref=e57]:
+          - generic [ref=e58] [cursor=pointer]: P-1
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - button [ref=e63] [cursor=pointer]
+          - textbox [ref=e65]: "UAT Test: Agent Question Flow"
+        - button "Delete" [ref=e67] [cursor=pointer]: Delete
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - heading "Description" [level=2] [ref=e72]
+          - textbox [ref=e137]:
+            - paragraph [ref=e138]: Please use the ask_question tool to ask me what color I prefer. Wait for my response before proceeding.
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]: Priority
+            - button "medium" [ref=e79] [cursor=pointer]:
+              - generic [ref=e80]: medium
+          - generic [ref=e81]:
+            - generic [ref=e82]: Assignees
+            - generic [ref=e85] [cursor=pointer]: None
+          - generic [ref=e87]:
+            - generic [ref=e88]: Due Date
+            - textbox "None" [ref=e89]
+          - generic [ref=e90]:
+            - generic [ref=e91]: Project
+            - generic [ref=e92]: None
+          - generic [ref=e93]:
+            - generic [ref=e94]: Agent
+            - button "Eligible" [active] [ref=e139] [cursor=pointer]: Eligible
+      - generic [ref=e105]:
+        - generic [ref=e106]:
+          - heading "Sub-tasks (0)" [level=2] [ref=e107]
+          - button "Add" [ref=e108] [cursor=pointer]: Add
+        - paragraph [ref=e110]: No sub-tasks
+      - generic [ref=e140]:
+        - heading "Agent Runs (1)" [level=2] [ref=e141]
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - generic [ref=e146]: running
+            - link "Watch" [ref=e148] [cursor=pointer]:
+              - /url: /agent-runs/019d1ac9-e5a5-75dd-9819-630b79f64637
+              - text: Watch
+            - button "Cancel" [ref=e150] [cursor=pointer]: Cancel
+          - generic [ref=e153]: "Started: Mar 23 13:02:12"
+      - generic [ref=e111]:
+        - heading "Activity" [level=2] [ref=e112]
+        - generic [ref=e134]: No activity yet
+        - generic [ref=e115]:
+          - generic "uat@citadel.test" [ref=e117]:
+            - generic [ref=e118]: U
+          - generic [ref=e119]:
+            - textbox "Add a comment..." [ref=e120]
+            - generic [ref=e121]:
+              - generic [ref=e122] [cursor=pointer]:
+                - checkbox "Request changes" [ref=e123]
+                - generic [ref=e124]: Request changes
+              - button "Comment" [ref=e125] [cursor=pointer]

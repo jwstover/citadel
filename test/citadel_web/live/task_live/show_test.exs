@@ -15,7 +15,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Test Task"],
+            [task_state_id: task_state.id, title: "Test Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -52,7 +52,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, title: "Original Title"],
+            [task_state_id: task_state.id, title: "Original Title"],
             actor: user,
             tenant: workspace.id
           )
@@ -62,7 +62,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task",
               parent_task_id: task.id
@@ -168,7 +167,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -203,7 +202,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               due_date: ~D[2025-01-15]
             ],
@@ -238,7 +236,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Due Date",
               parent_task_id: task.id
@@ -271,7 +268,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id, priority: :low],
+            [task_state_id: task_state.id, priority: :low],
             actor: user,
             tenant: workspace.id
           )
@@ -329,7 +326,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Priority",
               parent_task_id: task.id
@@ -362,7 +358,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: task_state.id],
+            [task_state_id: task_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -422,7 +418,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Sub Task for Assignee",
               parent_task_id: task.id
@@ -461,7 +456,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -512,7 +507,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: todo_state.id,
               title: "Sub Task for State",
               parent_task_id: task.id
@@ -546,7 +540,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Parent Task"],
+            [task_state_id: todo_state.id, title: "Parent Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -556,7 +550,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: todo_state.id,
               title: "Draggable Sub Task",
               parent_task_id: task.id
@@ -635,7 +628,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: owner_workspace.id, task_state_id: task_state.id, title: "Owner Task"],
+            [task_state_id: task_state.id, title: "Owner Task"],
             actor: owner,
             tenant: owner_workspace.id
           )
@@ -661,7 +654,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Main Task"],
+            [task_state_id: todo_state.id, title: "Main Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -692,7 +685,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id, title: "Dependency Task"],
+            [task_state_id: todo_state.id, title: "Dependency Task"],
             actor: user,
             tenant: workspace.id
           )
@@ -730,7 +723,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       task_b =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -764,7 +757,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -800,7 +793,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -828,7 +821,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       complete_dependency =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: done_state.id],
+            [task_state_id: done_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -856,7 +849,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -891,7 +884,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -941,7 +934,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -988,7 +981,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependent_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1018,7 +1011,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1048,7 +1041,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       dependency_task =
         generate(
           task(
-            [workspace_id: workspace.id, task_state_id: todo_state.id],
+            [task_state_id: todo_state.id],
             actor: user,
             tenant: workspace.id
           )
@@ -1109,7 +1102,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Agent Task",
               agent_eligible: true
@@ -1122,56 +1114,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       %{task: task, task_state: task_state}
     end
 
-    test "shows agent runs section when task is agent eligible", %{conn: conn, task: task} do
-      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
-
-      assert html =~ "Agent Runs"
-      assert html =~ "No agent runs yet"
-    end
-
-    test "does not show agent runs section when not eligible and no runs", %{
-      conn: conn,
-      user: user,
-      workspace: workspace,
-      task_state: task_state
-    } do
-      task =
-        generate(
-          task(
-            [
-              workspace_id: workspace.id,
-              task_state_id: task_state.id,
-              title: "Non-Agent Task",
-              agent_eligible: false
-            ],
-            actor: user,
-            tenant: workspace.id
-          )
-        )
-
-      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
-
-      refute html =~ "Agent Runs"
-    end
-
-    test "displays agent run with status badge", %{
-      conn: conn,
-      task: task,
-      user: user,
-      workspace: workspace
-    } do
-      Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
-        actor: user,
-        tenant: workspace.id
-      )
-
-      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
-
-      assert html =~ "Agent Runs (1)"
-      assert html =~ "completed"
-    end
-
-    test "displays expandable diff section", %{
+    test "displays agent run activity with status badge", %{
       conn: conn,
       task: task,
       user: user,
@@ -1183,15 +1126,49 @@ defmodule CitadelWeb.TaskLive.ShowTest do
           tenant: workspace.id
         )
 
-      Tasks.update_agent_run!(run.id, %{diff: "--- a/file.ex\n+++ b/file.ex"},
-        actor: user,
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
         tenant: workspace.id
       )
 
       {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert html =~ "Diff"
-      assert html =~ "--- a/file.ex"
+      assert html =~ "completed"
+    end
+
+    test "displays expandable commits section", %{
+      conn: conn,
+      task: task,
+      user: user,
+      workspace: workspace
+    } do
+      run =
+        Tasks.create_agent_run!(%{task_id: task.id, status: :completed},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.update_agent_run!(
+        run.id,
+        %{
+          commits: [
+            %{"sha" => "abc1234", "message" => "first commit"},
+            %{"sha" => "def5678", "message" => "second commit"}
+          ]
+        },
+        actor: user,
+        tenant: workspace.id
+      )
+
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
+        tenant: workspace.id
+      )
+
+      {:ok, _view, html} = live(conn, ~p"/tasks/#{task.human_id}")
+
+      assert html =~ "Commits (2)"
+      assert html =~ "abc1234"
     end
 
     test "displays error message for failed runs", %{
@@ -1208,6 +1185,11 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       Tasks.update_agent_run!(run.id, %{error_message: "Tests failed"},
         actor: user,
+        tenant: workspace.id
+      )
+
+      Tasks.create_agent_run_activity!(%{task_id: task.id, agent_run_id: run.id},
+        authorize?: false,
         tenant: workspace.id
       )
 
@@ -1228,7 +1210,6 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         generate(
           task(
             [
-              workspace_id: workspace.id,
               task_state_id: task_state.id,
               title: "Cancel Test Task",
               agent_eligible: true
@@ -1247,14 +1228,14 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      Tasks.create_agent_run!(%{task_id: task.id},
-        actor: user,
-        tenant: workspace.id
-      )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      assert has_element?(
+               view,
+               ~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|
+             )
     end
 
     test "shows cancel button on running run", %{
@@ -1263,11 +1244,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :running, started_at: DateTime.utc_now()},
         actor: user,
@@ -1276,7 +1253,10 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      assert has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      assert has_element?(
+               view,
+               ~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|
+             )
     end
 
     test "does not show cancel button on completed run", %{
@@ -1285,11 +1265,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :completed, completed_at: DateTime.utc_now()},
         actor: user,
@@ -1298,7 +1274,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
 
     test "does not show cancel button on failed run", %{
@@ -1307,11 +1283,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       Tasks.update_agent_run!(run, %{status: :failed, error_message: "broke"},
         actor: user,
@@ -1320,7 +1292,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      refute has_element?(view, "button[phx-click=\"confirm_cancel_run\"]")
+      refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
 
     test "clicking cancel button shows confirmation modal", %{
@@ -1329,18 +1301,15 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
-      html =
-        view
-        |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
-        |> render_click()
+      view
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
+      |> render_click()
+
+      html = render(view)
 
       assert html =~ "Cancel Agent Run"
       assert html =~ "Are you sure you want to cancel this agent run?"
@@ -1352,16 +1321,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
       |> render_click()
 
       html =
@@ -1383,16 +1348,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       user: user,
       workspace: workspace
     } do
-      run =
-        Tasks.create_agent_run!(%{task_id: task.id},
-          actor: user,
-          tenant: workspace.id
-        )
+      run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
 
       view
-      |> element(~s|button[phx-click="confirm_cancel_run"][phx-value-run-id="#{run.id}"]|)
+      |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
       |> render_click()
 
       html =
@@ -1420,5 +1381,12 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       foreground_color: "#ffffff",
       background_color: "#3b82f6"
     })
+  end
+
+  defp create_agent_run_with_activity(task, user, workspace) do
+    Tasks.create_agent_run!(%{task_id: task.id},
+      actor: user,
+      tenant: workspace.id
+    )
   end
 end

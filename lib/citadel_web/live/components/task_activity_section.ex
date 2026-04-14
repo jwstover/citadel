@@ -5,10 +5,15 @@ defmodule CitadelWeb.Components.TaskActivitySection do
 
   alias Citadel.Tasks
 
-  import CitadelWeb.Components.TaskComponents, only: [user_avatar: 1]
+  import CitadelWeb.Components.TaskComponents,
+    only: [user_avatar: 1, agent_run_status_classes: 1, agent_run_dot_class: 1]
 
   def update(%{broadcast: broadcast}, socket) do
     {:ok, handle_broadcast(broadcast, socket)}
+  end
+
+  def update(%{agent_run_updated: _broadcast}, socket) do
+    {:ok, reload_agent_run_activities(socket)}
   end
 
   def update(assigns, socket) do
@@ -22,24 +27,48 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           Tasks.list_task_activities!(assigns.task.id,
             actor: assigns.current_user,
             tenant: assigns.current_workspace.id,
-            load: [:user]
+            load: [:user, :agent_run]
           )
 
         socket
         |> stream(:activities, activities)
         |> assign(:activities_loaded, true)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
+        |> assign(:request_changes, false)
+        |> assign(:reply_to_activity_id, nil)
       end
 
     {:ok, socket}
   end
 
   defp handle_broadcast(
-         %Phoenix.Socket.Broadcast{event: "create_comment", payload: %{data: activity}},
+         %Phoenix.Socket.Broadcast{event: event, payload: %{data: activity}},
+         socket
+       )
+       when event in [
+              "create_comment",
+              "create_request_changes_comment",
+              "create_agent_question",
+              "create_question_response"
+            ] do
+    activity =
+      Ash.load!(activity, [:user],
+        tenant: socket.assigns.current_workspace.id,
+        actor: socket.assigns.current_user
+      )
+
+    stream_insert(socket, :activities, activity)
+  end
+
+  defp handle_broadcast(
+         %Phoenix.Socket.Broadcast{
+           event: "create_agent_run_activity",
+           payload: %{data: activity}
+         },
          socket
        ) do
     activity =
-      Ash.load!(activity, [:user],
+      Ash.load!(activity, [:user, :agent_run],
         tenant: socket.assigns.current_workspace.id,
         actor: socket.assigns.current_user
       )
@@ -54,18 +83,64 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     stream_delete(socket, :activities, activity)
   end
 
+  defp reload_agent_run_activities(socket) do
+    activities =
+      Tasks.list_task_activities!(socket.assigns.task.id,
+        actor: socket.assigns.current_user,
+        tenant: socket.assigns.current_workspace.id,
+        load: [:user, :agent_run]
+      )
+
+    agent_run_activities = Enum.filter(activities, &(&1.type == :agent_run))
+
+    Enum.reduce(agent_run_activities, socket, fn activity, acc ->
+      stream_insert(acc, :activities, activity)
+    end)
+  end
+
+  def handle_event("toggle-request-changes", _params, socket) do
+    {:noreply, assign(socket, :request_changes, !socket.assigns.request_changes)}
+  end
+
+  def handle_event("toggle-reply", %{"id" => id}, socket) do
+    reply_to =
+      if socket.assigns.reply_to_activity_id == id do
+        nil
+      else
+        id
+      end
+
+    {:noreply, assign(socket, :reply_to_activity_id, reply_to)}
+  end
+
   def handle_event("submit-comment", %{"comment" => %{"body" => body}}, socket) do
     body = String.trim(body)
 
     if body == "" do
       {:noreply, socket}
     else
+      opts = [actor: socket.assigns.current_user, tenant: socket.assigns.current_workspace.id]
+
       activity =
-        Tasks.create_comment!(
-          %{body: body, task_id: socket.assigns.task.id},
-          actor: socket.assigns.current_user,
-          tenant: socket.assigns.current_workspace.id
-        )
+        cond do
+          socket.assigns.reply_to_activity_id ->
+            params = %{
+              body: body,
+              task_id: socket.assigns.task.id,
+              parent_activity_id: socket.assigns.reply_to_activity_id
+            }
+
+            Tasks.create_question_response!(params, opts)
+
+          socket.assigns.request_changes ->
+            Tasks.create_request_changes_comment!(
+              %{body: body, task_id: socket.assigns.task.id},
+              opts
+            )
+
+          true ->
+            Tasks.create_comment!(%{body: body, task_id: socket.assigns.task.id}, opts)
+        end
 
       activity =
         Ash.load!(activity, [:user],
@@ -77,6 +152,8 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         socket
         |> stream_insert(:activities, activity)
         |> assign(:form, to_form(%{"body" => ""}, as: :comment))
+        |> assign(:request_changes, false)
+        |> assign(:reply_to_activity_id, nil)
 
       {:noreply, socket}
     end
@@ -97,6 +174,11 @@ defmodule CitadelWeb.Components.TaskActivitySection do
     {:noreply, stream_delete(socket, :activities, activity)}
   end
 
+  def handle_event("request-cancel-agent-run", %{"run-id" => run_id}, socket) do
+    send(self(), {:request_cancel_agent_run, run_id})
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <div id={@id} class="py-4 border-t border-base-300 max-w-5xl">
@@ -109,33 +191,31 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         <div
           :for={{dom_id, activity} <- @streams.activities}
           id={dom_id}
-          class="flex gap-2 group"
+          class={[
+            "flex gap-2 group rounded-lg p-2 -ml-2",
+            activity.type == :change_request && "bg-warning/5 border-l-2 border-warning",
+            activity.type == :agent_run && "bg-base-200/50 border-l-2 border-info/40",
+            activity.type == :question && "bg-purple-500/5 border-l-2 border-purple-400",
+            activity.type == :question_response && "ml-8 bg-base-200/50 rounded-lg"
+          ]}
         >
           <div class="flex-shrink-0 pt-0.5">
             <.activity_actor_avatar activity={activity} />
           </div>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="text-sm font-medium text-base-content">
-                <.activity_actor_name activity={activity} />
-              </span>
-              <span class="text-xs text-base-content/40">
-                {relative_time(activity.inserted_at)}
-              </span>
-              <button
-                :if={activity.user_id == @current_user.id}
-                phx-click="delete-comment"
-                phx-target={@myself}
-                phx-value-id={activity.id}
-                class="text-xs text-base-content/30 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
-                data-confirm="Delete this comment?"
-              >
-                <.icon name="hero-trash" class="size-3" />
-              </button>
-            </div>
-            <p class="text-sm text-base-content/80 mt-1">
-              {activity.body}
-            </p>
+            <%= if activity.type == :agent_run and not is_nil(activity.agent_run) do %>
+              <.agent_run_activity_content
+                activity={activity}
+                can_edit={@can_edit}
+                myself={@myself}
+              />
+            <% else %>
+              <.comment_activity_content
+                activity={activity}
+                current_user={@current_user}
+                myself={@myself}
+              />
+            <% end %>
           </div>
         </div>
       </div>
@@ -151,23 +231,221 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           <.user_avatar user={@current_user} />
         </div>
         <div class="flex-1">
+          <div
+            :if={@reply_to_activity_id}
+            class="flex items-center justify-between bg-purple-500/10 text-purple-400 text-xs px-3 py-1.5 rounded-t-lg border border-b-0 border-purple-400/20"
+          >
+            <span>Replying to agent question</span>
+            <button
+              type="button"
+              phx-click="toggle-reply"
+              phx-target={@myself}
+              phx-value-id={@reply_to_activity_id}
+              class="hover:text-purple-300"
+            >
+              <.icon name="hero-x-mark" class="size-3.5" />
+            </button>
+          </div>
           <textarea
             name={@form[:body].name}
             value={@form[:body].value}
             rows="2"
-            placeholder="Add a comment..."
-            class="textarea textarea-bordered w-full text-sm resize-none"
+            placeholder={
+              cond do
+                @reply_to_activity_id -> "Type your reply to the agent's question..."
+                @request_changes -> "Describe what changes are needed..."
+                true -> "Add a comment..."
+              end
+            }
+            class={[
+              "textarea textarea-bordered w-full text-sm resize-none",
+              @reply_to_activity_id && "rounded-t-none"
+            ]}
             id={"#{@id}-body"}
             phx-hook="CmdEnterSubmit"
           />
-          <div class="flex justify-end mt-2">
-            <button type="submit" class="btn btn-sm btn-primary">
-              Comment
+          <div class="flex items-center justify-between mt-2">
+            <label
+              :if={!@reply_to_activity_id}
+              class="flex items-center gap-2 cursor-pointer select-none"
+              id={"#{@id}-request-changes-toggle"}
+            >
+              <input
+                type="checkbox"
+                checked={@request_changes}
+                phx-click="toggle-request-changes"
+                phx-target={@myself}
+                class="checkbox checkbox-warning checkbox-xs"
+              />
+              <span class={[
+                "text-xs",
+                if(@request_changes, do: "text-warning font-medium", else: "text-base-content/50")
+              ]}>
+                Request changes
+              </span>
+            </label>
+            <div :if={@reply_to_activity_id} />
+            <button
+              type="submit"
+              class={[
+                "btn btn-sm",
+                cond do
+                  @reply_to_activity_id -> "btn-primary"
+                  @request_changes -> "btn-warning"
+                  true -> "btn-primary"
+                end
+              ]}
+            >
+              {cond do
+                @reply_to_activity_id -> "Reply"
+                @request_changes -> "Request Changes"
+                true -> "Comment"
+              end}
             </button>
           </div>
         </div>
       </.form>
     </div>
+    """
+  end
+
+  attr :activity, :map, required: true
+  attr :current_user, :any, required: true
+  attr :myself, :any, required: true
+
+  defp comment_activity_content(assigns) do
+    ~H"""
+    <div class="flex items-center gap-2">
+      <span class="text-sm font-medium text-base-content">
+        <.activity_actor_name activity={@activity} />
+      </span>
+      <span
+        :if={@activity.type == :change_request}
+        class="inline-flex items-center gap-1 text-xs font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded"
+      >
+        <.icon name="hero-arrow-path" class="size-3" /> Changes Requested
+      </span>
+      <span
+        :if={@activity.type == :question}
+        class="inline-flex items-center gap-1 text-xs font-medium text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded"
+      >
+        <.icon name="hero-question-mark-circle" class="size-3" /> Agent Question
+      </span>
+      <span
+        :if={@activity.type == :question_response}
+        class="inline-flex items-center gap-1 text-xs font-medium text-base-content/50 bg-base-200 px-1.5 py-0.5 rounded"
+      >
+        In Reply
+      </span>
+      <span class="text-xs text-base-content/40">
+        {relative_time(@activity.inserted_at)}
+      </span>
+      <button
+        :if={@activity.user_id == @current_user.id}
+        phx-click="delete-comment"
+        phx-target={@myself}
+        phx-value-id={@activity.id}
+        class="text-xs text-base-content/30 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity"
+        data-confirm="Delete this comment?"
+      >
+        <.icon name="hero-trash" class="size-3" />
+      </button>
+      <button
+        :if={@activity.type == :question}
+        phx-click="toggle-reply"
+        phx-target={@myself}
+        phx-value-id={@activity.id}
+        class="text-xs text-purple-400 hover:text-purple-300 opacity-0 group-hover:opacity-100 transition-opacity"
+      >
+        <.icon name="hero-chat-bubble-left" class="size-3" /> Reply
+      </button>
+    </div>
+    <p class="text-sm text-base-content/80 mt-1">
+      {@activity.body}
+    </p>
+    """
+  end
+
+  attr :activity, :map, required: true
+  attr :can_edit, :boolean, required: true
+  attr :myself, :any, required: true
+
+  defp agent_run_activity_content(assigns) do
+    assigns = assign(assigns, :run, assigns.activity.agent_run)
+
+    ~H"""
+    <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-medium text-base-content">
+          <.activity_actor_name activity={@activity} />
+        </span>
+        <span class={[
+          "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+          agent_run_status_classes(@run.status)
+        ]}>
+          <span class={["size-1.5 rounded-full", agent_run_dot_class(@run.status)]} />
+          {@run.status}
+        </span>
+        <span :if={@run.error_message} class="text-xs text-error">
+          {@run.error_message}
+        </span>
+        <.link
+          :if={@run.status == :running}
+          navigate={~p"/agent-runs/#{@run.id}"}
+          class="btn btn-xs btn-ghost text-info hover:bg-info/10"
+        >
+          <.icon name="hero-eye" class="size-3.5" /> Watch
+        </.link>
+        <button
+          :if={@can_edit and @run.status in [:pending, :running]}
+          phx-click="request-cancel-agent-run"
+          phx-target={@myself}
+          phx-value-run-id={@run.id}
+          class="btn btn-xs btn-ghost text-error hover:bg-error/10"
+        >
+          <.icon name="hero-x-mark" class="size-3.5" /> Cancel
+        </button>
+      </div>
+      <div class="text-xs text-base-content/50 flex gap-3">
+        <span class="text-xs text-base-content/40">
+          {relative_time(@activity.inserted_at)}
+        </span>
+        <span :if={@run.started_at}>
+          Started: {Calendar.strftime(@run.started_at, "%b %d %H:%M:%S")}
+        </span>
+        <span :if={@run.completed_at}>
+          Completed: {Calendar.strftime(@run.completed_at, "%b %d %H:%M:%S")}
+        </span>
+      </div>
+    </div>
+
+    <details :if={@run.commits != nil and @run.commits != []} class="group/details">
+      <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+        Commits ({length(@run.commits)})
+      </summary>
+      <ul class="mt-2 space-y-1">
+        <li :for={commit <- @run.commits} class="flex items-start gap-2 text-xs">
+          <code class="px-1.5 py-0.5 bg-base-300/50 rounded font-mono text-base-content/70 shrink-0">
+            {String.slice(commit["sha"], 0..6)}
+          </code>
+          <span class="text-base-content/80">{commit["message"]}</span>
+        </li>
+      </ul>
+    </details>
+
+    <details :if={@run.test_output && @run.test_output != ""} class="group/details mt-2">
+      <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+        Test Output
+      </summary>
+      <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{@run.test_output}</code></pre>
+    </details>
+
+    <details :if={@run.logs && @run.logs != ""} class="group/details mt-2">
+      <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
+        Logs
+      </summary>
+      <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{@run.logs}</code></pre>
+    </details>
     """
   end
 

@@ -25,8 +25,7 @@ defmodule Citadel.Tasks.TaskTest do
       attrs = %{
         title: "Test Task #{System.unique_integer([:positive])}",
         description: "A test task",
-        task_state_id: task_state.id,
-        workspace_id: workspace.id
+        task_state_id: task_state.id
       }
 
       assert task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
@@ -46,7 +45,6 @@ defmodule Citadel.Tasks.TaskTest do
         title: "Test Task #{System.unique_integer([:positive])}",
         description: "A test task",
         task_state_id: task_state.id,
-        workspace_id: workspace.id,
         assignees: [user.id]
       }
 
@@ -63,8 +61,7 @@ defmodule Citadel.Tasks.TaskTest do
     } do
       attrs = %{
         title: "Minimal Task #{System.unique_integer([:positive])}",
-        task_state_id: task_state.id,
-        workspace_id: workspace.id
+        task_state_id: task_state.id
       }
 
       assert task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
@@ -78,8 +75,7 @@ defmodule Citadel.Tasks.TaskTest do
       task_state: task_state
     } do
       attrs = %{
-        task_state_id: task_state.id,
-        workspace_id: workspace.id
+        task_state_id: task_state.id
       }
 
       assert_raise Ash.Error.Invalid, fn ->
@@ -104,8 +100,7 @@ defmodule Citadel.Tasks.TaskTest do
         })
 
       attrs = %{
-        title: "Task Without State #{System.unique_integer([:positive])}",
-        workspace_id: workspace.id
+        title: "Task Without State #{System.unique_integer([:positive])}"
       }
 
       task = Tasks.create_task!(attrs, actor: user, tenant: workspace.id)
@@ -116,8 +111,7 @@ defmodule Citadel.Tasks.TaskTest do
     test "raises error when actor is missing", %{workspace: workspace, task_state: task_state} do
       attrs = %{
         title: "Missing User #{System.unique_integer([:positive])}",
-        task_state_id: task_state.id,
-        workspace_id: workspace.id
+        task_state_id: task_state.id
       }
 
       assert_raise Ash.Error.Invalid, fn ->
@@ -136,8 +130,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task 1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -147,8 +140,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task 2 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -173,8 +165,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Other User Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: other_user,
           tenant: workspace.id
@@ -184,8 +175,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "User Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -218,8 +208,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task State 1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -229,8 +218,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task State 2 #{System.unique_integer([:positive])}",
-            task_state_id: other_state.id,
-            workspace_id: workspace.id
+            task_state_id: other_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -252,8 +240,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task with Relations #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -285,8 +272,7 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Original Title #{System.unique_integer([:positive])}",
             description: "Original description",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -319,8 +305,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -344,8 +329,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Protected Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -368,8 +352,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -392,8 +375,7 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Original Title #{System.unique_integer([:positive])}",
             description: "Original description",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -431,8 +413,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -465,8 +446,7 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Original #{System.unique_integer([:positive])}",
             description: "Original desc",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -501,8 +481,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Protected Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -525,8 +504,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Valid Title #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -546,8 +524,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -580,8 +557,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -603,8 +579,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -634,8 +609,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -664,8 +638,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -695,8 +668,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -740,8 +712,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Top Level Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -787,8 +758,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -819,8 +789,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -849,8 +818,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Grandparent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -890,8 +858,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "To Delete #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -915,8 +882,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Protected Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -938,8 +904,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -971,8 +936,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Other Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -995,8 +959,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1018,8 +981,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Top Level 1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1029,8 +991,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Top Level 2 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1076,8 +1037,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1111,8 +1071,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1142,8 +1101,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1173,8 +1131,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1193,8 +1150,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1213,8 +1169,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1232,8 +1187,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task 1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1243,8 +1197,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task 2 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1254,8 +1207,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task 3 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1284,8 +1236,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task in WS1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace1.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace1.id
@@ -1295,8 +1246,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task in WS2 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace2.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace2.id
@@ -1320,8 +1270,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1356,7 +1305,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             human_id: "CUSTOM-999"
           },
           actor: user,
@@ -1376,8 +1324,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Find Me #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1408,8 +1355,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Secret Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1431,8 +1377,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1451,7 +1396,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Urgent Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             priority: :urgent
           },
           actor: user,
@@ -1471,7 +1415,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             priority: :low
           },
           actor: user,
@@ -1493,7 +1436,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             priority: :invalid
           },
           actor: user,
@@ -1516,7 +1458,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: due_date
           },
           actor: user,
@@ -1535,8 +1476,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1554,8 +1494,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1580,8 +1519,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1603,7 +1541,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: future_date
           },
           actor: user,
@@ -1626,7 +1563,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: past_date
           },
           actor: user,
@@ -1649,7 +1585,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: today
           },
           actor: user,
@@ -1671,8 +1606,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1694,7 +1628,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: future_date
           },
           actor: user,
@@ -1717,7 +1650,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: past_date
           },
           actor: user,
@@ -1740,7 +1672,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             due_date: today
           },
           actor: user,
@@ -1763,7 +1694,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [user.id]
           },
           actor: user,
@@ -1788,7 +1718,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [user.id, other_user.id]
           },
           actor: user,
@@ -1815,8 +1744,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1849,7 +1777,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [user.id, other_user.id]
           },
           actor: user,
@@ -1880,7 +1807,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [non_member.id]
           },
           actor: user,
@@ -1899,7 +1825,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [user.id]
           },
           actor: user,
@@ -1924,7 +1849,6 @@ defmodule Citadel.Tasks.TaskTest do
           %{
             title: "Task #{System.unique_integer([:positive])}",
             task_state_id: task_state.id,
-            workspace_id: workspace.id,
             assignees: [member.id]
           },
           actor: user,
@@ -1947,8 +1871,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent 1 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1958,8 +1881,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent 2 #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -1996,8 +1918,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -2034,8 +1955,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Task #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -2058,8 +1978,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Parent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -2093,8 +2012,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Grandparent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -2139,8 +2057,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "New Parent #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id
@@ -2150,8 +2067,7 @@ defmodule Citadel.Tasks.TaskTest do
         Tasks.create_task!(
           %{
             title: "Top Level #{System.unique_integer([:positive])}",
-            task_state_id: task_state.id,
-            workspace_id: workspace.id
+            task_state_id: task_state.id
           },
           actor: user,
           tenant: workspace.id

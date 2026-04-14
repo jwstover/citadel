@@ -148,7 +148,6 @@ defmodule Citadel.Tasks.McpTaskDependencyTest do
                  %{
                    title: "Task with dependencies",
                    task_state_id: todo_state.id,
-                   workspace_id: workspace.id,
                    dependencies: [dep_task_1.id, dep_task_2.id]
                  },
                  actor: user,
@@ -173,7 +172,6 @@ defmodule Citadel.Tasks.McpTaskDependencyTest do
                  %{
                    title: "Task without dependencies",
                    task_state_id: todo_state.id,
-                   workspace_id: workspace.id,
                    dependencies: []
                  },
                  actor: user,
@@ -193,8 +191,7 @@ defmodule Citadel.Tasks.McpTaskDependencyTest do
                Tasks.create_task(
                  %{
                    title: "Task no deps arg",
-                   task_state_id: todo_state.id,
-                   workspace_id: workspace.id
+                   task_state_id: todo_state.id
                  },
                  actor: user,
                  tenant: workspace.id

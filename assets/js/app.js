@@ -28,12 +28,14 @@ import TaskDragDrop from "./hooks/task_drag_drop.js"
 import Clipboard from "./hooks/clipboard.js"
 import MilkdownEditor from "./hooks/milkdown_editor.js"
 import CmdEnterSubmit from "./hooks/cmd_enter_submit.js"
+import AutoScroll from "./hooks/auto_scroll.js"
+import WorkflowEditor from "./hooks/workflow_editor.js"
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks, TaskDragDrop, Clipboard, MilkdownEditor, CmdEnterSubmit},
+  hooks: {...colocatedHooks, TaskDragDrop, Clipboard, MilkdownEditor, CmdEnterSubmit, AutoScroll, WorkflowEditor},
 })
 
 // Show progress bar on live navigation and form submits

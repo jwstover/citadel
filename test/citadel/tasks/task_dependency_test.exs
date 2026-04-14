@@ -49,6 +49,32 @@ defmodule Citadel.Tasks.TaskDependencyTest do
       assert dependency.depends_on_task_id == task_b.id
     end
 
+    test "prevents dependency on parent task", %{
+      user: user,
+      workspace: workspace,
+      todo_state: todo_state
+    } do
+      parent_task =
+        generate(task([task_state_id: todo_state.id], actor: user, tenant: workspace.id))
+
+      child_task =
+        generate(
+          task([task_state_id: todo_state.id, parent_task_id: parent_task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      assert {:error, %Ash.Error.Invalid{} = error} =
+               Tasks.create_task_dependency(
+                 %{task_id: child_task.id, depends_on_task_id: parent_task.id},
+                 actor: user,
+                 tenant: workspace.id
+               )
+
+      assert Exception.message(error) =~ "a task cannot depend on its parent task"
+    end
+
     test "prevents self-referential dependency", %{
       user: user,
       workspace: workspace,

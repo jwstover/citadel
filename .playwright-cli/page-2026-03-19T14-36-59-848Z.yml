@@ -1,0 +1,76 @@
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic "close sidebar"
+    - generic [ref=e7]:
+      - heading "Pyllar" [level=2] [ref=e9]
+      - button "Personal" [ref=e12] [cursor=pointer]:
+        - generic [ref=e14]: Personal
+      - list [ref=e16]:
+        - listitem [ref=e17]:
+          - link "Home" [ref=e18] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e20]: Home
+        - listitem [ref=e21]:
+          - link "Dashboard" [ref=e22] [cursor=pointer]:
+            - /url: /dashboard
+            - generic [ref=e24]: Dashboard
+        - listitem [ref=e25]:
+          - link "Billing" [ref=e26] [cursor=pointer]:
+            - /url: /billing
+            - generic [ref=e28]: Billing
+        - listitem [ref=e29]:
+          - link "Preferences" [ref=e30] [cursor=pointer]:
+            - /url: /preferences
+            - generic [ref=e32]: Preferences
+      - generic [ref=e34]:
+        - generic [ref=e37]: Agents
+        - generic [ref=e38]: No agents connected
+      - generic [ref=e41]:
+        - button [ref=e43] [cursor=pointer]
+        - button [ref=e45] [cursor=pointer]
+        - button [ref=e47] [cursor=pointer]
+  - main [ref=e49]:
+    - generic [ref=e52]:
+      - heading "Billing" [level=1] [ref=e53]
+      - generic [ref=e56]:
+        - generic [ref=e57]: Subscription
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - text: Plan
+            - paragraph [ref=e60]: Free
+          - generic [ref=e61]:
+            - text: Status
+            - paragraph [ref=e62]:
+              - generic [ref=e63]: Active
+          - generic [ref=e64]:
+            - text: Renewal Date
+            - paragraph [ref=e65]: Apr 18, 2026
+          - generic [ref=e66]:
+            - text: Seats
+            - paragraph [ref=e67]: 1 / 1
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - heading "Upgrade to Pro" [level=4] [ref=e71]
+            - paragraph [ref=e72]: Get more credits, team members, and workspaces
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: 10k
+              - generic [ref=e76]: Credits
+            - generic [ref=e77]:
+              - generic [ref=e78]: "5"
+              - generic [ref=e79]: Members
+            - generic [ref=e80]:
+              - generic [ref=e81]: "5"
+              - generic [ref=e82]: Workspaces
+          - generic [ref=e83]:
+            - button "Monthly $19 per month Choose Monthly" [ref=e85] [cursor=pointer]:
+              - generic [ref=e86]: Monthly
+              - generic [ref=e87]: $19
+              - generic [ref=e88]: per month
+              - generic: Choose Monthly
+            - button "SAVE 16% Annual $190 per year (≈ $16/mo) Choose Annual" [ref=e90] [cursor=pointer]:
+              - generic [ref=e91]: SAVE 16%
+              - generic [ref=e92]: Annual
+              - generic [ref=e93]: $190
+              - generic [ref=e94]: per year (≈ $16/mo)
+              - generic: Choose Annual

@@ -39,6 +39,10 @@ defmodule Citadel.Tasks do
     tool :delete_task_dependency, Citadel.Tasks.TaskDependency, :destroy do
       description "Deletes an existing task dependency by its ID"
     end
+
+    tool :ask_question, Citadel.Tasks.TaskActivity, :create_agent_question do
+      description "Posts a question to the task activity feed and signals that you need user input before continuing. Call this when you cannot proceed without clarification. After calling this tool, you MUST stop all other work and exit immediately — do not make any further changes or tool calls. Provide your agent_run_id (given in your task prompt) and the task_id. The body should contain all your questions clearly formatted."
+    end
   end
 
   resources do
@@ -73,6 +77,11 @@ defmodule Citadel.Tasks do
 
     resource Citadel.Tasks.TaskActivity do
       define :create_comment, action: :create_comment
+      define :create_request_changes_comment, action: :create_request_changes_comment
+      define :create_agent_run_activity, action: :create_agent_run_activity
+      define :create_agent_question, action: :create_agent_question
+      define :create_question_response, action: :create_question_response
+      define :get_task_activity, action: :read, get_by: [:id]
       define :list_task_activities, action: :list_by_task, args: [:task_id]
       define :destroy_comment, action: :destroy_comment
     end
@@ -82,6 +91,14 @@ defmodule Citadel.Tasks do
       define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
     end
 
+    resource Citadel.Tasks.AgentWorkItem do
+      define :create_agent_work_item, action: :create
+      define :claim_agent_work_item, action: :claim
+      define :complete_agent_work_item, action: :complete
+      define :cancel_agent_work_item, action: :cancel
+      define :list_agent_work_items, action: :read
+    end
+
     resource Citadel.Tasks.AgentRun do
       define :claim_next_task, action: :claim_next
       define :create_agent_run, action: :create
@@ -89,6 +106,7 @@ defmodule Citadel.Tasks do
       define :cancel_agent_run, action: :cancel
       define :list_agent_runs_by_task, action: :list_by_task, args: [:task_id]
       define :get_agent_run, action: :read, get_by: [:id]
+      define :request_agent_run_input, action: :request_input
       define :destroy_agent_run, action: :destroy
     end
 

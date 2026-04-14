@@ -5,18 +5,21 @@ defmodule CitadelWeb.Components.NewTaskModal do
 
   require Logger
 
+  alias Citadel.Tasks
   alias Citadel.Tasks.Task
 
-  def update(assigns, socket) do
-    socket =
+  def update_many(assigns_sockets) do
+    task_states = Tasks.list_task_states!(query: [sort: [order: :asc]])
+
+    Enum.map(assigns_sockets, fn {assigns, socket} ->
       socket
       |> assign(assigns)
       |> assign_new(:parent_task_id, fn -> nil end)
       |> assign_new(:close_event, fn -> "close-new-task-form" end)
       |> assign(:assignee_ids, [])
+      |> assign(:task_states, task_states)
       |> assign_form()
-
-    {:ok, socket}
+    end)
   end
 
   def handle_event("create", %{"form" => params}, socket) do
@@ -73,7 +76,13 @@ defmodule CitadelWeb.Components.NewTaskModal do
           <.input field={@form[:title]} placeholder="Title" />
           <.input type="textarea" field={@form[:description]} placeholder="Description" />
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-3 gap-4">
+            <.input
+              field={@form[:task_state_id]}
+              type="select"
+              label="Status"
+              options={Enum.map(@task_states, &{&1.name, &1.id})}
+            />
             <.input
               field={@form[:priority]}
               type="select"

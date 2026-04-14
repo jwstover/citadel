@@ -290,13 +290,13 @@ defmodule Citadel.Billing.CreditLedger do
       authorize_if always()
     end
 
-    policy action(:current_balance) do
+    policy action :current_balance do
       authorize_if Citadel.Billing.CreditLedger.Checks.ActorInOrganization
     end
 
     policy action_type(:read) do
       authorize_if relates_to_actor_via([:organization, :owner])
-      authorize_if expr(exists(organization.memberships, user_id == ^actor(:id)))
+      authorize_if expr(exists organization.memberships, user_id == ^actor(:id))
     end
   end
 

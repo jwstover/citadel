@@ -38,7 +38,7 @@ defmodule CitadelWeb.Api.AgentControllerTest do
   end
 
   defp create_task(workspace, user, task_state, attrs \\ []) do
-    defaults = [workspace_id: workspace.id, task_state_id: task_state.id, agent_eligible: true]
+    defaults = [task_state_id: task_state.id, agent_eligible: true]
     generate(task(Keyword.merge(defaults, attrs), actor: user, tenant: workspace.id))
   end
 
@@ -55,6 +55,9 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["task"]["task_state"]["name"] != nil
       assert data["agent_run"]["task_id"] == task.id
       assert data["agent_run"]["status"] == "running"
+      assert data["work_item"]["type"] == "new_task"
+      assert data["work_item"]["comment_id"] == nil
+      assert data["work_item"]["id"] != nil
     end
 
     test "returns 204 when no tasks available", ctx do
@@ -275,6 +278,20 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       assert data["task_state"]["name"] == new_state.name
     end
 
+    test "sets forge_pr on a task", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+      pr_url = "https://github.com/test-owner/test-repo/pull/42"
+
+      conn =
+        patch(ctx.conn, ~p"/api/agent/tasks/#{task.id}", %{
+          "forge_pr" => pr_url
+        })
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == task.id
+      assert data["forge_pr"] == pr_url
+    end
+
     test "returns 404 for non-existent task", ctx do
       fake_id = Ash.UUID.generate()
 
@@ -473,6 +490,46 @@ defmodule CitadelWeb.Api.AgentControllerTest do
     end
   end
 
+  describe "GET /api/agent/comments/:id" do
+    test "returns comment data", ctx do
+      task = create_task(ctx.workspace, ctx.user, ctx.task_state)
+
+      {:ok, comment} =
+        Tasks.create_comment(%{body: "Test comment", task_id: task.id},
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      conn = get(ctx.conn, ~p"/api/agent/comments/#{comment.id}")
+
+      assert %{"data" => data} = json_response(conn, 200)
+      assert data["id"] == comment.id
+      assert data["type"] == "comment"
+      assert data["body"] == "Test comment"
+      assert data["actor_type"] == "user"
+      assert data["inserted_at"] != nil
+    end
+
+    test "returns 404 for non-existent comment", ctx do
+      fake_id = Ash.UUID.generate()
+
+      conn = get(ctx.conn, ~p"/api/agent/comments/#{fake_id}")
+
+      assert json_response(conn, 404)
+    end
+
+    test "returns 401 without authentication" do
+      fake_id = Ash.UUID.generate()
+
+      conn =
+        build_conn()
+        |> put_req_header("accept", "application/json")
+        |> get(~p"/api/agent/comments/#{fake_id}")
+
+      assert json_response(conn, 401)
+    end
+  end
+
   describe "PATCH /api/agent/runs/:id" do
     test "updates an agent run status", ctx do
       task = create_task(ctx.workspace, ctx.user, ctx.task_state)
@@ -486,16 +543,21 @@ defmodule CitadelWeb.Api.AgentControllerTest do
           )
         )
 
+      commits = [
+        %{"sha" => "abc123", "message" => "first commit"},
+        %{"sha" => "def456", "message" => "second commit"}
+      ]
+
       conn =
         patch(ctx.conn, ~p"/api/agent/runs/#{run.id}", %{
           "status" => "completed",
-          "diff" => "--- a/file.ex\n+++ b/file.ex",
+          "commits" => commits,
           "test_output" => "All tests passed"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "completed"
-      assert data["diff"] == "--- a/file.ex\n+++ b/file.ex"
+      assert data["commits"] == commits
       assert data["test_output"] == "All tests passed"
     end
 

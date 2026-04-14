@@ -4,7 +4,7 @@ defmodule Citadel.MixProject do
   def project do
     [
       app: :citadel,
-      version: "0.29.0",
+      version: "0.47.0",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -129,11 +129,21 @@ defmodule Citadel.MixProject do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ash.setup --quiet", "test"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind citadel", "esbuild citadel"],
+      "assets.setup": [
+        "tailwind.install --if-missing",
+        "esbuild.install --if-missing",
+        "cmd npm install --prefix assets"
+      ],
+      "assets.build": [
+        "compile",
+        "tailwind citadel",
+        "esbuild citadel",
+        "cmd node assets/build_svelte.js"
+      ],
       "assets.deploy": [
         "tailwind citadel --minify",
         "esbuild citadel --minify",
+        "cmd node assets/build_svelte.js --minify",
         "phx.digest"
       ],
       precommit: [
