@@ -235,6 +235,46 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
       assert reloaded2.status == :failed
     end
 
+    test "skips stale run when agent is connected and working on the task", ctx do
+      run = create_run(ctx)
+      run = set_run_status(run, :running, ctx)
+      backdate_run(run, 45)
+
+      topic = "agents:#{ctx.workspace.id}"
+
+      CitadelWeb.AgentPresence.track(self(), topic, "test-agent", %{
+        status: "working",
+        current_task_id: ctx.task.id,
+        agent_name: "test-agent",
+        joined_at: DateTime.utc_now() |> DateTime.to_iso8601()
+      })
+
+      assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
+
+      reloaded = reload_run(run, ctx)
+      assert reloaded.status == :running
+    end
+
+    test "reaps stale run when agent is connected but idle", ctx do
+      run = create_run(ctx)
+      run = set_run_status(run, :running, ctx)
+      backdate_run(run, 45)
+
+      topic = "agents:#{ctx.workspace.id}"
+
+      CitadelWeb.AgentPresence.track(self(), topic, "test-agent", %{
+        status: "idle",
+        current_task_id: nil,
+        agent_name: "test-agent",
+        joined_at: DateTime.utc_now() |> DateTime.to_iso8601()
+      })
+
+      assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
+
+      reloaded = reload_run(run, ctx)
+      assert reloaded.status == :failed
+    end
+
     test "returns :ok when no stale runs exist", _ctx do
       assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
     end

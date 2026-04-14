@@ -8,8 +8,14 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
   from future agent work because both `ClaimNextTask` and
   `MaybeEnqueueAgentWork` skip tasks with active runs.
 
-  Runs every 5 minutes to find and fail runs that haven't been updated
-  within the configured thresholds.
+  Uses a two-tier detection strategy:
+  1. **Presence check** — if a connected agent is actively working on the
+     run's task, the run is legitimate regardless of how long it's been
+     running. This avoids reaping long-running but healthy executions.
+  2. **Staleness threshold** — runs without a connected agent are failed
+     after 30 minutes (:running) or 60 minutes (:pending) of no updates.
+
+  Runs every 5 minutes.
   """
   use Oban.Worker,
     queue: :default,
@@ -18,6 +24,8 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
   require Logger
 
   import Ecto.Query
+
+  alias CitadelWeb.AgentPresence
 
   @running_threshold_minutes 30
   @pending_threshold_minutes 60
@@ -32,22 +40,44 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
     if stale_runs == [] do
       Logger.debug("StaleAgentRunReaper: no stale runs found")
     else
-      Logger.info("StaleAgentRunReaper: found #{length(stale_runs)} stale run(s)")
+      Logger.info("StaleAgentRunReaper: found #{length(stale_runs)} stale candidate(s)")
 
-      Enum.each(stale_runs, &fail_stale_run/1)
+      Enum.each(stale_runs, &maybe_fail_stale_run/1)
     end
 
     :ok
   end
 
   defp find_stale_runs(running_cutoff, pending_cutoff) do
-    from(ar in "agent_runs",
+    from(ar in Citadel.Tasks.AgentRun,
       where:
-        (ar.status == "running" and ar.updated_at < ^running_cutoff) or
-          (ar.status == "pending" and ar.updated_at < ^pending_cutoff),
-      select: %{id: ar.id, workspace_id: ar.workspace_id, status: ar.status}
+        (ar.status == :running and ar.updated_at < ^running_cutoff) or
+          (ar.status == :pending and ar.updated_at < ^pending_cutoff),
+      select: %{id: ar.id, workspace_id: ar.workspace_id, task_id: ar.task_id, status: ar.status}
     )
     |> Citadel.Repo.all()
+  end
+
+  defp maybe_fail_stale_run(%{task_id: task_id, workspace_id: workspace_id} = run) do
+    if agent_working_on_task?(workspace_id, task_id) do
+      Logger.debug(
+        "StaleAgentRunReaper: skipping run #{run.id}, agent still connected and working"
+      )
+    else
+      fail_stale_run(run)
+    end
+  end
+
+  defp agent_working_on_task?(workspace_id, task_id) do
+    topic = "agents:#{workspace_id}"
+    task_id_string = to_string(task_id)
+
+    AgentPresence.list(topic)
+    |> Enum.any?(fn {_name, %{metas: metas}} ->
+      Enum.any?(metas, fn meta ->
+        meta[:status] == "working" and to_string(meta[:current_task_id]) == task_id_string
+      end)
+    end)
   end
 
   defp fail_stale_run(%{id: id, workspace_id: workspace_id, status: status}) do
@@ -61,14 +91,14 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
           run,
           %{
             status: :failed,
-            error_message: "Reaped: #{status} run stale with no recent activity",
+            error_message: "Reaped: #{status} run had no connected agent",
             completed_at: DateTime.utc_now()
           },
           authorize?: false,
           tenant: workspace_id
         )
 
-        Logger.info("StaleAgentRunReaper: failed stale #{status} run #{id}")
+        Logger.info("StaleAgentRunReaper: failed orphaned #{status} run #{id}")
 
       {:ok, _run} ->
         Logger.debug("StaleAgentRunReaper: run #{id} already resolved, skipping")
