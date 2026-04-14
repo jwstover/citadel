@@ -4,15 +4,23 @@ defmodule CitadelAgent.RunnerTest do
   @moduletag :tmp_dir
 
   setup %{tmp_dir: tmp_dir} do
-    System.cmd("git", ["init", "-b", "main"], cd: tmp_dir)
-    System.cmd("git", ["config", "user.email", "test@test.com"], cd: tmp_dir)
-    System.cmd("git", ["config", "user.name", "Test"], cd: tmp_dir)
+    project_path = Path.join(tmp_dir, "project")
+    File.mkdir_p!(project_path)
 
-    File.write!(Path.join(tmp_dir, "README.md"), "# Test")
-    System.cmd("git", ["add", "."], cd: tmp_dir)
-    System.cmd("git", ["commit", "-m", "initial"], cd: tmp_dir)
+    System.cmd("git", ["init", "-b", "main"], cd: project_path)
+    System.cmd("git", ["config", "user.email", "test@test.com"], cd: project_path)
+    System.cmd("git", ["config", "user.name", "Test"], cd: project_path)
 
-    {:ok, project_path: tmp_dir}
+    File.write!(Path.join(project_path, "README.md"), "# Test")
+    System.cmd("git", ["add", "."], cd: project_path)
+    System.cmd("git", ["commit", "-m", "initial"], cd: project_path)
+
+    bare_path = Path.join(tmp_dir, "remote.git")
+    System.cmd("git", ["init", "--bare", bare_path])
+    System.cmd("git", ["remote", "add", "origin", bare_path], cd: project_path)
+    System.cmd("git", ["push", "-u", "origin", "main"], cd: project_path)
+
+    {:ok, project_path: project_path}
   end
 
   describe "worktree creation" do

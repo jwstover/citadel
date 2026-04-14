@@ -44,19 +44,31 @@ defmodule CitadelAgent.Socket do
   def handle_connect(socket) do
     Logger.info("Connected to Citadel WebSocket, joining agent channel")
 
-    {:ok,
-     join(socket, "agents:lobby", %{
-       "agent_name" => socket.assigns.agent_name,
-       "status" => socket.assigns.status,
-       "current_task_id" => socket.assigns.current_task_id
-     })}
+    {status, task_id} = CitadelAgent.Runners.get_status()
+
+    payload = %{
+      "agent_name" => socket.assigns.agent_name,
+      "status" => status,
+      "current_task_id" => task_id
+    }
+
+    {:ok, join(socket, "agents:lobby", payload)}
   end
 
   @impl true
   def handle_join(_topic, reply, socket) do
     workspace_id = reply["workspace_id"]
     Logger.info("Joined agent channel for workspace #{workspace_id}")
-    {:ok, assign(socket, :workspace_id, workspace_id)}
+
+    {status, task_id} = CitadelAgent.Runners.get_status()
+    socket = assign(socket, :workspace_id, workspace_id)
+
+    push(socket, "agents:lobby", "update_status", %{
+      "status" => status,
+      "current_task_id" => task_id
+    })
+
+    {:ok, socket}
   end
 
   @impl true

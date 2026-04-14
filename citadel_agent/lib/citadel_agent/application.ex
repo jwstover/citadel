@@ -10,8 +10,10 @@ defmodule CitadelAgent.Application do
         CitadelAgent.Preflight.run!()
 
         [
+          {Registry, keys: :unique, name: CitadelAgent.RunnerRegistry},
           {CitadelAgent.Socket, []},
-          {CitadelAgent.Worker, []}
+          {DynamicSupervisor, name: CitadelAgent.TaskRunnerSupervisor, strategy: :one_for_one},
+          {CitadelAgent.Scheduler, []}
         ]
       else
         []

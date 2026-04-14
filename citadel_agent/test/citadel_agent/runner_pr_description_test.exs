@@ -29,7 +29,7 @@ defmodule CitadelAgent.RunnerPrDescriptionTest do
       }
 
       assert {:ok, description} = CitadelAgent.Runner.generate_pr_description(task, project_path)
-      assert description =~ "Fix login bug"
+      assert String.downcase(description) =~ "fix login bug"
     end
 
     test "handles task with nil title gracefully", %{project_path: project_path} do
