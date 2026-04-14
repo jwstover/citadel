@@ -70,10 +70,17 @@ defmodule Citadel.Tasks.AgentRun do
       require_atomic? false
       accept []
 
+      argument :reason, :string, default: "Manually cancelled by user"
+
       validate attribute_in(:status, [:pending, :running])
 
       change set_attribute(:status, :cancelled)
-      change set_attribute(:error_message, "Manually cancelled by user")
+
+      change fn changeset, _ ->
+        reason = Ash.Changeset.get_argument(changeset, :reason)
+        Ash.Changeset.force_change_attribute(changeset, :error_message, reason)
+      end
+
       change set_attribute(:completed_at, &DateTime.utc_now/0)
       change Citadel.Tasks.Changes.SyncWorkItemStatus
     end
