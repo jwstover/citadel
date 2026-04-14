@@ -64,7 +64,7 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
   end
 
   describe "perform/1" do
-    test "reaps a stale running run", ctx do
+    test "cancels a stale running run", ctx do
       run = create_run(ctx)
       run = set_run_status(run, :running, ctx)
       backdate_run(run, 45)
@@ -72,19 +72,19 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
       assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
 
       reloaded = reload_run(run, ctx)
-      assert reloaded.status == :failed
+      assert reloaded.status == :cancelled
       assert reloaded.error_message =~ "Reaped"
       assert reloaded.completed_at != nil
     end
 
-    test "reaps a stale pending run", ctx do
+    test "cancels a stale pending run", ctx do
       run = create_run(ctx)
       backdate_run(run, 90)
 
       assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
 
       reloaded = reload_run(run, ctx)
-      assert reloaded.status == :failed
+      assert reloaded.status == :cancelled
       assert reloaded.error_message =~ "Reaped"
     end
 
@@ -194,7 +194,7 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
         |> Ash.Query.filter(id == ^work_item.id)
         |> Ash.read_one!(authorize?: false, tenant: ctx.workspace.id)
 
-      assert reloaded_work_item.status == :completed
+      assert reloaded_work_item.status == :cancelled
     end
 
     test "handles multiple stale runs across workspaces", ctx do
@@ -229,10 +229,10 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
       assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
 
       reloaded1 = reload_run(run1, ctx)
-      assert reloaded1.status == :failed
+      assert reloaded1.status == :cancelled
 
       reloaded2 = reload_run(run2, %{user: user2, workspace: workspace2})
-      assert reloaded2.status == :failed
+      assert reloaded2.status == :cancelled
     end
 
     test "skips stale run when agent is connected and working on the task", ctx do
@@ -255,7 +255,7 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
       assert reloaded.status == :running
     end
 
-    test "reaps stale run when agent is connected but idle", ctx do
+    test "cancels stale run when agent is connected but idle", ctx do
       run = create_run(ctx)
       run = set_run_status(run, :running, ctx)
       backdate_run(run, 45)
@@ -272,7 +272,7 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorkerTest do
       assert :ok = perform_job(StaleAgentRunReaperWorker, %{})
 
       reloaded = reload_run(run, ctx)
-      assert reloaded.status == :failed
+      assert reloaded.status == :cancelled
     end
 
     test "returns :ok when no stale runs exist", _ctx do

@@ -64,7 +64,7 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
         "StaleAgentRunReaper: skipping run #{run.id}, agent still connected and working"
       )
     else
-      fail_stale_run(run)
+      cancel_stale_run(run)
     end
   end
 
@@ -80,25 +80,21 @@ defmodule Citadel.Workers.StaleAgentRunReaperWorker do
     end)
   end
 
-  defp fail_stale_run(%{id: id, workspace_id: workspace_id, status: status}) do
+  defp cancel_stale_run(%{id: id, workspace_id: workspace_id, status: status}) do
     require Ash.Query
 
     case Citadel.Tasks.AgentRun
          |> Ash.Query.filter(id == ^id)
          |> Ash.read_one(authorize?: false, tenant: workspace_id) do
       {:ok, %{status: current_status} = run} when current_status in [:running, :pending] ->
-        Citadel.Tasks.update_agent_run!(
-          run,
-          %{
-            status: :failed,
-            error_message: "Reaped: #{status} run had no connected agent",
-            completed_at: DateTime.utc_now()
-          },
+        reason = "Reaped: #{status} run had no connected agent"
+
+        Citadel.Tasks.cancel_agent_run!(run, %{reason: reason},
           authorize?: false,
           tenant: workspace_id
         )
 
-        Logger.info("StaleAgentRunReaper: failed orphaned #{status} run #{id}")
+        Logger.info("StaleAgentRunReaper: cancelled orphaned #{status} run #{id}")
 
       {:ok, _run} ->
         Logger.debug("StaleAgentRunReaper: run #{id} already resolved, skipping")
