@@ -29,6 +29,10 @@ kill_signal = 'SIGTERM'
     hard_limit = 1000
     soft_limit = 1000
 
+[metrics]
+  port = 9568
+  path = "/metrics"
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'

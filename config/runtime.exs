@@ -151,19 +151,18 @@ if config_env() == :prod do
     config :opentelemetry_exporter, otlp_protocol: :http_protobuf
   end
 
-  # ── PromEx → Grafana Cloud Prometheus remote_write ─────
+  # ── PromEx /metrics endpoint for Fly Prometheus to scrape ──
+  # Fly scrapes this via the [metrics] block in fly.toml every 15s.
+  # The scraped data lands in Fly's managed Prometheus, which Grafana
+  # Cloud queries as an external data source (see docs/observability).
   config :citadel, Citadel.PromEx,
     grafana: :disabled,
-    metrics_server: :disabled,
-    prometheus_remote_write: [
-      enabled: System.get_env("GRAFANA_CLOUD_REMOTE_WRITE_URL") != nil,
-      url: System.get_env("GRAFANA_CLOUD_REMOTE_WRITE_URL"),
-      bearer_token: nil,
-      username: System.get_env("GRAFANA_CLOUD_PROM_USERNAME"),
-      password: System.get_env("GRAFANA_CLOUD_PROM_PASSWORD"),
-      proxy_url: nil,
-      headers: [],
-      export_interval: :timer.seconds(30)
+    metrics_server: [
+      port: 9568,
+      path: "/metrics",
+      protocol: :http,
+      pool_size: 5,
+      auth_strategy: :none
     ]
 
   database_url =
