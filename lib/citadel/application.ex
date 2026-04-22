@@ -56,5 +56,28 @@ defmodule Citadel.Application do
     :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
       config: %{metadata: [:request_id, :trace_id, :span_id]}
     })
+
+    log_otlp_diagnostics()
+  end
+
+  defp log_otlp_diagnostics do
+    endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT")
+    raw_headers = System.get_env("OTEL_EXPORTER_OTLP_HEADERS", "")
+
+    header_names =
+      raw_headers
+      |> String.split(",", trim: true)
+      |> Enum.map(fn kv ->
+        case String.split(kv, "=", parts: 2) do
+          [k, _v] -> String.trim(k)
+          _ -> "<unparseable>"
+        end
+      end)
+
+    require Logger
+
+    Logger.info(
+      "otlp diagnostics: endpoint=#{inspect(endpoint)} header_names=#{inspect(header_names)} header_count=#{length(header_names)}"
+    )
   end
 end
