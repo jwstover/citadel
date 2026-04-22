@@ -1,3 +1,12 @@
+## [0.48.1](https://github.com/jwstover/citadel/compare/v0.48.0...v0.48.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **docker:** copy npm manifests before mix assets.setup ([db2a9ce](https://github.com/jwstover/citadel/commit/db2a9ce659d8ec9a383b052b46eb4f2ddb2f05d4))
+
+
+
 # [0.48.0](https://github.com/jwstover/citadel/compare/v0.47.1...v0.48.0) (2026-04-22)
 
 
@@ -41,20 +50,6 @@
 ### Bug Fixes
 
 * restrict tool access in commit/pr subprocesses ([bbc6823](https://github.com/jwstover/citadel/commit/bbc68233bdc294fef3283482ef7367ab55e20a60))
-
-
-
-# [0.46.0](https://github.com/jwstover/citadel/compare/v0.45.2...v0.46.0) (2026-04-10)
-
-
-### Bug Fixes
-
-* upgrade Oban migration to v14 to add suspended job state ([8f78b13](https://github.com/jwstover/citadel/commit/8f78b132e44e37cd20b2053155577779a363ed8b))
-
-
-### Features
-
-* auto-create TaskActivity when agent run is created ([3f6ab94](https://github.com/jwstover/citadel/commit/3f6ab940b6ec5eacba6496d143ab0ed2b20fa56d))
 
 
 
