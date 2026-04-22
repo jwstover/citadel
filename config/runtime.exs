@@ -135,6 +135,47 @@ else
 end
 
 if config_env() == :prod do
+  # ── Sentry ─────────────────────────────────────────────
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: System.get_env("SENTRY_ENV", "production"),
+    release: to_string(Application.spec(:citadel, :vsn)),
+    included_environments: [:prod],
+    before_send: {Citadel.Observability.SentryFilter, :before_send}
+
+  # ── OpenTelemetry → Grafana Cloud Tempo (OTLP) ─────────
+  if otlp_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
+    otlp_headers =
+      System.get_env("OTEL_EXPORTER_OTLP_HEADERS", "")
+      |> String.split(",", trim: true)
+      |> Enum.map(fn kv ->
+        [k, v] = String.split(kv, "=", parts: 2)
+        {String.trim(k), String.trim(v)}
+      end)
+
+    config :opentelemetry, traces_exporter: :otlp
+
+    config :opentelemetry_exporter,
+      otlp_protocol: :http_protobuf,
+      otlp_endpoint: otlp_endpoint,
+      otlp_headers: otlp_headers
+  end
+
+  # ── PromEx → Grafana Cloud Prometheus remote_write ─────
+  config :citadel, Citadel.PromEx,
+    grafana: :disabled,
+    metrics_server: :disabled,
+    prometheus_remote_write: [
+      enabled: System.get_env("GRAFANA_CLOUD_REMOTE_WRITE_URL") != nil,
+      url: System.get_env("GRAFANA_CLOUD_REMOTE_WRITE_URL"),
+      bearer_token: nil,
+      username: System.get_env("GRAFANA_CLOUD_PROM_USERNAME"),
+      password: System.get_env("GRAFANA_CLOUD_PROM_PASSWORD"),
+      proxy_url: nil,
+      headers: [],
+      export_interval: :timer.seconds(30)
+    ]
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
