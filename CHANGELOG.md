@@ -1,3 +1,12 @@
+## [0.48.2](https://github.com/jwstover/citadel/compare/v0.48.1...v0.48.2) (2026-04-22)
+
+
+### Bug Fixes
+
+* **observability:** stop double-parsing OTLP headers ([220680e](https://github.com/jwstover/citadel/commit/220680e92513b28c07ec39d73b1c2dcf5ad2c038))
+
+
+
 ## [0.48.1](https://github.com/jwstover/citadel/compare/v0.48.0...v0.48.1) (2026-04-22)
 
 
@@ -41,15 +50,6 @@
 * add Svelte and XYFlow npm dependencies ([7123af8](https://github.com/jwstover/citadel/commit/7123af8e987ff6429cbc5b402aa8726401b0a696))
 * add workflow_editor feature flag and gated dev route ([a0d9b72](https://github.com/jwstover/citadel/commit/a0d9b72787b28b07e4b55208dceea5dbb8df63d4))
 * add WorkflowGraph Svelte component and WorkflowEditor LiveView hook ([e59465d](https://github.com/jwstover/citadel/commit/e59465d0d77581ba67cdd45f5f5e4c7bf13bee4d))
-
-
-
-## [0.46.1](https://github.com/jwstover/citadel/compare/v0.46.0...v0.46.1) (2026-04-10)
-
-
-### Bug Fixes
-
-* restrict tool access in commit/pr subprocesses ([bbc6823](https://github.com/jwstover/citadel/commit/bbc68233bdc294fef3283482ef7367ab55e20a60))
 
 
 
