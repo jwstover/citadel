@@ -144,21 +144,11 @@ if config_env() == :prod do
     before_send: {Citadel.Observability.SentryFilter, :before_send}
 
   # ── OpenTelemetry → Grafana Cloud Tempo (OTLP) ─────────
-  if otlp_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
-    otlp_headers =
-      System.get_env("OTEL_EXPORTER_OTLP_HEADERS", "")
-      |> String.split(",", trim: true)
-      |> Enum.map(fn kv ->
-        [k, v] = String.split(kv, "=", parts: 2)
-        {String.trim(k), String.trim(v)}
-      end)
-
+  # Headers come from OTEL_EXPORTER_OTLP_HEADERS and are parsed by
+  # opentelemetry_exporter directly per the OTel spec — don't re-parse here.
+  if System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
     config :opentelemetry, traces_exporter: :otlp
-
-    config :opentelemetry_exporter,
-      otlp_protocol: :http_protobuf,
-      otlp_endpoint: otlp_endpoint,
-      otlp_headers: otlp_headers
+    config :opentelemetry_exporter, otlp_protocol: :http_protobuf
   end
 
   # ── PromEx → Grafana Cloud Prometheus remote_write ─────
