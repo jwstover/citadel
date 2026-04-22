@@ -1,3 +1,12 @@
+## [0.49.1](https://github.com/jwstover/citadel/compare/v0.49.0...v0.49.1) (2026-04-22)
+
+
+### Performance Improvements
+
+* **dashboard:** preload blocked?/blocking_count on top-level tasks ([33f489f](https://github.com/jwstover/citadel/commit/33f489f408561b4544994e97035e8a0f186f0346))
+
+
+
 # [0.49.0](https://github.com/jwstover/citadel/compare/v0.48.2...v0.49.0) (2026-04-22)
 
 
@@ -36,16 +45,6 @@
 ### Features
 
 * add sentry + grafana cloud observability stack ([8f75223](https://github.com/jwstover/citadel/commit/8f752238da09613c26c8a8a72fae6f428a06530f))
-
-
-
-## [0.47.1](https://github.com/jwstover/citadel/compare/v0.47.0...v0.47.1) (2026-04-14)
-
-
-### Bug Fixes
-
-* recover orphaned agent runs and fail unconfigured runner claims ([d57f643](https://github.com/jwstover/citadel/commit/d57f643549b00bdfac904e67ff6437bca4d40bb7))
-* use agent presence to detect orphaned runs instead of time alone ([e0bb59b](https://github.com/jwstover/citadel/commit/e0bb59b2d1f59d6d49245fa200cf0e5ced972040))
 
 
 
