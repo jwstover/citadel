@@ -136,11 +136,12 @@ end
 
 if config_env() == :prod do
   # ── Sentry ─────────────────────────────────────────────
+  # :included_environments is deprecated in sentry 10.x — presence of :dsn
+  # is what enables event shipping, and :dsn is only set here (prod block).
   config :sentry,
     dsn: System.get_env("SENTRY_DSN"),
     environment_name: System.get_env("SENTRY_ENV", "production"),
     release: to_string(Application.spec(:citadel, :vsn)),
-    included_environments: [:prod],
     before_send: {Citadel.Observability.SentryFilter, :before_send}
 
   # ── OpenTelemetry → Grafana Cloud Tempo (OTLP) ─────────
