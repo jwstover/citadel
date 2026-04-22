@@ -109,6 +109,8 @@ defmodule Citadel.MixProject do
       {:hackney, "~> 1.18"},
       # Observability: metrics
       {:prom_ex, "~> 1.11"},
+      # Needed by PromEx.metrics_server (PromEx still uses Cowboy internally)
+      {:plug_cowboy, "~> 2.7"},
       # Observability: tracing (OpenTelemetry)
       {:opentelemetry, "~> 1.5"},
       {:opentelemetry_api, "~> 1.4"},
