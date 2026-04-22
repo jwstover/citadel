@@ -1,3 +1,17 @@
+# [0.49.0](https://github.com/jwstover/citadel/compare/v0.48.2...v0.49.0) (2026-04-22)
+
+
+### Bug Fixes
+
+* **observability:** export PromEx metrics via Fly Prometheus scrape ([5e1cb53](https://github.com/jwstover/citadel/commit/5e1cb53267dd74730dd4f5f5eb659d3fc16bb788))
+
+
+### Features
+
+* **observability:** auto-upload PromEx dashboards to Grafana Cloud ([a1ad64b](https://github.com/jwstover/citadel/commit/a1ad64b47b40d23daf78ab59d387392a2302dd6d))
+
+
+
 ## [0.48.2](https://github.com/jwstover/citadel/compare/v0.48.1...v0.48.2) (2026-04-22)
 
 
@@ -32,24 +46,6 @@
 
 * recover orphaned agent runs and fail unconfigured runner claims ([d57f643](https://github.com/jwstover/citadel/commit/d57f643549b00bdfac904e67ff6437bca4d40bb7))
 * use agent presence to detect orphaned runs instead of time alone ([e0bb59b](https://github.com/jwstover/citadel/commit/e0bb59b2d1f59d6d49245fa200cf0e5ced972040))
-
-
-
-# [0.47.0](https://github.com/jwstover/citadel/compare/v0.46.1...v0.47.0) (2026-04-13)
-
-
-### Bug Fixes
-
-* resolve Svelte build pipeline path and API compatibility issues ([ba41fe9](https://github.com/jwstover/citadel/commit/ba41fe9f2e52788e96f828c6e87fe029c4e390c4))
-
-
-### Features
-
-* add custom node styling, detail panel, and active runner animation ([b53c5ba](https://github.com/jwstover/citadel/commit/b53c5ba35ce5361e9ccba60e565a988bf49d2467))
-* add Node-based Svelte build pipeline alongside esbuild ([fdbeb77](https://github.com/jwstover/citadel/commit/fdbeb77875397db030d2624098ee8132c39fdb57))
-* add Svelte and XYFlow npm dependencies ([7123af8](https://github.com/jwstover/citadel/commit/7123af8e987ff6429cbc5b402aa8726401b0a696))
-* add workflow_editor feature flag and gated dev route ([a0d9b72](https://github.com/jwstover/citadel/commit/a0d9b72787b28b07e4b55208dceea5dbb8df63d4))
-* add WorkflowGraph Svelte component and WorkflowEditor LiveView hook ([e59465d](https://github.com/jwstover/citadel/commit/e59465d0d77581ba67cdd45f5f5e4c7bf13bee4d))
 
 
 
