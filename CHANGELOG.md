@@ -1,3 +1,12 @@
+# [0.48.0](https://github.com/jwstover/citadel/compare/v0.47.1...v0.48.0) (2026-04-22)
+
+
+### Features
+
+* add sentry + grafana cloud observability stack ([8f75223](https://github.com/jwstover/citadel/commit/8f752238da09613c26c8a8a72fae6f428a06530f))
+
+
+
 ## [0.47.1](https://github.com/jwstover/citadel/compare/v0.47.0...v0.47.1) (2026-04-14)
 
 
@@ -46,15 +55,6 @@
 ### Features
 
 * auto-create TaskActivity when agent run is created ([3f6ab94](https://github.com/jwstover/citadel/commit/3f6ab940b6ec5eacba6496d143ab0ed2b20fa56d))
-
-
-
-## [0.45.2](https://github.com/jwstover/citadel/compare/v0.45.1...v0.45.2) (2026-04-07)
-
-
-### Bug Fixes
-
-* use uuid_generate_v7() for backfilled activity records ([7ec2272](https://github.com/jwstover/citadel/commit/7ec227255011dc3eb52a5382db08b5887ca311cd))
 
 
 
