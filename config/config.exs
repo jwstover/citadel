@@ -157,8 +157,7 @@ config :opentelemetry,
   span_processor: :batch,
   traces_exporter: :none
 
-config :opentelemetry, :resource,
-  service: %{name: "citadel", namespace: "citadel"}
+config :opentelemetry, :resource, service: %{name: "citadel", namespace: "citadel"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
