@@ -51,6 +51,8 @@ RUN mkdir config
 COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
+# copy npm manifests before assets.setup so `npm install --prefix assets` works
+COPY assets/package.json assets/package-lock.json assets/
 RUN mix assets.setup
 
 COPY priv priv
@@ -61,9 +63,6 @@ COPY lib lib
 RUN mix compile
 
 COPY assets assets
-
-# install npm dependencies
-RUN npm ci --prefix assets
 
 # compile assets
 RUN mix assets.deploy
