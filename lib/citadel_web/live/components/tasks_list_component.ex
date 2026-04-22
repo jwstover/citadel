@@ -78,7 +78,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
     {:ok, socket}
   end
 
-  @required_loads [:task_state, :assignees, :overdue?]
+  @required_loads [:task_state, :assignees, :overdue?, :blocked?, :blocking_count]
 
   defp ensure_loaded(%{__struct__: Citadel.Tasks.Task} = task, socket) do
     loads_needed =
@@ -110,7 +110,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
       Tasks.get_task!(task_id,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
+        load: @required_loads
       )
 
     old_state_id = task.task_state_id
@@ -123,9 +123,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
       )
 
     updated_task =
-      Ash.load!(updated_task, [:task_state, :assignees, :overdue?],
-        tenant: socket.assigns.current_workspace.id
-      )
+      Ash.load!(updated_task, @required_loads, tenant: socket.assigns.current_workspace.id)
 
     # Update streams - delete from old state, insert into new state
     old_count = Map.get(socket.assigns.tasks_by_state_count, old_state_id, 1)
@@ -163,7 +161,7 @@ defmodule CitadelWeb.Components.TasksListComponent do
       Tasks.list_top_level_tasks!(
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
+        load: @required_loads
       )
 
     assign(socket, :tasks, tasks)
