@@ -155,8 +155,24 @@ if config_env() == :prod do
   # Fly scrapes this via the [metrics] block in fly.toml every 15s.
   # The scraped data lands in Fly's managed Prometheus, which Grafana
   # Cloud queries as an external data source (see docs/observability).
+  grafana_host = System.get_env("GRAFANA_CLOUD_HOST")
+  grafana_token = System.get_env("GRAFANA_CLOUD_TOKEN")
+
+  grafana_config =
+    if grafana_host && grafana_token do
+      [
+        host: grafana_host,
+        auth_token: grafana_token,
+        upload_dashboards_on_start: true,
+        folder_name: "Citadel",
+        annotate_app_lifecycle: true
+      ]
+    else
+      :disabled
+    end
+
   config :citadel, Citadel.PromEx,
-    grafana: :disabled,
+    grafana: grafana_config,
     metrics_server: [
       port: 9568,
       path: "/metrics",
