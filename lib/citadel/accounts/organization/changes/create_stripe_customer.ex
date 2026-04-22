@@ -79,13 +79,22 @@ defmodule Citadel.Accounts.Organization.Changes.CreateStripeCustomer do
     if Application.get_env(:citadel, :skip_stripe_in_tests, false) do
       {:error, :stripe_customer_creation_failed}
     else
-      case StripeService.create_customer(organization) do
+      owner_email = get_owner_email(organization)
+
+      case StripeService.create_customer(organization, owner_email) do
         {:ok, customer_id} ->
           {:ok, customer_id}
 
         {:error, _error} ->
           {:error, :stripe_customer_creation_failed}
       end
+    end
+  end
+
+  defp get_owner_email(organization) do
+    case Ash.load(organization, :owner, authorize?: false) do
+      {:ok, %{owner: %{email: email}}} -> to_string(email)
+      _ -> nil
     end
   end
 

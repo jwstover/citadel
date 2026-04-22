@@ -28,14 +28,16 @@ defmodule Citadel.Billing.Stripe do
       iex> create_customer(organization)
       {:error, %Stripe.Error{}}
   """
-  @spec create_customer(organization()) :: {:ok, String.t()} | {:error, term()}
-  def create_customer(organization) do
-    params = %{
-      name: organization.name,
-      metadata: %{
-        organization_id: organization.id
+  @spec create_customer(organization(), String.t() | nil) :: {:ok, String.t()} | {:error, term()}
+  def create_customer(organization, email \\ nil) do
+    params =
+      %{
+        name: organization.name,
+        metadata: %{
+          organization_id: organization.id
+        }
       }
-    }
+      |> maybe_put(:email, email)
 
     case Stripe.Customer.create(params) do
       {:ok, %Stripe.Customer{id: customer_id}} ->
@@ -103,7 +105,6 @@ defmodule Citadel.Billing.Stripe do
       params =
         %{
           mode: "subscription",
-          customer: subscription.stripe_customer_id,
           success_url: success_url,
           cancel_url: cancel_url,
           line_items: line_items,
@@ -117,7 +118,7 @@ defmodule Citadel.Billing.Stripe do
             organization_id: subscription.organization_id
           }
         }
-        |> maybe_add_customer_email(customer_email)
+        |> maybe_add_customer(subscription.stripe_customer_id, customer_email)
 
       case Stripe.Checkout.Session.create(params) do
         {:ok, %Stripe.Checkout.Session{url: url}} ->
@@ -147,12 +148,21 @@ defmodule Citadel.Billing.Stripe do
     end
   end
 
-  defp maybe_add_customer_email(params, nil), do: params
-  defp maybe_add_customer_email(params, ""), do: params
+  defp maybe_add_customer(params, stripe_customer_id, _email)
+       when is_binary(stripe_customer_id) and stripe_customer_id != "" do
+    Map.put(params, :customer, stripe_customer_id)
+  end
 
-  defp maybe_add_customer_email(params, email) when is_binary(email) do
+  defp maybe_add_customer(params, _nil_customer, %Ash.CiString{} = email) do
+    maybe_add_customer(params, nil, to_string(email))
+  end
+
+  defp maybe_add_customer(params, _nil_customer, email)
+       when is_binary(email) and email != "" do
     Map.put(params, :customer_email, email)
   end
+
+  defp maybe_add_customer(params, _nil_customer, _nil_email), do: params
 
   @doc """
   Updates the seat quantity on a Stripe subscription.
@@ -315,4 +325,13 @@ defmodule Citadel.Billing.Stripe do
         {:error, reason}
     end
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, _key, ""), do: map
+
+  defp maybe_put(map, key, %Ash.CiString{} = value) do
+    maybe_put(map, key, to_string(value))
+  end
+
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end
