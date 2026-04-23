@@ -54,7 +54,11 @@ defmodule Citadel.Application do
     OpentelemetryLoggerMetadata.setup()
 
     :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
-      config: %{metadata: [:request_id, :trace_id, :span_id]}
+      config: %{
+        metadata: [:request_id, :trace_id, :span_id],
+        capture_log_messages: true,
+        level: :error
+      }
     })
 
     log_otlp_diagnostics()
