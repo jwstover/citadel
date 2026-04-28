@@ -332,6 +332,7 @@ defmodule Citadel.Tasks.Task do
     has_many :sub_tasks, __MODULE__, destination_attribute: :parent_task_id
     has_many :agent_runs, Citadel.Tasks.AgentRun
     has_many :work_items, Citadel.Tasks.AgentWorkItem
+    has_many :dependency_records, Citadel.Tasks.TaskDependency, destination_attribute: :task_id
 
     many_to_many :assignees, Citadel.Accounts.User do
       through Citadel.Tasks.TaskAssignment
