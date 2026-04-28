@@ -1,3 +1,12 @@
+# [0.50.0](https://github.com/jwstover/citadel/compare/v0.49.1...v0.50.0) (2026-04-28)
+
+
+### Features
+
+* **observability:** capture all error-level logs in Sentry ([e21a088](https://github.com/jwstover/citadel/commit/e21a088cf2a06200ae20ddd7d221af2baa293bb3))
+
+
+
 ## [0.49.1](https://github.com/jwstover/citadel/compare/v0.49.0...v0.49.1) (2026-04-22)
 
 
@@ -36,15 +45,6 @@
 ### Bug Fixes
 
 * **docker:** copy npm manifests before mix assets.setup ([db2a9ce](https://github.com/jwstover/citadel/commit/db2a9ce659d8ec9a383b052b46eb4f2ddb2f05d4))
-
-
-
-# [0.48.0](https://github.com/jwstover/citadel/compare/v0.47.1...v0.48.0) (2026-04-22)
-
-
-### Features
-
-* add sentry + grafana cloud observability stack ([8f75223](https://github.com/jwstover/citadel/commit/8f752238da09613c26c8a8a72fae6f428a06530f))
 
 
 
