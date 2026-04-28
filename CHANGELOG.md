@@ -1,3 +1,14 @@
+## [0.50.1](https://github.com/jwstover/citadel/compare/v0.50.0...v0.50.1) (2026-04-28)
+
+
+### Performance Improvements
+
+* **observability:** trace task show async loads to Tempo ([1f0c2f0](https://github.com/jwstover/citadel/commit/1f0c2f05b95b5e0999a24992e01a20d2fb6ce439))
+* **task-show:** load task data async and eliminate dependencies N+1 ([0919faf](https://github.com/jwstover/citadel/commit/0919faffd202875afed79fb3b457d7b9fc930759))
+* **task-show:** split async loading per section with AsyncResult ([ac01271](https://github.com/jwstover/citadel/commit/ac01271e0e4b98feb309b00e2fa26d6e2ec137fe))
+
+
+
 # [0.50.0](https://github.com/jwstover/citadel/compare/v0.49.1...v0.50.0) (2026-04-28)
 
 
@@ -36,15 +47,6 @@
 ### Bug Fixes
 
 * **observability:** stop double-parsing OTLP headers ([220680e](https://github.com/jwstover/citadel/commit/220680e92513b28c07ec39d73b1c2dcf5ad2c038))
-
-
-
-## [0.48.1](https://github.com/jwstover/citadel/compare/v0.48.0...v0.48.1) (2026-04-22)
-
-
-### Bug Fixes
-
-* **docker:** copy npm manifests before mix assets.setup ([db2a9ce](https://github.com/jwstover/citadel/commit/db2a9ce659d8ec9a383b052b46eb4f2ddb2f05d4))
 
 
 
