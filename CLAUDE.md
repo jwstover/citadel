@@ -224,6 +224,110 @@ After modifying resources:
 7. Run `mix ck` to verify code quality
 8. Write tests with globally unique identity values
 
+### LiveView Async Loading
+
+LiveViews must not block `mount/3` on database queries. Follow this pattern for **every** new LiveView that loads workspace data:
+
+1. **Async by default** — `mount/3` assigns placeholder state and immediately calls `start_async/3`. Tests and users should never wait for `mount` to finish a query.
+2. **Use `Phoenix.LiveView.AsyncResult`** — every async assign is an `AsyncResult` struct, not a raw value or `nil` sentinel. Initialize with `AsyncResult.loading()` and update with `AsyncResult.ok/2` / `AsyncResult.failed/2` from `handle_async/3`.
+3. **Loading / success / failed for every section** — render each async assign with `<.async_result :let={value} assign={@thing}>` and supply both `:loading` and `:failed` slots. No silent empty states, no "stuck on skeleton" failures.
+4. **One async per section, not one mega-load** — when a page has multiple independent sections (e.g. main record + collections), give each its own `start_async`/`AsyncResult` so the user sees each section fill in as soon as its data is ready. Chain dependent loads via `handle_async/3` after the prerequisite resolves.
+5. **OTel spans for every async branch** — wrap `start_async` with `OpentelemetryPhoenixLiveViewProcessPropagator.LiveView.start_async/3` (aliased as `TracedLV`) so context propagates across the spawned process. Wrap each loader fn body in `OpenTelemetry.Tracer.with_span/3` with a stable name (`"<context>.load.<section>"`) and useful attributes. `opentelemetry_ecto` will nest query spans underneath automatically.
+6. **Skeletons over spinners** — render section-shaped skeleton placeholders (DaisyUI `skeleton` class) while loading so layout doesn't shift.
+
+Reference implementation: `lib/citadel_web/live/task_live/show.ex`. Key shape:
+
+```elixir
+defmodule CitadelWeb.SomethingLive.Show do
+  use CitadelWeb, :live_view
+
+  require OpentelemetryPhoenixLiveViewProcessPropagator.LiveView, as: TracedLV
+  require OpenTelemetry.Tracer, as: Tracer
+
+  alias Phoenix.LiveView.AsyncResult
+
+  def mount(%{"id" => id}, _session, socket) do
+    user = socket.assigns.current_user
+    tenant = socket.assigns.current_workspace.id
+
+    socket =
+      socket
+      |> assign(:thing, AsyncResult.loading())
+      |> assign(:children, AsyncResult.loading())
+      |> TracedLV.start_async(:load_thing, fn -> load_thing(id, user, tenant) end)
+
+    {:ok, socket}
+  end
+
+  def handle_async(:load_thing, {:ok, {:ok, thing}}, socket) do
+    user = socket.assigns.current_user
+    tenant = socket.assigns.current_workspace.id
+
+    socket =
+      socket
+      |> assign(:thing, AsyncResult.ok(socket.assigns.thing, thing))
+      |> TracedLV.start_async(:load_children, fn ->
+        load_children(thing.id, user, tenant)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_async(:load_thing, {:ok, {:error, reason}}, socket),
+    do: {:noreply, assign(socket, :thing, AsyncResult.failed(socket.assigns.thing, reason))}
+
+  def handle_async(:load_thing, {:exit, reason}, socket),
+    do: {:noreply, assign(socket, :thing, AsyncResult.failed(socket.assigns.thing, {:exit, reason}))}
+
+  def handle_async(:load_children, {:ok, children}, socket) when is_list(children),
+    do: {:noreply, assign(socket, :children, AsyncResult.ok(socket.assigns.children, children))}
+
+  def handle_async(:load_children, {:exit, reason}, socket),
+    do: {:noreply,
+         assign(socket, :children, AsyncResult.failed(socket.assigns.children, {:exit, reason}))}
+
+  defp load_thing(id, user, tenant) do
+    Tracer.with_span "something.show.load.thing", %{attributes: %{"thing.id" => id}} do
+      MyDomain.get_thing(id, actor: user, tenant: tenant, load: @thing_load)
+    end
+  end
+
+  defp load_children(thing_id, user, tenant) do
+    Tracer.with_span "something.show.load.children", %{attributes: %{"thing.id" => thing_id}} do
+      MyDomain.list_children!(thing_id, actor: user, tenant: tenant)
+    end
+  end
+end
+```
+
+Template — every async assign goes through `<.async_result>`:
+
+```heex
+<.async_result :let={thing} assign={@thing}>
+  <:loading><.thing_skeleton /></:loading>
+  <:failed :let={_reason}><.load_error /></:failed>
+  <.thing_content thing={thing} children={@children} />
+</.async_result>
+
+<%!-- inside thing_content, do the same for each nested async assign --%>
+<.async_result :let={children} assign={@children}>
+  <:loading><.section_skeleton /></:loading>
+  <:failed :let={_reason}>
+    <p class="text-error text-sm italic">Failed to load children.</p>
+  </:failed>
+  <%!-- success state --%>
+</.async_result>
+```
+
+**Testing**: `Phoenix.LiveViewTest.render_async/1` only awaits the snapshot of in-flight async pids at call time — chained `start_async` calls fired from `handle_async` are not picked up. Add an `await_loads/1` helper that calls `render_async/1` twice (once per chain depth) and use it in place of bare `render_async(view)`:
+
+```elixir
+defp await_loads(view) do
+  Phoenix.LiveViewTest.render_async(view)
+  Phoenix.LiveViewTest.render_async(view)
+end
+```
+
 ### Working with AI Features
 
 The `AshAi` extension exposes domain actions as tools for AI agents:

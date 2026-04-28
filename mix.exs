@@ -120,6 +120,8 @@ defmodule Citadel.MixProject do
       {:opentelemetry_bandit, "~> 0.2"},
       {:opentelemetry_oban, "~> 1.1"},
       {:opentelemetry_logger_metadata, "~> 0.1"},
+      {:opentelemetry_process_propagator, "~> 0.3"},
+      {:opentelemetry_phoenix_live_view_process_propagator, "~> 0.1"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},

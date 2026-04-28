@@ -35,14 +35,14 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
   describe "activity section rendering" do
     test "displays activity section heading", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Activity"
     end
 
     test "displays comment form", %{conn: conn, task: task, component_id: cid} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(view, "##{cid}-form")
       assert has_element?(view, ~s|##{cid}-form textarea[name="comment[body]"]|)
@@ -50,7 +50,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
 
     test "displays empty state when no activities", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "No activity yet"
     end
@@ -63,7 +63,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -79,7 +79,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> form("##{cid}-form", %{comment: %{body: "Comment to clear"}})
@@ -100,7 +100,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> form("##{cid}-form", %{comment: %{body: ""}})
@@ -118,7 +118,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       component_id: cid
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> form("##{cid}-form", %{comment: %{body: "   "}})
@@ -143,7 +143,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "User comment"
       assert html =~ to_string(user.email)
@@ -164,7 +164,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       end
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Comment 1"
       assert html =~ "Comment 2"
@@ -184,7 +184,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "just now"
     end
@@ -205,7 +205,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(
                view,
@@ -227,7 +227,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -246,7 +246,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       Tasks.create_comment!(
         %{body: "Real-time comment", task_id: task.id},
@@ -274,7 +274,7 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
       assert html =~ "Soon to be deleted"
 
       Tasks.destroy_comment!(activity, actor: user, tenant: workspace.id)
@@ -284,5 +284,10 @@ defmodule CitadelWeb.TaskLive.ShowActivityTest do
       html = render(view)
       refute html =~ "Soon to be deleted"
     end
+  end
+
+  defp await_loads(view) do
+    Phoenix.LiveViewTest.render_async(view)
+    Phoenix.LiveViewTest.render_async(view)
   end
 end

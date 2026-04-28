@@ -26,21 +26,21 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "displays task title", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Test Task"
     end
 
     test "displays task human_id in breadcrumbs", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ task.human_id
     end
 
     test "displays priority badge", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "medium"
     end
@@ -79,7 +79,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "saves title on blur", %{conn: conn, task: task, user: user, workspace: workspace} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"title\"]")
@@ -96,7 +96,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "saves title on Enter key", %{conn: conn, task: task, user: user, workspace: workspace} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"title\"]")
@@ -113,7 +113,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "does not save empty title", %{conn: conn, task: task, user: user, workspace: workspace} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"title\"]")
@@ -135,7 +135,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"title\"]")
@@ -152,7 +152,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "preserves sub-tasks after title update", %{conn: conn, task: task, sub_task: sub_task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ sub_task.title
 
@@ -186,7 +186,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "saves due date on blur", %{conn: conn, task: task, user: user, workspace: workspace} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"due_date\"]")
@@ -220,7 +220,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("input[name=\"due_date\"]")
@@ -256,7 +256,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ sub_task.title
 
@@ -290,7 +290,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "displays current priority", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "low"
     end
@@ -302,7 +302,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("#task-priority-#{task.id} button[phx-value-priority=\"high\"]")
@@ -319,7 +319,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "updates UI after priority change", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -350,7 +350,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ sub_task.title
 
@@ -384,21 +384,21 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "displays assignee select component", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(view, "#task-assignees-#{task.id}")
     end
 
     test "shows 'None' when no assignees", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "None"
     end
 
     test "can toggle assignee dropdown", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("#task-assignees-#{task.id} > div[phx-click=\"toggle\"]")
@@ -412,7 +412,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "toggles member selection in UI", %{conn: conn, task: task, user: user} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("#task-assignees-#{task.id} > div[phx-click=\"toggle\"]")
@@ -447,7 +447,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ sub_task.title
 
@@ -487,7 +487,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "displays task state dropdown", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(view, "#task-state-#{task.id}")
     end
@@ -501,7 +501,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element("#task-state-#{task.id} button[phx-value-state-id=\"#{done_state.id}\"]")
@@ -539,7 +539,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ sub_task.title
 
@@ -594,7 +594,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       # Simulate the drag-and-drop by sending the task-moved event to the component
       view
@@ -622,7 +622,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       done_state: done_state
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Sub-tasks (1)"
       assert html =~ sub_task.title
@@ -664,7 +664,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "non-member cannot access task", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Failed to load task"
     end
@@ -691,14 +691,14 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "displays dependencies section when task loads", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Blocked by"
     end
 
     test "displays 'Blocks' section for dependents", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Blocked by"
     end
@@ -720,7 +720,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -733,7 +733,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
     test "shows error for invalid human_id", %{conn: conn, task: task} do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -768,7 +768,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
 
       # Try to create B→A (circular)
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task_b.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -802,7 +802,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -838,7 +838,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "badge badge-warning"
       assert html =~ ">Blocked</span>"
@@ -867,7 +867,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       refute html =~ "badge badge-warning"
     end
@@ -896,7 +896,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       html =
         view
@@ -932,7 +932,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       # Trigger completion warning
       view
@@ -983,7 +983,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       # Trigger completion warning
       view
@@ -1031,7 +1031,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Blocks"
       assert html =~ dependent_task.human_id
@@ -1045,7 +1045,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       dependency_task =
         generate(
@@ -1094,7 +1094,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
         )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
       assert html =~ dependency_task.human_id
 
       # Remove dependency in another process
@@ -1114,7 +1114,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       workspace: workspace
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       # Try to submit with empty human_id
       view
@@ -1173,7 +1173,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "completed"
     end
@@ -1208,7 +1208,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Commits (2)"
       assert html =~ "abc1234"
@@ -1237,7 +1237,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "failed"
       assert html =~ "Tests failed"
@@ -1275,7 +1275,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(
                view,
@@ -1297,7 +1297,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert has_element?(
                view,
@@ -1319,7 +1319,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
@@ -1338,7 +1338,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       refute has_element?(view, ~s|button[phx-click="request-cancel-agent-run"]|)
     end
@@ -1352,7 +1352,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
@@ -1373,7 +1373,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
@@ -1401,7 +1401,7 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       run = create_agent_run_with_activity(task, user, workspace)
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       view
       |> element(~s|button[phx-click="request-cancel-agent-run"][phx-value-run-id="#{run.id}"]|)
@@ -1439,5 +1439,10 @@ defmodule CitadelWeb.TaskLive.ShowTest do
       actor: user,
       tenant: workspace.id
     )
+  end
+
+  defp await_loads(view) do
+    Phoenix.LiveViewTest.render_async(view)
+    Phoenix.LiveViewTest.render_async(view)
   end
 end
