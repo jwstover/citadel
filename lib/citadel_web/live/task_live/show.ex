@@ -3,7 +3,11 @@ defmodule CitadelWeb.TaskLive.Show do
 
   use CitadelWeb, :live_view
 
+  require OpentelemetryPhoenixLiveViewProcessPropagator.LiveView, as: TracedLV
+  require OpenTelemetry.Tracer, as: Tracer
+
   alias Citadel.Tasks
+  alias OpentelemetryProcessPropagator.Task, as: TracedTask
 
   import CitadelWeb.Components.TaskComponents,
     only: [
@@ -48,7 +52,7 @@ defmodule CitadelWeb.TaskLive.Show do
       |> assign(:confirm_delete, false)
       |> assign(:cancel_run_id, nil)
       |> assign(:load_error, nil)
-      |> start_async(:load_task, fn -> load_task_data(id, user, workspace_id) end)
+      |> TracedLV.start_async(:load_task, fn -> load_task_data(id, user, workspace_id) end)
 
     {:ok, socket}
   end
@@ -81,34 +85,43 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   defp load_task_data(human_id, user, workspace_id) do
-    opts = [actor: user, tenant: workspace_id]
+    Tracer.with_span "task.show.load", %{attributes: %{"task.human_id" => human_id}} do
+      opts = [actor: user, tenant: workspace_id]
 
-    with {:ok, task} <-
-           Tasks.get_task_by_human_id(human_id, Keyword.put(opts, :load, @task_load)) do
-      [sub_tasks, activities] =
-        [
-          fn ->
-            Tasks.list_sub_tasks!(task.id, Keyword.put(opts, :load, @sub_tasks_load))
-          end,
-          fn ->
-            Tasks.list_task_activities!(task.id, Keyword.put(opts, :load, [:user, :agent_run]))
-          end
-        ]
-        |> Task.async_stream(fn fun -> fun.() end,
-          ordered: true,
-          max_concurrency: 2,
-          timeout: 30_000
-        )
-        |> Enum.map(fn {:ok, result} -> result end)
+      with {:ok, task} <-
+             Tasks.get_task_by_human_id(human_id, Keyword.put(opts, :load, @task_load)) do
+        [sub_tasks, activities] =
+          [
+            fn ->
+              Tracer.with_span "task.show.load.sub_tasks", %{} do
+                Tasks.list_sub_tasks!(task.id, Keyword.put(opts, :load, @sub_tasks_load))
+              end
+            end,
+            fn ->
+              Tracer.with_span "task.show.load.activities", %{} do
+                Tasks.list_task_activities!(
+                  task.id,
+                  Keyword.put(opts, :load, [:user, :agent_run])
+                )
+              end
+            end
+          ]
+          |> TracedTask.async_stream(fn fun -> fun.() end,
+            ordered: true,
+            max_concurrency: 2,
+            timeout: 30_000
+          )
+          |> Enum.map(fn {:ok, result} -> result end)
 
-      {:ok,
-       %{
-         task: task,
-         sub_tasks: sub_tasks,
-         activities: activities,
-         can_edit: Ash.can?({task, :update}, user),
-         can_delete: Ash.can?({task, :destroy}, user)
-       }}
+        {:ok,
+         %{
+           task: task,
+           sub_tasks: sub_tasks,
+           activities: activities,
+           can_edit: Ash.can?({task, :update}, user),
+           can_delete: Ash.can?({task, :destroy}, user)
+         }}
+      end
     end
   end
 
