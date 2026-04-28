@@ -7,7 +7,7 @@ defmodule CitadelWeb.TaskLive.Show do
   require OpenTelemetry.Tracer, as: Tracer
 
   alias Citadel.Tasks
-  alias OpentelemetryProcessPropagator.Task, as: TracedTask
+  alias Phoenix.LiveView.AsyncResult
 
   import CitadelWeb.Components.TaskComponents,
     only: [
@@ -42,86 +42,104 @@ defmodule CitadelWeb.TaskLive.Show do
     socket =
       socket
       |> assign(:human_id, id)
-      |> assign(:task, nil)
-      |> assign(:sub_tasks, [])
-      |> assign(:sub_tasks_count, 0)
-      |> assign(:activities, [])
+      |> assign(:task, AsyncResult.loading())
+      |> assign(:sub_tasks, AsyncResult.loading())
+      |> assign(:activities, AsyncResult.loading())
       |> assign(:can_edit, false)
       |> assign(:can_delete, false)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
       |> assign(:cancel_run_id, nil)
-      |> assign(:load_error, nil)
-      |> TracedLV.start_async(:load_task, fn -> load_task_data(id, user, workspace_id) end)
+      |> TracedLV.start_async(:load_task, fn -> load_task(id, user, workspace_id) end)
 
     {:ok, socket}
   end
 
-  def handle_async(:load_task, {:ok, {:ok, data}}, socket) do
-    %{task: task, sub_tasks: sub_tasks, activities: activities} = data
-
+  def handle_async(:load_task, {:ok, {:ok, task}}, socket) do
     if connected?(socket) do
       subscribe_to_task_topics(task.id)
     end
 
+    user = socket.assigns.current_user
+    workspace_id = socket.assigns.current_workspace.id
+    task_id = task.id
+
     socket =
       socket
-      |> assign(:task, task)
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
-      |> assign(:activities, activities)
-      |> assign(:can_edit, data.can_edit)
-      |> assign(:can_delete, data.can_delete)
+      |> put_task(task)
+      |> assign(:can_edit, Ash.can?({task, :update}, user))
+      |> assign(:can_delete, Ash.can?({task, :destroy}, user))
+      |> TracedLV.start_async(:load_sub_tasks, fn ->
+        load_sub_tasks(task_id, user, workspace_id)
+      end)
+      |> TracedLV.start_async(:load_activities, fn ->
+        load_activities(task_id, user, workspace_id)
+      end)
 
     {:noreply, socket}
   end
 
   def handle_async(:load_task, {:ok, {:error, reason}}, socket) do
-    {:noreply, assign(socket, :load_error, reason)}
+    {:noreply, assign(socket, :task, AsyncResult.failed(socket.assigns.task, reason))}
   end
 
   def handle_async(:load_task, {:exit, reason}, socket) do
-    {:noreply, assign(socket, :load_error, reason)}
+    {:noreply, assign(socket, :task, AsyncResult.failed(socket.assigns.task, {:exit, reason}))}
   end
 
-  defp load_task_data(human_id, user, workspace_id) do
-    Tracer.with_span "task.show.load", %{attributes: %{"task.human_id" => human_id}} do
-      opts = [actor: user, tenant: workspace_id]
+  def handle_async(:load_sub_tasks, {:ok, sub_tasks}, socket) when is_list(sub_tasks) do
+    {:noreply, put_sub_tasks(socket, sub_tasks)}
+  end
 
-      with {:ok, task} <-
-             Tasks.get_task_by_human_id(human_id, Keyword.put(opts, :load, @task_load)) do
-        [sub_tasks, activities] =
-          [
-            fn ->
-              Tracer.with_span "task.show.load.sub_tasks", %{} do
-                Tasks.list_sub_tasks!(task.id, Keyword.put(opts, :load, @sub_tasks_load))
-              end
-            end,
-            fn ->
-              Tracer.with_span "task.show.load.activities", %{} do
-                Tasks.list_task_activities!(
-                  task.id,
-                  Keyword.put(opts, :load, [:user, :agent_run])
-                )
-              end
-            end
-          ]
-          |> TracedTask.async_stream(fn fun -> fun.() end,
-            ordered: true,
-            max_concurrency: 2,
-            timeout: 30_000
-          )
-          |> Enum.map(fn {:ok, result} -> result end)
+  def handle_async(:load_sub_tasks, {:exit, reason}, socket) do
+    {:noreply,
+     assign(socket, :sub_tasks, AsyncResult.failed(socket.assigns.sub_tasks, {:exit, reason}))}
+  end
 
-        {:ok,
-         %{
-           task: task,
-           sub_tasks: sub_tasks,
-           activities: activities,
-           can_edit: Ash.can?({task, :update}, user),
-           can_delete: Ash.can?({task, :destroy}, user)
-         }}
-      end
+  def handle_async(:load_activities, {:ok, activities}, socket) when is_list(activities) do
+    {:noreply, assign(socket, :activities, AsyncResult.ok(socket.assigns.activities, activities))}
+  end
+
+  def handle_async(:load_activities, {:exit, reason}, socket) do
+    {:noreply,
+     assign(socket, :activities, AsyncResult.failed(socket.assigns.activities, {:exit, reason}))}
+  end
+
+  defp put_task(socket, task) do
+    assign(socket, :task, AsyncResult.ok(socket.assigns.task, task))
+  end
+
+  defp put_sub_tasks(socket, sub_tasks) do
+    assign(socket, :sub_tasks, AsyncResult.ok(socket.assigns.sub_tasks, sub_tasks))
+  end
+
+  defp load_task(human_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.task", %{attributes: %{"task.human_id" => human_id}} do
+      Tasks.get_task_by_human_id(human_id,
+        actor: user,
+        tenant: workspace_id,
+        load: @task_load
+      )
+    end
+  end
+
+  defp load_sub_tasks(task_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.sub_tasks", %{attributes: %{"task.id" => task_id}} do
+      Tasks.list_sub_tasks!(task_id,
+        actor: user,
+        tenant: workspace_id,
+        load: @sub_tasks_load
+      )
+    end
+  end
+
+  defp load_activities(task_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.activities", %{attributes: %{"task.id" => task_id}} do
+      Tasks.list_task_activities!(task_id,
+        actor: user,
+        tenant: workspace_id,
+        load: [:user, :agent_run]
+      )
     end
   end
 
@@ -148,7 +166,7 @@ defmodule CitadelWeb.TaskLive.Show do
     if human_id == "" do
       {:noreply, socket}
     else
-      case Tasks.add_task_dependency_by_human_id(socket.assigns.task.id, human_id,
+      case Tasks.add_task_dependency_by_human_id(socket.assigns.task.result.id, human_id,
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
@@ -157,7 +175,7 @@ defmodule CitadelWeb.TaskLive.Show do
 
           {:noreply,
            socket
-           |> assign(:task, task)
+           |> put_task(task)
            |> put_flash(:info, "Dependency added successfully")}
 
         {:error, error} ->
@@ -177,7 +195,7 @@ defmodule CitadelWeb.TaskLive.Show do
 
         {:noreply,
          socket
-         |> assign(:task, task)
+         |> put_task(task)
          |> put_flash(:info, "Dependency removed successfully")}
 
       {:error, _} ->
@@ -186,9 +204,9 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("toggle_agent_eligible", _params, socket) do
-    new_value = !socket.assigns.task.agent_eligible
+    new_value = !socket.assigns.task.result.agent_eligible
 
-    case Tasks.update_task(socket.assigns.task.id, %{agent_eligible: new_value},
+    case Tasks.update_task(socket.assigns.task.result.id, %{agent_eligible: new_value},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
@@ -196,7 +214,7 @@ defmodule CitadelWeb.TaskLive.Show do
         task =
           Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update agent eligibility")}
@@ -212,7 +230,7 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("delete", _params, socket) do
-    task = socket.assigns.task
+    task = socket.assigns.task.result
     parent = List.last(task.ancestors || [])
 
     case Tasks.destroy_task(task, actor: socket.assigns.current_user) do
@@ -267,14 +285,14 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("save-description", %{"content" => content}, socket) do
-    case Tasks.update_task(socket.assigns.task.id, %{description: content},
+    case Tasks.update_task(socket.assigns.task.result.id, %{description: content},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
       {:ok, task} ->
         task = Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to save description")}
@@ -284,10 +302,10 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save-title", %{"value" => title}, socket) do
     title = String.trim(title)
 
-    if title == "" or title == socket.assigns.task.title do
+    if title == "" or title == socket.assigns.task.result.title do
       {:noreply, socket}
     else
-      case Tasks.update_task(socket.assigns.task.id, %{title: title},
+      case Tasks.update_task(socket.assigns.task.result.id, %{title: title},
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
@@ -295,7 +313,7 @@ defmodule CitadelWeb.TaskLive.Show do
           task =
             Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-          {:noreply, assign(socket, :task, task)}
+          {:noreply, put_task(socket, task)}
 
         {:error, _changeset} ->
           {:noreply, put_flash(socket, :error, "Failed to save title")}
@@ -306,10 +324,10 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save-due-date", %{"value" => due_date}, socket) do
     due_date = if due_date == "", do: nil, else: Date.from_iso8601!(due_date)
 
-    if due_date == socket.assigns.task.due_date do
+    if due_date == socket.assigns.task.result.due_date do
       {:noreply, socket}
     else
-      case Tasks.update_task(socket.assigns.task.id, %{due_date: due_date},
+      case Tasks.update_task(socket.assigns.task.result.id, %{due_date: due_date},
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
@@ -317,7 +335,7 @@ defmodule CitadelWeb.TaskLive.Show do
           task =
             Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-          {:noreply, assign(socket, :task, task)}
+          {:noreply, put_task(socket, task)}
 
         {:error, _changeset} ->
           {:noreply, put_flash(socket, :error, "Failed to save due date")}
@@ -329,14 +347,13 @@ defmodule CitadelWeb.TaskLive.Show do
     sub_tasks = list_sub_tasks(socket)
 
     send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{socket.assigns.task.id}",
+      id: "sub-tasks-#{socket.assigns.task.result.id}",
       tasks: sub_tasks
     )
 
     socket =
       socket
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_sub_tasks(sub_tasks)
       |> assign(:show_sub_task_form, false)
       |> put_flash(:info, "Sub-task created successfully")
 
@@ -344,19 +361,19 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info({:task_priority_changed, task}, socket) do
-    updated_task = %{socket.assigns.task | priority: task.priority}
-    {:noreply, assign(socket, :task, updated_task)}
+    updated_task = %{socket.assigns.task.result | priority: task.priority}
+    {:noreply, put_task(socket, updated_task)}
   end
 
   def handle_info({:assignees_changed, assignee_ids}, socket) do
-    case Tasks.update_task(socket.assigns.task.id, %{assignees: assignee_ids},
+    case Tasks.update_task(socket.assigns.task.result.id, %{assignees: assignee_ids},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
       {:ok, task} ->
         task = Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update assignees")}
@@ -367,19 +384,19 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependencies:" <> _task_id},
         socket
       ) do
-    {:noreply, assign(socket, :task, reload_task(socket))}
+    {:noreply, put_task(socket, reload_task(socket))}
   end
 
   def handle_info(
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependents:" <> _task_id},
         socket
       ) do
-    {:noreply, assign(socket, :task, reload_task(socket))}
+    {:noreply, put_task(socket, reload_task(socket))}
   end
 
   def handle_info({:task_state_changed, _task}, socket) do
     task =
-      Ash.load!(socket.assigns.task, @task_load,
+      Ash.load!(socket.assigns.task.result, @task_load,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )
@@ -393,9 +410,8 @@ defmodule CitadelWeb.TaskLive.Show do
 
     socket =
       socket
-      |> assign(:task, task)
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_task(task)
+      |> put_sub_tasks(sub_tasks)
 
     {:noreply, socket}
   end
@@ -404,14 +420,13 @@ defmodule CitadelWeb.TaskLive.Show do
     sub_tasks = list_sub_tasks(socket)
 
     send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{socket.assigns.task.id}",
+      id: "sub-tasks-#{socket.assigns.task.result.id}",
       tasks: sub_tasks
     )
 
     socket =
       socket
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_sub_tasks(sub_tasks)
 
     {:noreply, socket}
   end
@@ -420,7 +435,7 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task:" <> task_id, payload: _payload},
         socket
       ) do
-    if task_id == socket.assigns.task.id do
+    if task_id == socket.assigns.task.result.id do
       task =
         Tasks.get_task!(task_id,
           actor: socket.assigns.current_user,
@@ -428,7 +443,7 @@ defmodule CitadelWeb.TaskLive.Show do
           load: @task_load
         )
 
-      {:noreply, assign(socket, :task, task)}
+      {:noreply, put_task(socket, task)}
     else
       {:noreply, socket}
     end
@@ -438,7 +453,7 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_children:" <> parent_id, payload: payload},
         socket
       ) do
-    if parent_id == socket.assigns.task.id do
+    if parent_id == socket.assigns.task.result.id do
       {:noreply, handle_sub_task_broadcast(payload, socket)}
     else
       {:noreply, socket}
@@ -450,7 +465,7 @@ defmodule CitadelWeb.TaskLive.Show do
         socket
       ) do
     send_update(TaskActivitySection,
-      id: "task-activities-#{socket.assigns.task.id}",
+      id: "task-activities-#{socket.assigns.task.result.id}",
       agent_run_updated: broadcast
     )
 
@@ -462,7 +477,7 @@ defmodule CitadelWeb.TaskLive.Show do
         socket
       ) do
     send_update(TaskActivitySection,
-      id: "task-activities-#{socket.assigns.task.id}",
+      id: "task-activities-#{socket.assigns.task.result.id}",
       broadcast: broadcast
     )
 
@@ -474,7 +489,7 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   defp reload_task(socket) do
-    Tasks.get_task!(socket.assigns.task.id,
+    Tasks.get_task!(socket.assigns.task.result.id,
       actor: socket.assigns.current_user,
       tenant: socket.assigns.current_workspace.id,
       load: @task_load
@@ -482,7 +497,7 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   defp list_sub_tasks(socket) do
-    Tasks.list_sub_tasks!(socket.assigns.task.id,
+    Tasks.list_sub_tasks!(socket.assigns.task.result.id,
       actor: socket.assigns.current_user,
       tenant: socket.assigns.current_workspace.id,
       load: @sub_tasks_load
@@ -507,8 +522,7 @@ defmodule CitadelWeb.TaskLive.Show do
     maybe_notify_sub_task_deleted(sub_tasks, payload, socket)
 
     socket
-    |> assign(:sub_tasks, sub_tasks)
-    |> assign(:sub_tasks_count, length(sub_tasks))
+    |> put_sub_tasks(sub_tasks)
   end
 
   defp handle_sub_task_broadcast(_sub_task, socket) do
@@ -517,14 +531,13 @@ defmodule CitadelWeb.TaskLive.Show do
     maybe_notify_sub_tasks_updated(sub_tasks, socket)
 
     socket
-    |> assign(:sub_tasks, sub_tasks)
-    |> assign(:sub_tasks_count, length(sub_tasks))
+    |> put_sub_tasks(sub_tasks)
   end
 
   defp maybe_notify_sub_task_deleted(sub_tasks, payload, socket) do
     unless Enum.empty?(sub_tasks) do
       send_update(CitadelWeb.Components.TasksListComponent,
-        id: "sub-tasks-#{socket.assigns.task.id}",
+        id: "sub-tasks-#{socket.assigns.task.result.id}",
         deleted_task: payload
       )
     end
@@ -565,7 +578,7 @@ defmodule CitadelWeb.TaskLive.Show do
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
     unless Enum.empty?(sub_tasks) do
       send_update(CitadelWeb.Components.TasksListComponent,
-        id: "sub-tasks-#{socket.assigns.task.id}",
+        id: "sub-tasks-#{socket.assigns.task.result.id}",
         tasks: sub_tasks
       )
     end
@@ -581,33 +594,33 @@ defmodule CitadelWeb.TaskLive.Show do
     >
       <div class="relative h-full p-4 bg-base-200 border border-base-300">
         <div class="h-full overflow-auto">
-          <%= cond do %>
-            <% @load_error -> %>
-              <.load_error human_id={@human_id} />
-            <% @task -> %>
-              <.task_content
-                task={@task}
-                sub_tasks={@sub_tasks}
-                sub_tasks_count={@sub_tasks_count}
-                activities={@activities}
-                can_edit={@can_edit}
-                can_delete={@can_delete}
-                current_user={@current_user}
-                current_workspace={@current_workspace}
-              />
-            <% true -> %>
+          <.async_result :let={task} assign={@task}>
+            <:loading>
               <.task_skeleton />
-          <% end %>
+            </:loading>
+            <:failed :let={_reason}>
+              <.load_error human_id={@human_id} />
+            </:failed>
+            <.task_content
+              task={task}
+              sub_tasks={@sub_tasks}
+              activities={@activities}
+              can_edit={@can_edit}
+              can_delete={@can_delete}
+              current_user={@current_user}
+              current_workspace={@current_workspace}
+            />
+          </.async_result>
         </div>
       </div>
 
       <.live_component
-        :if={@show_sub_task_form and @task}
+        :if={@show_sub_task_form and @task.ok?}
         module={CitadelWeb.Components.NewTaskModal}
         id="new-sub-task-modal"
         current_user={@current_user}
         current_workspace={@current_workspace}
-        parent_task_id={@task.id}
+        parent_task_id={@task.result.id}
         close_event="close-sub-task-form"
       />
 
@@ -685,9 +698,8 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   attr :task, :any, required: true
-  attr :sub_tasks, :list, required: true
-  attr :sub_tasks_count, :integer, required: true
-  attr :activities, :list, required: true
+  attr :sub_tasks, :any, required: true
+  attr :activities, :any, required: true
   attr :can_edit, :boolean, required: true
   attr :can_delete, :boolean, required: true
   attr :current_user, :any, required: true
@@ -932,35 +944,67 @@ defmodule CitadelWeb.TaskLive.Show do
     <div class="py-4 border-t border-base-300">
       <div class="flex items-center justify-between mb-3 mr-6">
         <h2 class="text-sm font-semibold text-base-content/70">
-          Sub-tasks ({@sub_tasks_count})
+          Sub-tasks{if @sub_tasks.ok?, do: " (#{length(@sub_tasks.result)})"}
         </h2>
         <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
           <.icon name="hero-plus" class="size-3" /> Add
         </.button>
       </div>
 
-      <%= if @sub_tasks_count == 0 do %>
-        <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
-      <% else %>
-        <.live_component
-          module={CitadelWeb.Components.TasksListComponent}
-          id={"sub-tasks-#{@task.id}"}
-          tasks={@sub_tasks}
-          current_user={@current_user}
-          current_workspace={@current_workspace}
-        />
-      <% end %>
+      <.async_result :let={sub_tasks} assign={@sub_tasks}>
+        <:loading>
+          <.section_skeleton testid="sub-tasks-skeleton" />
+        </:loading>
+        <:failed :let={_reason}>
+          <p class="text-error text-sm italic">Failed to load sub-tasks.</p>
+        </:failed>
+        <%= if Enum.empty?(sub_tasks) do %>
+          <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
+        <% else %>
+          <.live_component
+            module={CitadelWeb.Components.TasksListComponent}
+            id={"sub-tasks-#{@task.id}"}
+            tasks={sub_tasks}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
+        <% end %>
+      </.async_result>
     </div>
 
-    <.live_component
-      module={TaskActivitySection}
-      id={"task-activities-#{@task.id}"}
-      task={@task}
-      activities={@activities}
-      current_user={@current_user}
-      current_workspace={@current_workspace}
-      can_edit={@can_edit}
-    />
+    <.async_result :let={activities} assign={@activities}>
+      <:loading>
+        <div class="py-4 border-t border-base-300">
+          <div class="skeleton h-4 w-32 mb-3"></div>
+          <.section_skeleton testid="activities-skeleton" />
+        </div>
+      </:loading>
+      <:failed :let={_reason}>
+        <div class="py-4 border-t border-base-300">
+          <p class="text-error text-sm italic">Failed to load activities.</p>
+        </div>
+      </:failed>
+      <.live_component
+        module={TaskActivitySection}
+        id={"task-activities-#{@task.id}"}
+        task={@task}
+        activities={activities}
+        current_user={@current_user}
+        current_workspace={@current_workspace}
+        can_edit={@can_edit}
+      />
+    </.async_result>
+    """
+  end
+
+  attr :testid, :string, required: true
+
+  defp section_skeleton(assigns) do
+    ~H"""
+    <div class="space-y-2" data-testid={@testid}>
+      <div class="skeleton h-12 w-full"></div>
+      <div class="skeleton h-12 w-full"></div>
+    </div>
     """
   end
 end

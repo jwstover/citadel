@@ -58,7 +58,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Activity"
       assert html =~ "Agent"
@@ -95,7 +95,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "failed"
       assert html =~ "Test failure: expected 200, got 500"
@@ -137,7 +137,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Commits (2)"
       assert html =~ "abc1234"
@@ -176,7 +176,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Test Output"
       assert html =~ "12 tests, 0 failures"
@@ -212,7 +212,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "running"
       assert has_element?(view, "button", "Cancel")
@@ -249,7 +249,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       refute has_element?(
                view,
@@ -299,7 +299,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "Starting work on this"
       assert html =~ "completed"
@@ -336,7 +336,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       refute has_element?(view, "#agent-runs-section")
       refute html =~ "Agent Runs"
@@ -395,7 +395,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "failed"
       assert html =~ "Tests failed"
@@ -412,7 +412,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       task: task
     } do
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      html = render_async(view)
+      html = await_loads(view)
 
       assert html =~ "No activity yet"
 
@@ -472,7 +472,7 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       )
 
       {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
-      render_async(view)
+      await_loads(view)
 
       assert render(view) =~ "running"
 
@@ -490,5 +490,10 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
       html = render(view)
       assert html =~ "completed"
     end
+  end
+
+  defp await_loads(view) do
+    Phoenix.LiveViewTest.render_async(view)
+    Phoenix.LiveViewTest.render_async(view)
   end
 end
