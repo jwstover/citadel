@@ -9,10 +9,16 @@ defmodule CitadelWeb.Components.TaskDependencies do
     dependencies_loaded = not match?(%Ash.NotLoaded{}, assigns.task.dependencies)
     dependents_loaded = not match?(%Ash.NotLoaded{}, assigns.task.dependents)
 
+    dep_records =
+      case assigns.task.dependency_records do
+        %Ash.NotLoaded{} -> []
+        records -> records
+      end
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:task_dependencies, fn -> [] end)
+     |> assign(:dep_map, Map.new(dep_records, fn r -> {r.depends_on_task_id, r.id} end))
      |> assign(:dependencies_loaded, dependencies_loaded)
      |> assign(:dependents_loaded, dependents_loaded)}
   end
@@ -45,9 +51,6 @@ defmodule CitadelWeb.Components.TaskDependencies do
               <%= if Enum.empty?(@task.dependencies) do %>
                 <p class="text-base-content/50 italic text-sm">None</p>
               <% else %>
-                <% # Create a map from depends_on_task_id to TaskDependency ID
-                dep_map =
-                  Map.new(@task_dependencies, fn td -> {td.depends_on_task_id, td.id} end) %>
                 <div class="space-y-2">
                   <%= for dep <- @task.dependencies do %>
                     <div class="flex items-center justify-between p-2 bg-base-100 rounded-lg border border-base-300">
@@ -62,7 +65,7 @@ defmodule CitadelWeb.Components.TaskDependencies do
                       <%= if @can_edit do %>
                         <button
                           phx-click="remove-dependency"
-                          phx-value-id={Map.get(dep_map, dep.id)}
+                          phx-value-id={Map.get(@dep_map, dep.id)}
                           class="btn btn-ghost btn-xs text-error"
                           title="Remove dependency"
                         >

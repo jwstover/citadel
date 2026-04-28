@@ -17,19 +17,13 @@ defmodule CitadelWeb.Components.TaskActivitySection do
   end
 
   def update(assigns, socket) do
+    {activities, assigns} = Map.pop(assigns, :activities, [])
     socket = assign(socket, assigns)
 
     socket =
       if socket.assigns[:activities_loaded] do
         socket
       else
-        activities =
-          Tasks.list_task_activities!(assigns.task.id,
-            actor: assigns.current_user,
-            tenant: assigns.current_workspace.id,
-            load: [:user, :agent_run]
-          )
-
         socket
         |> stream(:activities, activities)
         |> assign(:activities_loaded, true)
