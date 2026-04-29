@@ -7,10 +7,13 @@ defmodule Citadel.Application do
 
   @impl true
   def start(_type, _args) do
+    setup_observability()
+
     children = [
       Citadel.Vault,
       CitadelWeb.Telemetry,
       Citadel.Repo,
+      Citadel.PromEx,
       {Registry, keys: :unique, name: Citadel.MCP.ClientRegistry},
       {DynamicSupervisor, name: Citadel.MCP.ClientSupervisor, strategy: :one_for_one},
       {DNSCluster, query: Application.get_env(:citadel, :dns_cluster_query) || :ignore},
@@ -41,5 +44,44 @@ defmodule Citadel.Application do
   def config_change(changed, _new, removed) do
     CitadelWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp setup_observability do
+    OpentelemetryPhoenix.setup(adapter: :bandit)
+    OpentelemetryBandit.setup()
+    OpentelemetryEcto.setup([:citadel, :repo])
+    OpentelemetryOban.setup()
+    OpentelemetryLoggerMetadata.setup()
+
+    :logger.add_handler(:sentry_handler, Sentry.LoggerHandler, %{
+      config: %{
+        metadata: [:request_id, :trace_id, :span_id],
+        capture_log_messages: true,
+        level: :error
+      }
+    })
+
+    log_otlp_diagnostics()
+  end
+
+  defp log_otlp_diagnostics do
+    endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT")
+    raw_headers = System.get_env("OTEL_EXPORTER_OTLP_HEADERS", "")
+
+    header_names =
+      raw_headers
+      |> String.split(",", trim: true)
+      |> Enum.map(fn kv ->
+        case String.split(kv, "=", parts: 2) do
+          [k, _v] -> String.trim(k)
+          _ -> "<unparseable>"
+        end
+      end)
+
+    require Logger
+
+    Logger.info(
+      "otlp diagnostics: endpoint=#{inspect(endpoint)} header_names=#{inspect(header_names)} header_count=#{length(header_names)}"
+    )
   end
 end

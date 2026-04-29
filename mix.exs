@@ -4,7 +4,7 @@ defmodule Citadel.MixProject do
   def project do
     [
       app: :citadel,
-      version: "0.47.1",
+      version: "0.50.1",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -104,6 +104,24 @@ defmodule Citadel.MixProject do
       {:stripity_stripe, "~> 3.0"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+      # Observability: error tracking
+      {:sentry, "~> 10.8"},
+      {:hackney, "~> 1.18"},
+      # Observability: metrics
+      {:prom_ex, "~> 1.11"},
+      # Needed by PromEx.metrics_server (PromEx still uses Cowboy internally)
+      {:plug_cowboy, "~> 2.7"},
+      # Observability: tracing (OpenTelemetry)
+      {:opentelemetry, "~> 1.5"},
+      {:opentelemetry_api, "~> 1.4"},
+      {:opentelemetry_exporter, "~> 1.8"},
+      {:opentelemetry_phoenix, "~> 2.0"},
+      {:opentelemetry_ecto, "~> 1.2"},
+      {:opentelemetry_bandit, "~> 0.2"},
+      {:opentelemetry_oban, "~> 1.1"},
+      {:opentelemetry_logger_metadata, "~> 0.1"},
+      {:opentelemetry_process_propagator, "~> 0.3"},
+      {:opentelemetry_phoenix_live_view_process_propagator, "~> 0.1"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},

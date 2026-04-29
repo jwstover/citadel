@@ -1,60 +1,52 @@
-## [0.47.1](https://github.com/jwstover/citadel/compare/v0.47.0...v0.47.1) (2026-04-14)
+## [0.50.1](https://github.com/jwstover/citadel/compare/v0.50.0...v0.50.1) (2026-04-28)
 
 
-### Bug Fixes
+### Performance Improvements
 
-* recover orphaned agent runs and fail unconfigured runner claims ([d57f643](https://github.com/jwstover/citadel/commit/d57f643549b00bdfac904e67ff6437bca4d40bb7))
-* use agent presence to detect orphaned runs instead of time alone ([e0bb59b](https://github.com/jwstover/citadel/commit/e0bb59b2d1f59d6d49245fa200cf0e5ced972040))
-
-
-
-# [0.47.0](https://github.com/jwstover/citadel/compare/v0.46.1...v0.47.0) (2026-04-13)
+* **observability:** trace task show async loads to Tempo ([1f0c2f0](https://github.com/jwstover/citadel/commit/1f0c2f05b95b5e0999a24992e01a20d2fb6ce439))
+* **task-show:** load task data async and eliminate dependencies N+1 ([0919faf](https://github.com/jwstover/citadel/commit/0919faffd202875afed79fb3b457d7b9fc930759))
+* **task-show:** split async loading per section with AsyncResult ([ac01271](https://github.com/jwstover/citadel/commit/ac01271e0e4b98feb309b00e2fa26d6e2ec137fe))
 
 
-### Bug Fixes
 
-* resolve Svelte build pipeline path and API compatibility issues ([ba41fe9](https://github.com/jwstover/citadel/commit/ba41fe9f2e52788e96f828c6e87fe029c4e390c4))
+# [0.50.0](https://github.com/jwstover/citadel/compare/v0.49.1...v0.50.0) (2026-04-28)
 
 
 ### Features
 
-* add custom node styling, detail panel, and active runner animation ([b53c5ba](https://github.com/jwstover/citadel/commit/b53c5ba35ce5361e9ccba60e565a988bf49d2467))
-* add Node-based Svelte build pipeline alongside esbuild ([fdbeb77](https://github.com/jwstover/citadel/commit/fdbeb77875397db030d2624098ee8132c39fdb57))
-* add Svelte and XYFlow npm dependencies ([7123af8](https://github.com/jwstover/citadel/commit/7123af8e987ff6429cbc5b402aa8726401b0a696))
-* add workflow_editor feature flag and gated dev route ([a0d9b72](https://github.com/jwstover/citadel/commit/a0d9b72787b28b07e4b55208dceea5dbb8df63d4))
-* add WorkflowGraph Svelte component and WorkflowEditor LiveView hook ([e59465d](https://github.com/jwstover/citadel/commit/e59465d0d77581ba67cdd45f5f5e4c7bf13bee4d))
+* **observability:** capture all error-level logs in Sentry ([e21a088](https://github.com/jwstover/citadel/commit/e21a088cf2a06200ae20ddd7d221af2baa293bb3))
 
 
 
-## [0.46.1](https://github.com/jwstover/citadel/compare/v0.46.0...v0.46.1) (2026-04-10)
+## [0.49.1](https://github.com/jwstover/citadel/compare/v0.49.0...v0.49.1) (2026-04-22)
 
 
-### Bug Fixes
+### Performance Improvements
 
-* restrict tool access in commit/pr subprocesses ([bbc6823](https://github.com/jwstover/citadel/commit/bbc68233bdc294fef3283482ef7367ab55e20a60))
+* **dashboard:** preload blocked?/blocking_count on top-level tasks ([33f489f](https://github.com/jwstover/citadel/commit/33f489f408561b4544994e97035e8a0f186f0346))
 
 
 
-# [0.46.0](https://github.com/jwstover/citadel/compare/v0.45.2...v0.46.0) (2026-04-10)
+# [0.49.0](https://github.com/jwstover/citadel/compare/v0.48.2...v0.49.0) (2026-04-22)
 
 
 ### Bug Fixes
 
-* upgrade Oban migration to v14 to add suspended job state ([8f78b13](https://github.com/jwstover/citadel/commit/8f78b132e44e37cd20b2053155577779a363ed8b))
+* **observability:** export PromEx metrics via Fly Prometheus scrape ([5e1cb53](https://github.com/jwstover/citadel/commit/5e1cb53267dd74730dd4f5f5eb659d3fc16bb788))
 
 
 ### Features
 
-* auto-create TaskActivity when agent run is created ([3f6ab94](https://github.com/jwstover/citadel/commit/3f6ab940b6ec5eacba6496d143ab0ed2b20fa56d))
+* **observability:** auto-upload PromEx dashboards to Grafana Cloud ([a1ad64b](https://github.com/jwstover/citadel/commit/a1ad64b47b40d23daf78ab59d387392a2302dd6d))
 
 
 
-## [0.45.2](https://github.com/jwstover/citadel/compare/v0.45.1...v0.45.2) (2026-04-07)
+## [0.48.2](https://github.com/jwstover/citadel/compare/v0.48.1...v0.48.2) (2026-04-22)
 
 
 ### Bug Fixes
 
-* use uuid_generate_v7() for backfilled activity records ([7ec2272](https://github.com/jwstover/citadel/commit/7ec227255011dc3eb52a5382db08b5887ca311cd))
+* **observability:** stop double-parsing OTLP headers ([220680e](https://github.com/jwstover/citadel/commit/220680e92513b28c07ec39d73b1c2dcf5ad2c038))
 
 
 

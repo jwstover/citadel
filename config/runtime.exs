@@ -135,6 +135,53 @@ else
 end
 
 if config_env() == :prod do
+  # ── Sentry ─────────────────────────────────────────────
+  # :included_environments is deprecated in sentry 10.x — presence of :dsn
+  # is what enables event shipping, and :dsn is only set here (prod block).
+  config :sentry,
+    dsn: System.get_env("SENTRY_DSN"),
+    environment_name: System.get_env("SENTRY_ENV", "production"),
+    release: to_string(Application.spec(:citadel, :vsn)),
+    before_send: {Citadel.Observability.SentryFilter, :before_send}
+
+  # ── OpenTelemetry → Grafana Cloud Tempo (OTLP) ─────────
+  # Headers come from OTEL_EXPORTER_OTLP_HEADERS and are parsed by
+  # opentelemetry_exporter directly per the OTel spec — don't re-parse here.
+  if System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
+    config :opentelemetry, traces_exporter: :otlp
+    config :opentelemetry_exporter, otlp_protocol: :http_protobuf
+  end
+
+  # ── PromEx /metrics endpoint for Fly Prometheus to scrape ──
+  # Fly scrapes this via the [metrics] block in fly.toml every 15s.
+  # The scraped data lands in Fly's managed Prometheus, which Grafana
+  # Cloud queries as an external data source (see docs/observability).
+  grafana_host = System.get_env("GRAFANA_CLOUD_HOST")
+  grafana_token = System.get_env("GRAFANA_CLOUD_TOKEN")
+
+  grafana_config =
+    if grafana_host && grafana_token do
+      [
+        host: grafana_host,
+        auth_token: grafana_token,
+        upload_dashboards_on_start: true,
+        folder_name: "Citadel",
+        annotate_app_lifecycle: true
+      ]
+    else
+      :disabled
+    end
+
+  config :citadel, Citadel.PromEx,
+    grafana: grafana_config,
+    metrics_server: [
+      port: 9568,
+      path: "/metrics",
+      protocol: :http,
+      pool_size: 5,
+      auth_strategy: :none
+    ]
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """

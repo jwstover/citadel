@@ -37,3 +37,4 @@ npm-debug.log
 worktrees
 /.worktrees/
 .expert/
+.playwright-cli/

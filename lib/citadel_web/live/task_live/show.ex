@@ -3,7 +3,11 @@ defmodule CitadelWeb.TaskLive.Show do
 
   use CitadelWeb, :live_view
 
+  require OpentelemetryPhoenixLiveViewProcessPropagator.LiveView, as: TracedLV
+  require OpenTelemetry.Tracer, as: Tracer
+
   alias Citadel.Tasks
+  alias Phoenix.LiveView.AsyncResult
 
   import CitadelWeb.Components.TaskComponents,
     only: [
@@ -14,66 +18,138 @@ defmodule CitadelWeb.TaskLive.Show do
 
   alias CitadelWeb.Components.TaskActivitySection
 
+  @task_load [
+    :task_state,
+    :user,
+    :ancestors,
+    :assignees,
+    :overdue?,
+    :blocked?,
+    :blocking_count,
+    :project,
+    :execution_status,
+    dependency_records: [],
+    dependencies: [:task_state],
+    dependents: [:task_state]
+  ]
+
+  @sub_tasks_load [:task_state, :assignees, :overdue?]
+
   def mount(%{"id" => id}, _session, socket) do
-    task =
-      Tasks.get_task_by_human_id!(id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [
-          :task_state,
-          :user,
-          :parent_task,
-          :ancestors,
-          :assignees,
-          :overdue?,
-          :blocked?,
-          :blocking_count,
-          :project,
-          :execution_status,
-          :active_agent_run,
-          dependencies: [:task_state],
-          dependents: [:task_state]
-        ]
-      )
-
-    sub_tasks =
-      Tasks.list_sub_tasks!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
-      )
-
-    task_dependencies =
-      Tasks.list_task_dependencies!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
-    can_edit = Ash.can?({task, :update}, socket.assigns.current_user)
-    can_delete = Ash.can?({task, :destroy}, socket.assigns.current_user)
-
-    if connected?(socket) do
-      CitadelWeb.Endpoint.subscribe("tasks:task:#{task.id}")
-      CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task.id}")
-      CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task.id}")
-      CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task.id}")
-      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
-      CitadelWeb.Endpoint.subscribe("tasks:agent_runs:#{task.id}")
-    end
+    user = socket.assigns.current_user
+    workspace_id = socket.assigns.current_workspace.id
 
     socket =
       socket
-      |> assign(:task, task)
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
-      |> assign(:task_dependencies, task_dependencies)
-      |> assign(:can_edit, can_edit)
-      |> assign(:can_delete, can_delete)
+      |> assign(:human_id, id)
+      |> assign(:task, AsyncResult.loading())
+      |> assign(:sub_tasks, AsyncResult.loading())
+      |> assign(:activities, AsyncResult.loading())
+      |> assign(:can_edit, false)
+      |> assign(:can_delete, false)
       |> assign(:show_sub_task_form, false)
       |> assign(:confirm_delete, false)
       |> assign(:cancel_run_id, nil)
+      |> TracedLV.start_async(:load_task, fn -> load_task(id, user, workspace_id) end)
 
     {:ok, socket}
+  end
+
+  def handle_async(:load_task, {:ok, {:ok, task}}, socket) do
+    if connected?(socket) do
+      subscribe_to_task_topics(task.id)
+    end
+
+    user = socket.assigns.current_user
+    workspace_id = socket.assigns.current_workspace.id
+    task_id = task.id
+
+    socket =
+      socket
+      |> put_task(task)
+      |> assign(:can_edit, Ash.can?({task, :update}, user))
+      |> assign(:can_delete, Ash.can?({task, :destroy}, user))
+      |> TracedLV.start_async(:load_sub_tasks, fn ->
+        load_sub_tasks(task_id, user, workspace_id)
+      end)
+      |> TracedLV.start_async(:load_activities, fn ->
+        load_activities(task_id, user, workspace_id)
+      end)
+
+    {:noreply, socket}
+  end
+
+  def handle_async(:load_task, {:ok, {:error, reason}}, socket) do
+    {:noreply, assign(socket, :task, AsyncResult.failed(socket.assigns.task, reason))}
+  end
+
+  def handle_async(:load_task, {:exit, reason}, socket) do
+    {:noreply, assign(socket, :task, AsyncResult.failed(socket.assigns.task, {:exit, reason}))}
+  end
+
+  def handle_async(:load_sub_tasks, {:ok, sub_tasks}, socket) when is_list(sub_tasks) do
+    {:noreply, put_sub_tasks(socket, sub_tasks)}
+  end
+
+  def handle_async(:load_sub_tasks, {:exit, reason}, socket) do
+    {:noreply,
+     assign(socket, :sub_tasks, AsyncResult.failed(socket.assigns.sub_tasks, {:exit, reason}))}
+  end
+
+  def handle_async(:load_activities, {:ok, activities}, socket) when is_list(activities) do
+    {:noreply, assign(socket, :activities, AsyncResult.ok(socket.assigns.activities, activities))}
+  end
+
+  def handle_async(:load_activities, {:exit, reason}, socket) do
+    {:noreply,
+     assign(socket, :activities, AsyncResult.failed(socket.assigns.activities, {:exit, reason}))}
+  end
+
+  defp put_task(socket, task) do
+    assign(socket, :task, AsyncResult.ok(socket.assigns.task, task))
+  end
+
+  defp put_sub_tasks(socket, sub_tasks) do
+    assign(socket, :sub_tasks, AsyncResult.ok(socket.assigns.sub_tasks, sub_tasks))
+  end
+
+  defp load_task(human_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.task", %{attributes: %{"task.human_id" => human_id}} do
+      Tasks.get_task_by_human_id(human_id,
+        actor: user,
+        tenant: workspace_id,
+        load: @task_load
+      )
+    end
+  end
+
+  defp load_sub_tasks(task_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.sub_tasks", %{attributes: %{"task.id" => task_id}} do
+      Tasks.list_sub_tasks!(task_id,
+        actor: user,
+        tenant: workspace_id,
+        load: @sub_tasks_load
+      )
+    end
+  end
+
+  defp load_activities(task_id, user, workspace_id) do
+    Tracer.with_span "task.show.load.activities", %{attributes: %{"task.id" => task_id}} do
+      Tasks.list_task_activities!(task_id,
+        actor: user,
+        tenant: workspace_id,
+        load: [:user, :agent_run]
+      )
+    end
+  end
+
+  defp subscribe_to_task_topics(task_id) do
+    CitadelWeb.Endpoint.subscribe("tasks:task:#{task_id}")
+    CitadelWeb.Endpoint.subscribe("tasks:task_children:#{task_id}")
+    CitadelWeb.Endpoint.subscribe("tasks:task_dependencies:#{task_id}")
+    CitadelWeb.Endpoint.subscribe("tasks:task_dependents:#{task_id}")
+    CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task_id}")
+    CitadelWeb.Endpoint.subscribe("tasks:agent_runs:#{task_id}")
   end
 
   def handle_event("new-sub-task", _params, socket) do
@@ -90,17 +166,16 @@ defmodule CitadelWeb.TaskLive.Show do
     if human_id == "" do
       {:noreply, socket}
     else
-      case Tasks.add_task_dependency_by_human_id(socket.assigns.task.id, human_id,
+      case Tasks.add_task_dependency_by_human_id(socket.assigns.task.result.id, human_id,
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
         {:ok, _dependency} ->
-          {task, task_dependencies} = reload_task_with_dependencies(socket)
+          task = reload_task(socket)
 
           {:noreply,
            socket
-           |> assign(:task, task)
-           |> assign(:task_dependencies, task_dependencies)
+           |> put_task(task)
            |> put_flash(:info, "Dependency added successfully")}
 
         {:error, error} ->
@@ -116,12 +191,11 @@ defmodule CitadelWeb.TaskLive.Show do
            tenant: socket.assigns.current_workspace.id
          ) do
       :ok ->
-        {task, task_dependencies} = reload_task_with_dependencies(socket)
+        task = reload_task(socket)
 
         {:noreply,
          socket
-         |> assign(:task, task)
-         |> assign(:task_dependencies, task_dependencies)
+         |> put_task(task)
          |> put_flash(:info, "Dependency removed successfully")}
 
       {:error, _} ->
@@ -130,31 +204,17 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("toggle_agent_eligible", _params, socket) do
-    new_value = !socket.assigns.task.agent_eligible
+    new_value = !socket.assigns.task.result.agent_eligible
 
-    case Tasks.update_task(socket.assigns.task.id, %{agent_eligible: new_value},
+    case Tasks.update_task(socket.assigns.task.result.id, %{agent_eligible: new_value},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
       {:ok, task} ->
         task =
-          Ash.load!(
-            task,
-            [
-              :task_state,
-              :user,
-              :parent_task,
-              :ancestors,
-              :assignees,
-              :overdue?,
-              :project,
-              :execution_status,
-              :active_agent_run
-            ],
-            tenant: socket.assigns.current_workspace.id
-          )
+          Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update agent eligibility")}
@@ -170,13 +230,13 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("delete", _params, socket) do
-    task = socket.assigns.task
-    parent_task = task.parent_task
+    task = socket.assigns.task.result
+    parent = List.last(task.ancestors || [])
 
     case Tasks.destroy_task(task, actor: socket.assigns.current_user) do
       :ok ->
         redirect_path =
-          if parent_task, do: ~p"/tasks/#{parent_task.human_id}", else: ~p"/dashboard"
+          if parent, do: ~p"/tasks/#{parent.human_id}", else: ~p"/dashboard"
 
         {:noreply,
          socket
@@ -225,26 +285,14 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_event("save-description", %{"content" => content}, socket) do
-    case Tasks.update_task(socket.assigns.task.id, %{description: content},
+    case Tasks.update_task(socket.assigns.task.result.id, %{description: content},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
       {:ok, task} ->
-        task =
-          Ash.load!(
-            task,
-            [
-              :task_state,
-              :user,
-              :parent_task,
-              :ancestors,
-              :assignees,
-              :overdue?
-            ],
-            tenant: socket.assigns.current_workspace.id
-          )
+        task = Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to save description")}
@@ -254,32 +302,18 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save-title", %{"value" => title}, socket) do
     title = String.trim(title)
 
-    if title == "" or title == socket.assigns.task.title do
+    if title == "" or title == socket.assigns.task.result.title do
       {:noreply, socket}
     else
-      case Tasks.update_task(socket.assigns.task.id, %{title: title},
+      case Tasks.update_task(socket.assigns.task.result.id, %{title: title},
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
         {:ok, task} ->
           task =
-            Ash.load!(
-              task,
-              [
-                :task_state,
-                :user,
-                :parent_task,
-                :ancestors,
-                :assignees,
-                :overdue?,
-                :project,
-                :execution_status,
-                :active_agent_run
-              ],
-              tenant: socket.assigns.current_workspace.id
-            )
+            Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-          {:noreply, assign(socket, :task, task)}
+          {:noreply, put_task(socket, task)}
 
         {:error, _changeset} ->
           {:noreply, put_flash(socket, :error, "Failed to save title")}
@@ -290,32 +324,18 @@ defmodule CitadelWeb.TaskLive.Show do
   def handle_event("save-due-date", %{"value" => due_date}, socket) do
     due_date = if due_date == "", do: nil, else: Date.from_iso8601!(due_date)
 
-    if due_date == socket.assigns.task.due_date do
+    if due_date == socket.assigns.task.result.due_date do
       {:noreply, socket}
     else
-      case Tasks.update_task(socket.assigns.task.id, %{due_date: due_date},
+      case Tasks.update_task(socket.assigns.task.result.id, %{due_date: due_date},
              actor: socket.assigns.current_user,
              tenant: socket.assigns.current_workspace.id
            ) do
         {:ok, task} ->
           task =
-            Ash.load!(
-              task,
-              [
-                :task_state,
-                :user,
-                :parent_task,
-                :ancestors,
-                :assignees,
-                :overdue?,
-                :project,
-                :execution_status,
-                :active_agent_run
-              ],
-              tenant: socket.assigns.current_workspace.id
-            )
+            Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-          {:noreply, assign(socket, :task, task)}
+          {:noreply, put_task(socket, task)}
 
         {:error, _changeset} ->
           {:noreply, put_flash(socket, :error, "Failed to save due date")}
@@ -324,22 +344,16 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info({:task_created, _sub_task}, socket) do
-    sub_tasks =
-      Tasks.list_sub_tasks!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
-      )
+    sub_tasks = list_sub_tasks(socket)
 
     send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{socket.assigns.task.id}",
+      id: "sub-tasks-#{socket.assigns.task.result.id}",
       tasks: sub_tasks
     )
 
     socket =
       socket
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_sub_tasks(sub_tasks)
       |> assign(:show_sub_task_form, false)
       |> put_flash(:info, "Sub-task created successfully")
 
@@ -347,31 +361,19 @@ defmodule CitadelWeb.TaskLive.Show do
   end
 
   def handle_info({:task_priority_changed, task}, socket) do
-    updated_task = %{socket.assigns.task | priority: task.priority}
-    {:noreply, assign(socket, :task, updated_task)}
+    updated_task = %{socket.assigns.task.result | priority: task.priority}
+    {:noreply, put_task(socket, updated_task)}
   end
 
   def handle_info({:assignees_changed, assignee_ids}, socket) do
-    case Tasks.update_task(socket.assigns.task.id, %{assignees: assignee_ids},
+    case Tasks.update_task(socket.assigns.task.result.id, %{assignees: assignee_ids},
            actor: socket.assigns.current_user,
            tenant: socket.assigns.current_workspace.id
          ) do
       {:ok, task} ->
-        task =
-          Ash.load!(
-            task,
-            [
-              :task_state,
-              :user,
-              :parent_task,
-              :ancestors,
-              :assignees,
-              :overdue?
-            ],
-            tenant: socket.assigns.current_workspace.id
-          )
+        task = Ash.load!(task, @task_load, tenant: socket.assigns.current_workspace.id)
 
-        {:noreply, assign(socket, :task, task)}
+        {:noreply, put_task(socket, task)}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update assignees")}
@@ -382,43 +384,24 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependencies:" <> _task_id},
         socket
       ) do
-    {task, task_dependencies} = reload_task_with_dependencies(socket)
-    {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
+    {:noreply, put_task(socket, reload_task(socket))}
   end
 
   def handle_info(
         %Phoenix.Socket.Broadcast{topic: "tasks:task_dependents:" <> _task_id},
         socket
       ) do
-    {task, task_dependencies} = reload_task_with_dependencies(socket)
-    {:noreply, socket |> assign(:task, task) |> assign(:task_dependencies, task_dependencies)}
+    {:noreply, put_task(socket, reload_task(socket))}
   end
 
   def handle_info({:task_state_changed, _task}, socket) do
     task =
-      Ash.load!(
-        socket.assigns.task,
-        [
-          :task_state,
-          :user,
-          :parent_task,
-          :ancestors,
-          :assignees,
-          :overdue?,
-          :project,
-          :execution_status,
-          :active_agent_run
-        ],
+      Ash.load!(socket.assigns.task.result, @task_load,
         actor: socket.assigns.current_user,
         tenant: socket.assigns.current_workspace.id
       )
 
-    sub_tasks =
-      Tasks.list_sub_tasks!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
-      )
+    sub_tasks = list_sub_tasks(socket)
 
     send_update(CitadelWeb.Components.TasksListComponent,
       id: "sub-tasks-#{task.id}",
@@ -427,30 +410,23 @@ defmodule CitadelWeb.TaskLive.Show do
 
     socket =
       socket
-      |> assign(:task, task)
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_task(task)
+      |> put_sub_tasks(sub_tasks)
 
     {:noreply, socket}
   end
 
   def handle_info({:tasks_list_task_moved, _component_id}, socket) do
-    sub_tasks =
-      Tasks.list_sub_tasks!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
-      )
+    sub_tasks = list_sub_tasks(socket)
 
     send_update(CitadelWeb.Components.TasksListComponent,
-      id: "sub-tasks-#{socket.assigns.task.id}",
+      id: "sub-tasks-#{socket.assigns.task.result.id}",
       tasks: sub_tasks
     )
 
     socket =
       socket
-      |> assign(:sub_tasks, sub_tasks)
-      |> assign(:sub_tasks_count, length(sub_tasks))
+      |> put_sub_tasks(sub_tasks)
 
     {:noreply, socket}
   end
@@ -459,25 +435,15 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task:" <> task_id, payload: _payload},
         socket
       ) do
-    if task_id == socket.assigns.task.id do
+    if task_id == socket.assigns.task.result.id do
       task =
         Tasks.get_task!(task_id,
           actor: socket.assigns.current_user,
           tenant: socket.assigns.current_workspace.id,
-          load: [
-            :task_state,
-            :user,
-            :parent_task,
-            :ancestors,
-            :assignees,
-            :overdue?,
-            :project,
-            :execution_status,
-            :active_agent_run
-          ]
+          load: @task_load
         )
 
-      {:noreply, assign(socket, :task, task)}
+      {:noreply, put_task(socket, task)}
     else
       {:noreply, socket}
     end
@@ -487,7 +453,7 @@ defmodule CitadelWeb.TaskLive.Show do
         %Phoenix.Socket.Broadcast{topic: "tasks:task_children:" <> parent_id, payload: payload},
         socket
       ) do
-    if parent_id == socket.assigns.task.id do
+    if parent_id == socket.assigns.task.result.id do
       {:noreply, handle_sub_task_broadcast(payload, socket)}
     else
       {:noreply, socket}
@@ -499,7 +465,7 @@ defmodule CitadelWeb.TaskLive.Show do
         socket
       ) do
     send_update(TaskActivitySection,
-      id: "task-activities-#{socket.assigns.task.id}",
+      id: "task-activities-#{socket.assigns.task.result.id}",
       agent_run_updated: broadcast
     )
 
@@ -511,7 +477,7 @@ defmodule CitadelWeb.TaskLive.Show do
         socket
       ) do
     send_update(TaskActivitySection,
-      id: "task-activities-#{socket.assigns.task.id}",
+      id: "task-activities-#{socket.assigns.task.result.id}",
       broadcast: broadcast
     )
 
@@ -522,35 +488,20 @@ defmodule CitadelWeb.TaskLive.Show do
     {:noreply, assign(socket, :cancel_run_id, run_id)}
   end
 
-  defp reload_task_with_dependencies(socket) do
-    task =
-      Tasks.get_task!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [
-          :task_state,
-          :user,
-          :parent_task,
-          :ancestors,
-          :assignees,
-          :overdue?,
-          :blocked?,
-          :blocking_count,
-          :project,
-          :execution_status,
-          :active_agent_run,
-          dependencies: [:task_state],
-          dependents: [:task_state]
-        ]
-      )
+  defp reload_task(socket) do
+    Tasks.get_task!(socket.assigns.task.result.id,
+      actor: socket.assigns.current_user,
+      tenant: socket.assigns.current_workspace.id,
+      load: @task_load
+    )
+  end
 
-    task_dependencies =
-      Tasks.list_task_dependencies!(task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id
-      )
-
-    {task, task_dependencies}
+  defp list_sub_tasks(socket) do
+    Tasks.list_sub_tasks!(socket.assigns.task.result.id,
+      actor: socket.assigns.current_user,
+      tenant: socket.assigns.current_workspace.id,
+      load: @sub_tasks_load
+    )
   end
 
   defp format_dependency_error(error, human_id) do
@@ -571,29 +522,22 @@ defmodule CitadelWeb.TaskLive.Show do
     maybe_notify_sub_task_deleted(sub_tasks, payload, socket)
 
     socket
-    |> assign(:sub_tasks, sub_tasks)
-    |> assign(:sub_tasks_count, length(sub_tasks))
+    |> put_sub_tasks(sub_tasks)
   end
 
   defp handle_sub_task_broadcast(_sub_task, socket) do
-    sub_tasks =
-      Tasks.list_sub_tasks!(socket.assigns.task.id,
-        actor: socket.assigns.current_user,
-        tenant: socket.assigns.current_workspace.id,
-        load: [:task_state, :assignees, :overdue?]
-      )
+    sub_tasks = list_sub_tasks(socket)
 
     maybe_notify_sub_tasks_updated(sub_tasks, socket)
 
     socket
-    |> assign(:sub_tasks, sub_tasks)
-    |> assign(:sub_tasks_count, length(sub_tasks))
+    |> put_sub_tasks(sub_tasks)
   end
 
   defp maybe_notify_sub_task_deleted(sub_tasks, payload, socket) do
     unless Enum.empty?(sub_tasks) do
       send_update(CitadelWeb.Components.TasksListComponent,
-        id: "sub-tasks-#{socket.assigns.task.id}",
+        id: "sub-tasks-#{socket.assigns.task.result.id}",
         deleted_task: payload
       )
     end
@@ -634,7 +578,7 @@ defmodule CitadelWeb.TaskLive.Show do
   defp maybe_notify_sub_tasks_updated(sub_tasks, socket) do
     unless Enum.empty?(sub_tasks) do
       send_update(CitadelWeb.Components.TasksListComponent,
-        id: "sub-tasks-#{socket.assigns.task.id}",
+        id: "sub-tasks-#{socket.assigns.task.result.id}",
         tasks: sub_tasks
       )
     end
@@ -649,289 +593,34 @@ defmodule CitadelWeb.TaskLive.Show do
       agents={@agents}
     >
       <div class="relative h-full p-4 bg-base-200 border border-base-300">
-        <div class="h-full overflow-auto ">
-          <div class="breadcrumbs text-sm mb-4">
-            <ul>
-              <li><.link navigate={~p"/dashboard"}>Tasks</.link></li>
-              <li :for={ancestor <- @task.ancestors}>
-                <.link navigate={~p"/tasks/#{ancestor.human_id}"}>{ancestor.human_id}</.link>
-              </li>
-              <li><span>{@task.human_id}</span></li>
-            </ul>
-          </div>
-
-          <div class="flex items-start justify-between pr-3">
-            <div class="flex items-center gap-3 flex-1">
-              <%= if @can_edit do %>
-                <.live_component
-                  module={CitadelWeb.Components.TaskStateDropdown}
-                  id={"task-state-#{@task.id}"}
-                  task={@task}
-                  current_user={@current_user}
-                  current_workspace={@current_workspace}
-                  size="size-5"
-                />
-              <% else %>
-                <.task_state_icon task_state={@task.task_state} size="size-5" />
-              <% end %>
-              <%= if @can_edit do %>
-                <input
-                  type="text"
-                  name="title"
-                  value={@task.title}
-                  phx-blur="save-title"
-                  phx-keydown="save-title"
-                  phx-key="Enter"
-                  class="input input-ghost text-2xl font-bold flex-1 p-0 h-auto min-h-0 focus:outline-none focus:bg-base-300/50 rounded"
-                />
-              <% else %>
-                <h1 class="card-title text-2xl">{@task.title}</h1>
-              <% end %>
-            </div>
-            <div class="flex gap-2">
-              <.button
-                :if={@can_delete}
-                class="btn btn-sm btn-secondary text-error"
-                phx-click="confirm_delete"
-              >
-                <.icon name="hero-trash" class="size-4" /> Delete
-              </.button>
-            </div>
-          </div>
-
-          <div class="pt-4"></div>
-
-          <div class="grid grid-cols-[1fr_20rem] gap-4">
-            <div class="py-4">
-              <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
-              <div
-                id={"description-editor-#{@task.id}"}
-                phx-hook="MilkdownEditor"
-                phx-update="ignore"
-                data-content={@task.description || ""}
-                data-readonly={to_string(not @can_edit)}
-                class="milkdown-container prose max-w-none"
-              />
-            </div>
-
-            <div class="border-l border-base-300 p-4">
-              <div class="sticky top-0 space-y-5">
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Priority
-                  </label>
-                  <%= if @can_edit do %>
-                    <.live_component
-                      module={CitadelWeb.Components.PriorityDropdown}
-                      id={"task-priority-#{@task.id}"}
-                      task={@task}
-                      current_user={@current_user}
-                      current_workspace={@current_workspace}
-                      align_right={true}
-                    />
-                  <% else %>
-                    <.priority_badge priority={@task.priority} />
-                  <% end %>
-                </div>
-
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Assignees
-                  </label>
-                  <%= if @can_edit do %>
-                    <.live_component
-                      module={CitadelWeb.Components.AssigneeSelect}
-                      id={"task-assignees-#{@task.id}"}
-                      workspace={@current_workspace}
-                      selected_ids={Enum.map(@task.assignees, & &1.id)}
-                      field_name="assignees[]"
-                      current_user={@current_user}
-                      on_change={true}
-                      compact={true}
-                    />
-                  <% else %>
-                    <%= if Enum.empty?(@task.assignees) do %>
-                      <span class="text-sm text-base-content/40">Unassigned</span>
-                    <% else %>
-                      <div class="flex flex-wrap gap-1">
-                        <.user_avatar
-                          :for={assignee <- @task.assignees}
-                          user={assignee}
-                          size="w-7 h-7"
-                        />
-                      </div>
-                    <% end %>
-                  <% end %>
-                </div>
-
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Due Date
-                  </label>
-                  <%= if @can_edit do %>
-                    <input
-                      type="text"
-                      name="due_date"
-                      value={@task.due_date}
-                      phx-blur="save-due-date"
-                      placeholder="None"
-                      onfocus="this.type='date'"
-                      class={[
-                        "input input-ghost text-sm text-right p-0 h-auto min-h-0 border-0 placeholder:text-base-content/60",
-                        @task.overdue? && "text-error",
-                        @task.due_date && !@task.overdue? && "text-base-content/80"
-                      ]}
-                    />
-                  <% else %>
-                    <span class={[
-                      "text-sm",
-                      @task.overdue? && "text-error",
-                      !@task.due_date && "text-base-content/40"
-                    ]}>
-                      {if @task.due_date,
-                        do: Calendar.strftime(@task.due_date, "%b %d, %Y"),
-                        else: "Not set"}
-                    </span>
-                  <% end %>
-                </div>
-
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Project
-                  </label>
-                  <%= if @task.project do %>
-                    <span class="text-sm text-base-content/80">{@task.project.name}</span>
-                  <% else %>
-                    <span class="text-sm text-base-content/40">None</span>
-                  <% end %>
-                </div>
-
-                <div
-                  :if={@task.execution_status != :none}
-                  class="flex items-center justify-between gap-4"
-                >
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Execution
-                  </label>
-                  <span class={[
-                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-                    execution_status_classes(@task.execution_status)
-                  ]}>
-                    <span class={[
-                      "size-1.5 rounded-full",
-                      execution_status_dot_class(@task.execution_status)
-                    ]} />
-                    {@task.execution_status}
-                  </span>
-                </div>
-
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    Agent
-                  </label>
-                  <%= if @can_edit do %>
-                    <button
-                      phx-click="toggle_agent_eligible"
-                      class={[
-                        "flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-full transition-colors cursor-pointer",
-                        if(@task.agent_eligible,
-                          do: "bg-emerald-500/15 text-emerald-400",
-                          else: "bg-base-300/50 text-base-content/40 hover:text-base-content/60"
-                        )
-                      ]}
-                    >
-                      <.icon
-                        name={
-                          if(@task.agent_eligible, do: "hero-cpu-chip-solid", else: "hero-cpu-chip")
-                        }
-                        class="size-3.5"
-                      />
-                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
-                    </button>
-                  <% else %>
-                    <span class={[
-                      "text-sm",
-                      if(@task.agent_eligible, do: "text-emerald-400", else: "text-base-content/40")
-                    ]}>
-                      {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
-                    </span>
-                  <% end %>
-                </div>
-
-                <% {pr_label, pr_text} = forge_pr_label(@task.forge_pr) %>
-                <div class="flex items-center justify-between gap-4">
-                  <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
-                    {pr_label}
-                  </label>
-                  <%= if @task.forge_pr do %>
-                    <a
-                      href={@task.forge_pr}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="inline-flex items-center gap-1.5 text-sm text-base-content/80 hover:text-primary transition-colors"
-                    >
-                      {pr_text}
-                      <.icon name="hero-arrow-top-right-on-square" class="size-3.5" />
-                    </a>
-                  <% else %>
-                    <span class="text-sm text-base-content/40">None</span>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <.live_component
-            module={CitadelWeb.Components.TaskDependencies}
-            id={"task-dependencies-#{@task.id}"}
-            task={@task}
-            task_dependencies={@task_dependencies}
-            can_edit={@can_edit}
-            current_user={@current_user}
-            current_workspace={@current_workspace}
-          />
-
-          <div class="py-4 border-t border-base-300">
-            <div class="flex items-center justify-between mb-3 mr-6">
-              <h2 class="text-sm font-semibold text-base-content/70">
-                Sub-tasks ({@sub_tasks_count})
-              </h2>
-              <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
-                <.icon name="hero-plus" class="size-3" /> Add
-              </.button>
-            </div>
-
-            <%= if @sub_tasks_count == 0 do %>
-              <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
-            <% else %>
-              <.live_component
-                module={CitadelWeb.Components.TasksListComponent}
-                id={"sub-tasks-#{@task.id}"}
-                tasks={@sub_tasks}
-                current_user={@current_user}
-                current_workspace={@current_workspace}
-              />
-            <% end %>
-          </div>
-
-          <.live_component
-            module={TaskActivitySection}
-            id={"task-activities-#{@task.id}"}
-            task={@task}
-            current_user={@current_user}
-            current_workspace={@current_workspace}
-            can_edit={@can_edit}
-          />
+        <div class="h-full overflow-auto">
+          <.async_result :let={task} assign={@task}>
+            <:loading>
+              <.task_skeleton />
+            </:loading>
+            <:failed :let={_reason}>
+              <.load_error human_id={@human_id} />
+            </:failed>
+            <.task_content
+              task={task}
+              sub_tasks={@sub_tasks}
+              activities={@activities}
+              can_edit={@can_edit}
+              can_delete={@can_delete}
+              current_user={@current_user}
+              current_workspace={@current_workspace}
+            />
+          </.async_result>
         </div>
       </div>
 
       <.live_component
-        :if={@show_sub_task_form}
+        :if={@show_sub_task_form and @task.ok?}
         module={CitadelWeb.Components.NewTaskModal}
         id="new-sub-task-modal"
         current_user={@current_user}
         current_workspace={@current_workspace}
-        parent_task_id={@task.id}
+        parent_task_id={@task.result.id}
         close_event="close-sub-task-form"
       />
 
@@ -959,6 +648,363 @@ defmodule CitadelWeb.TaskLive.Show do
         on_cancel="cancel_cancel_run"
       />
     </Layouts.app>
+    """
+  end
+
+  attr :human_id, :string, required: true
+
+  defp load_error(assigns) do
+    ~H"""
+    <div class="alert alert-error max-w-xl mx-auto mt-8">
+      <.icon name="hero-exclamation-triangle" class="size-5" />
+      <span>Failed to load task {@human_id}.</span>
+      <.link navigate={~p"/dashboard"} class="btn btn-sm btn-outline">Back to dashboard</.link>
+    </div>
+    """
+  end
+
+  defp task_skeleton(assigns) do
+    ~H"""
+    <div class="space-y-4" data-testid="task-skeleton">
+      <div class="skeleton h-4 w-40"></div>
+      <div class="flex items-center gap-3">
+        <div class="skeleton size-5 shrink-0 rounded-full"></div>
+        <div class="skeleton h-8 w-2/3"></div>
+      </div>
+      <div class="grid grid-cols-[1fr_20rem] gap-4 pt-4">
+        <div class="space-y-3">
+          <div class="skeleton h-4 w-24"></div>
+          <div class="skeleton h-24 w-full"></div>
+        </div>
+        <div class="space-y-3 border-l border-base-300 p-4">
+          <div class="skeleton h-4 w-32"></div>
+          <div class="skeleton h-4 w-40"></div>
+          <div class="skeleton h-4 w-28"></div>
+          <div class="skeleton h-4 w-36"></div>
+          <div class="skeleton h-4 w-24"></div>
+        </div>
+      </div>
+      <div class="space-y-3 pt-4 border-t border-base-300">
+        <div class="skeleton h-4 w-32"></div>
+        <div class="skeleton h-10 w-full max-w-lg"></div>
+      </div>
+      <div class="space-y-3 pt-4 border-t border-base-300">
+        <div class="skeleton h-4 w-24"></div>
+        <div class="skeleton h-12 w-full"></div>
+        <div class="skeleton h-12 w-full"></div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :task, :any, required: true
+  attr :sub_tasks, :any, required: true
+  attr :activities, :any, required: true
+  attr :can_edit, :boolean, required: true
+  attr :can_delete, :boolean, required: true
+  attr :current_user, :any, required: true
+  attr :current_workspace, :any, required: true
+
+  defp task_content(assigns) do
+    ~H"""
+    <div class="breadcrumbs text-sm mb-4">
+      <ul>
+        <li><.link navigate={~p"/dashboard"}>Tasks</.link></li>
+        <li :for={ancestor <- @task.ancestors}>
+          <.link navigate={~p"/tasks/#{ancestor.human_id}"}>{ancestor.human_id}</.link>
+        </li>
+        <li><span>{@task.human_id}</span></li>
+      </ul>
+    </div>
+
+    <div class="flex items-start justify-between pr-3">
+      <div class="flex items-center gap-3 flex-1">
+        <%= if @can_edit do %>
+          <.live_component
+            module={CitadelWeb.Components.TaskStateDropdown}
+            id={"task-state-#{@task.id}"}
+            task={@task}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+            size="size-5"
+          />
+        <% else %>
+          <.task_state_icon task_state={@task.task_state} size="size-5" />
+        <% end %>
+        <%= if @can_edit do %>
+          <input
+            type="text"
+            name="title"
+            value={@task.title}
+            phx-blur="save-title"
+            phx-keydown="save-title"
+            phx-key="Enter"
+            class="input input-ghost text-2xl font-bold flex-1 p-0 h-auto min-h-0 focus:outline-none focus:bg-base-300/50 rounded"
+          />
+        <% else %>
+          <h1 class="card-title text-2xl">{@task.title}</h1>
+        <% end %>
+      </div>
+      <div class="flex gap-2">
+        <.button
+          :if={@can_delete}
+          class="btn btn-sm btn-secondary text-error"
+          phx-click="confirm_delete"
+        >
+          <.icon name="hero-trash" class="size-4" /> Delete
+        </.button>
+      </div>
+    </div>
+
+    <div class="pt-4"></div>
+
+    <div class="grid grid-cols-[1fr_20rem] gap-4">
+      <div class="py-4">
+        <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
+        <div
+          id={"description-editor-#{@task.id}"}
+          phx-hook="MilkdownEditor"
+          phx-update="ignore"
+          data-content={@task.description || ""}
+          data-readonly={to_string(not @can_edit)}
+          class="milkdown-container prose max-w-none"
+        />
+      </div>
+
+      <div class="border-l border-base-300 p-4">
+        <div class="sticky top-0 space-y-5">
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Priority
+            </label>
+            <%= if @can_edit do %>
+              <.live_component
+                module={CitadelWeb.Components.PriorityDropdown}
+                id={"task-priority-#{@task.id}"}
+                task={@task}
+                current_user={@current_user}
+                current_workspace={@current_workspace}
+                align_right={true}
+              />
+            <% else %>
+              <.priority_badge priority={@task.priority} />
+            <% end %>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Assignees
+            </label>
+            <%= if @can_edit do %>
+              <.live_component
+                module={CitadelWeb.Components.AssigneeSelect}
+                id={"task-assignees-#{@task.id}"}
+                workspace={@current_workspace}
+                selected_ids={Enum.map(@task.assignees, & &1.id)}
+                field_name="assignees[]"
+                current_user={@current_user}
+                on_change={true}
+                compact={true}
+              />
+            <% else %>
+              <%= if Enum.empty?(@task.assignees) do %>
+                <span class="text-sm text-base-content/40">Unassigned</span>
+              <% else %>
+                <div class="flex flex-wrap gap-1">
+                  <.user_avatar :for={assignee <- @task.assignees} user={assignee} size="w-7 h-7" />
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Due Date
+            </label>
+            <%= if @can_edit do %>
+              <input
+                type="text"
+                name="due_date"
+                value={@task.due_date}
+                phx-blur="save-due-date"
+                placeholder="None"
+                onfocus="this.type='date'"
+                class={[
+                  "input input-ghost text-sm text-right p-0 h-auto min-h-0 border-0 placeholder:text-base-content/60",
+                  @task.overdue? && "text-error",
+                  @task.due_date && !@task.overdue? && "text-base-content/80"
+                ]}
+              />
+            <% else %>
+              <span class={[
+                "text-sm",
+                @task.overdue? && "text-error",
+                !@task.due_date && "text-base-content/40"
+              ]}>
+                {if @task.due_date,
+                  do: Calendar.strftime(@task.due_date, "%b %d, %Y"),
+                  else: "Not set"}
+              </span>
+            <% end %>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Project
+            </label>
+            <%= if @task.project do %>
+              <span class="text-sm text-base-content/80">{@task.project.name}</span>
+            <% else %>
+              <span class="text-sm text-base-content/40">None</span>
+            <% end %>
+          </div>
+
+          <div
+            :if={@task.execution_status != :none}
+            class="flex items-center justify-between gap-4"
+          >
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Execution
+            </label>
+            <span class={[
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+              execution_status_classes(@task.execution_status)
+            ]}>
+              <span class={[
+                "size-1.5 rounded-full",
+                execution_status_dot_class(@task.execution_status)
+              ]} />
+              {@task.execution_status}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              Agent
+            </label>
+            <%= if @can_edit do %>
+              <button
+                phx-click="toggle_agent_eligible"
+                class={[
+                  "flex items-center gap-1.5 text-sm px-2 py-0.5 rounded-full transition-colors cursor-pointer",
+                  if(@task.agent_eligible,
+                    do: "bg-emerald-500/15 text-emerald-400",
+                    else: "bg-base-300/50 text-base-content/40 hover:text-base-content/60"
+                  )
+                ]}
+              >
+                <.icon
+                  name={if(@task.agent_eligible, do: "hero-cpu-chip-solid", else: "hero-cpu-chip")}
+                  class="size-3.5"
+                />
+                {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
+              </button>
+            <% else %>
+              <span class={[
+                "text-sm",
+                if(@task.agent_eligible, do: "text-emerald-400", else: "text-base-content/40")
+              ]}>
+                {if @task.agent_eligible, do: "Eligible", else: "Not eligible"}
+              </span>
+            <% end %>
+          </div>
+
+          <% {pr_label, pr_text} = forge_pr_label(@task.forge_pr) %>
+          <div class="flex items-center justify-between gap-4">
+            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+              {pr_label}
+            </label>
+            <%= if @task.forge_pr do %>
+              <a
+                href={@task.forge_pr}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 text-sm text-base-content/80 hover:text-primary transition-colors"
+              >
+                {pr_text}
+                <.icon name="hero-arrow-top-right-on-square" class="size-3.5" />
+              </a>
+            <% else %>
+              <span class="text-sm text-base-content/40">None</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <.live_component
+      module={CitadelWeb.Components.TaskDependencies}
+      id={"task-dependencies-#{@task.id}"}
+      task={@task}
+      can_edit={@can_edit}
+      current_user={@current_user}
+      current_workspace={@current_workspace}
+    />
+
+    <div class="py-4 border-t border-base-300">
+      <div class="flex items-center justify-between mb-3 mr-6">
+        <h2 class="text-sm font-semibold text-base-content/70">
+          Sub-tasks{if @sub_tasks.ok?, do: " (#{length(@sub_tasks.result)})"}
+        </h2>
+        <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
+          <.icon name="hero-plus" class="size-3" /> Add
+        </.button>
+      </div>
+
+      <.async_result :let={sub_tasks} assign={@sub_tasks}>
+        <:loading>
+          <.section_skeleton testid="sub-tasks-skeleton" />
+        </:loading>
+        <:failed :let={_reason}>
+          <p class="text-error text-sm italic">Failed to load sub-tasks.</p>
+        </:failed>
+        <%= if Enum.empty?(sub_tasks) do %>
+          <p class="text-base-content/50 italic text-sm">No sub-tasks</p>
+        <% else %>
+          <.live_component
+            module={CitadelWeb.Components.TasksListComponent}
+            id={"sub-tasks-#{@task.id}"}
+            tasks={sub_tasks}
+            current_user={@current_user}
+            current_workspace={@current_workspace}
+          />
+        <% end %>
+      </.async_result>
+    </div>
+
+    <.async_result :let={activities} assign={@activities}>
+      <:loading>
+        <div class="py-4 border-t border-base-300">
+          <div class="skeleton h-4 w-32 mb-3"></div>
+          <.section_skeleton testid="activities-skeleton" />
+        </div>
+      </:loading>
+      <:failed :let={_reason}>
+        <div class="py-4 border-t border-base-300">
+          <p class="text-error text-sm italic">Failed to load activities.</p>
+        </div>
+      </:failed>
+      <.live_component
+        module={TaskActivitySection}
+        id={"task-activities-#{@task.id}"}
+        task={@task}
+        activities={activities}
+        current_user={@current_user}
+        current_workspace={@current_workspace}
+        can_edit={@can_edit}
+      />
+    </.async_result>
+    """
+  end
+
+  attr :testid, :string, required: true
+
+  defp section_skeleton(assigns) do
+    ~H"""
+    <div class="space-y-2" data-testid={@testid}>
+      <div class="skeleton h-12 w-full"></div>
+      <div class="skeleton h-12 w-full"></div>
+    </div>
     """
   end
 end

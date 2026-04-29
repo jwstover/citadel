@@ -141,10 +141,23 @@ config :tailwind,
 # Configures Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  metadata: [:request_id, :trace_id, :span_id, :sentry]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+# Sentry — compile-time defaults; runtime DSN/env set in runtime.exs
+config :sentry,
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()],
+  tags: %{app: "citadel"}
+
+# OpenTelemetry — disabled by default; traces only turn on in prod runtime.exs
+config :opentelemetry,
+  span_processor: :batch,
+  traces_exporter: :none
+
+config :opentelemetry, :resource, service: %{name: "citadel", namespace: "citadel"}
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

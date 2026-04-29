@@ -1,4 +1,5 @@
 defmodule CitadelWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :citadel
 
   # The session will be stored in the cookie and signed,
@@ -60,6 +61,8 @@ defmodule CitadelWeb.Endpoint do
     pass: ["*/*"],
     body_reader: {CitadelWeb.Plugs.CacheBodyReader, :read_body, []},
     json_decoder: Phoenix.json_library()
+
+  plug Sentry.PlugContext
 
   plug Plug.MethodOverride
   plug Plug.Head
