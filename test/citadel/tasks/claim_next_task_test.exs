@@ -309,5 +309,25 @@ defmodule Citadel.Tasks.ClaimNextTaskTest do
 
       assert agent_run.task_id == first.id
     end
+
+    test "auto-creates a linked task activity of type :agent_run", ctx do
+      task = create_eligible_task(ctx)
+
+      agent_run =
+        Tasks.claim_next_task!(
+          actor: ctx.user,
+          tenant: ctx.workspace.id
+        )
+
+      activities = Tasks.list_task_activities!(task.id, actor: ctx.user, tenant: ctx.workspace.id)
+
+      assert [activity] = activities
+      assert activity.type == :agent_run
+      assert activity.actor_type == :ai
+      assert activity.task_id == task.id
+      assert activity.agent_run_id == agent_run.id
+      assert activity.workspace_id == ctx.workspace.id
+      assert activity.user_id == ctx.user.id
+    end
   end
 end

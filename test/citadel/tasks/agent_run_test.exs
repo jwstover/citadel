@@ -101,6 +101,48 @@ defmodule Citadel.Tasks.AgentRunTest do
         event: "create"
       }
     end
+
+    test "auto-creates a linked task activity of type :agent_run", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        Tasks.create_agent_run!(
+          %{task_id: task.id},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      activities = Tasks.list_task_activities!(task.id, actor: user, tenant: workspace.id)
+
+      assert [activity] = activities
+      assert activity.type == :agent_run
+      assert activity.actor_type == :ai
+      assert activity.task_id == task.id
+      assert activity.agent_run_id == agent_run.id
+      assert activity.workspace_id == workspace.id
+      assert activity.user_id == user.id
+    end
+
+    test "broadcasts PubSub message on auto-created task activity", %{
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      CitadelWeb.Endpoint.subscribe("tasks:task_activities:#{task.id}")
+
+      Tasks.create_agent_run!(
+        %{task_id: task.id},
+        actor: user,
+        tenant: workspace.id
+      )
+
+      assert_receive %Phoenix.Socket.Broadcast{
+        topic: "tasks:task_activities:" <> _,
+        event: "create_for_agent_run"
+      }
+    end
   end
 
   describe "update_agent_run/2" do

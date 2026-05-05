@@ -73,6 +73,7 @@ defmodule Citadel.Tasks do
 
     resource Citadel.Tasks.TaskActivity do
       define :create_comment, action: :create_comment
+      define :create_agent_run_activity, action: :create_for_agent_run
       define :list_task_activities, action: :list_by_task, args: [:task_id]
       define :destroy_comment, action: :destroy_comment
     end

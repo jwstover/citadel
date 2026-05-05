@@ -24,6 +24,7 @@ defmodule Citadel.Tasks.AgentRun do
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.InheritTaskWorkspace
+      change Citadel.Tasks.Changes.CreateAgentRunActivity
     end
 
     update :update do
@@ -45,6 +46,7 @@ defmodule Citadel.Tasks.AgentRun do
 
       change relate_actor(:user)
       change Citadel.Tasks.Changes.ClaimNextTask
+      change Citadel.Tasks.Changes.CreateAgentRunActivity
     end
 
     read :list_by_task do
