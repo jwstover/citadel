@@ -1,3 +1,14 @@
+# [0.51.0](https://github.com/jwstover/citadel/compare/v0.50.1...v0.51.0) (2026-05-05)
+
+
+### Features
+
+* **agent-runs:** always link to agent run page, drop logs panel ([7784962](https://github.com/jwstover/citadel/commit/7784962d141c2d7d7e41739d7351f49696f2dad3))
+* **agent-runs:** drop logs column from agent_runs ([bdca7aa](https://github.com/jwstover/citadel/commit/bdca7aaca6bc4e469340a464d4433df1c503d9b2))
+* **agent-runs:** persist stream events for past-run replay ([d5dee0c](https://github.com/jwstover/citadel/commit/d5dee0c7febb481a59ab884ab5fa87bd066d24c1))
+
+
+
 ## [0.50.1](https://github.com/jwstover/citadel/compare/v0.50.0...v0.50.1) (2026-04-28)
 
 
@@ -38,15 +49,6 @@
 ### Features
 
 * **observability:** auto-upload PromEx dashboards to Grafana Cloud ([a1ad64b](https://github.com/jwstover/citadel/commit/a1ad64b47b40d23daf78ab59d387392a2302dd6d))
-
-
-
-## [0.48.2](https://github.com/jwstover/citadel/compare/v0.48.1...v0.48.2) (2026-04-22)
-
-
-### Bug Fixes
-
-* **observability:** stop double-parsing OTLP headers ([220680e](https://github.com/jwstover/citadel/commit/220680e92513b28c07ec39d73b1c2dcf5ad2c038))
 
 
 
