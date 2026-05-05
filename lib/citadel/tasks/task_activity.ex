@@ -37,6 +37,15 @@ defmodule Citadel.Tasks.TaskActivity do
       change Citadel.Tasks.Changes.InheritTaskWorkspace
     end
 
+    create :create_for_agent_run do
+      accept [:task_id, :agent_run_id]
+
+      change set_attribute(:type, :agent_run)
+      change set_attribute(:actor_type, :ai)
+      change relate_actor(:user)
+      change Citadel.Tasks.Changes.InheritTaskWorkspace
+    end
+
     read :list_by_task do
       argument :task_id, :uuid, allow_nil?: false
 
@@ -69,6 +78,7 @@ defmodule Citadel.Tasks.TaskActivity do
     prefix "tasks"
 
     publish :create_comment, ["task_activities", :task_id]
+    publish :create_for_agent_run, ["task_activities", :task_id]
     publish :destroy_comment, ["task_activities", :task_id]
   end
 
@@ -105,5 +115,6 @@ defmodule Citadel.Tasks.TaskActivity do
     belongs_to :workspace, Citadel.Accounts.Workspace, public?: true, allow_nil?: false
     belongs_to :task, Citadel.Tasks.Task, public?: true, allow_nil?: false
     belongs_to :user, Citadel.Accounts.User, allow_nil?: true
+    belongs_to :agent_run, Citadel.Tasks.AgentRun, public?: true, allow_nil?: true
   end
 end
