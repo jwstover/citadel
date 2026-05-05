@@ -298,12 +298,13 @@ defmodule CitadelWeb.AgentRunLive do
     progress = if total > 0, do: round(done / total * 100), else: 0
 
     assigns =
-      assigns
-      |> Map.put(:remaining, remaining)
-      |> Map.put(:completed, completed)
-      |> Map.put(:total, total)
-      |> Map.put(:done, done)
-      |> Map.put(:progress, progress)
+      assign(assigns,
+        remaining: remaining,
+        completed: completed,
+        total: total,
+        done: done,
+        progress: progress
+      )
 
     ~H"""
     <div class="border-t border-base-300 pt-3 mt-3 shrink-0">
