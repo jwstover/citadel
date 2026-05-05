@@ -257,6 +257,42 @@ defmodule CitadelWeb.TaskLive.ShowAgentRunActivityTest do
              )
     end
 
+    test "shows View link for completed agent run", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      task: task
+    } do
+      agent_run =
+        generate(
+          agent_run(
+            [task_id: task.id],
+            actor: user,
+            tenant: workspace.id
+          )
+        )
+
+      {:ok, agent_run} =
+        Tasks.update_agent_run(
+          agent_run,
+          %{status: :completed},
+          actor: user,
+          tenant: workspace.id
+        )
+
+      Tasks.create_agent_run_activity!(
+        %{task_id: task.id, agent_run_id: agent_run.id},
+        tenant: workspace.id,
+        authorize?: false
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/tasks/#{task.human_id}")
+      await_loads(view)
+
+      assert has_element?(view, ~s(a[href="/agent-runs/#{agent_run.id}"]), "View")
+      refute has_element?(view, "a", "Watch")
+    end
+
     test "agent run activities appear alongside comment activities", %{
       conn: conn,
       user: user,
