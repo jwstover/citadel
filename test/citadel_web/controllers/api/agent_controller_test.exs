@@ -576,14 +576,12 @@ defmodule CitadelWeb.Api.AgentControllerTest do
       conn =
         patch(ctx.conn, ~p"/api/agent/runs/#{run.id}", %{
           "status" => "failed",
-          "error_message" => "Compilation error",
-          "logs" => "** (CompileError) lib/foo.ex:1"
+          "error_message" => "Compilation error"
         })
 
       assert %{"data" => data} = json_response(conn, 200)
       assert data["status"] == "failed"
       assert data["error_message"] == "Compilation error"
-      assert data["logs"] == "** (CompileError) lib/foo.ex:1"
     end
 
     test "returns 404 for non-existent run", ctx do

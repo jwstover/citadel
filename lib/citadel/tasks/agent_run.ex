@@ -35,7 +35,6 @@ defmodule Citadel.Tasks.AgentRun do
         :session_id,
         :commits,
         :test_output,
-        :logs,
         :error_message,
         :started_at,
         :completed_at
@@ -150,7 +149,6 @@ defmodule Citadel.Tasks.AgentRun do
     attribute :session_id, :string, public?: true
     attribute :commits, {:array, :map}, public?: true, default: []
     attribute :test_output, :string, public?: true
-    attribute :logs, :string, public?: true
     attribute :error_message, :string, public?: true
     attribute :started_at, :utc_datetime_usec, public?: true
     attribute :completed_at, :utc_datetime_usec, public?: true

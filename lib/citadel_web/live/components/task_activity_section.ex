@@ -384,11 +384,11 @@ defmodule CitadelWeb.Components.TaskActivitySection do
           {@run.error_message}
         </span>
         <.link
-          :if={@run.status == :running}
           navigate={~p"/agent-runs/#{@run.id}"}
           class="btn btn-xs btn-ghost text-info hover:bg-info/10"
         >
-          <.icon name="hero-eye" class="size-3.5" /> Watch
+          <.icon name="hero-eye" class="size-3.5" />
+          {if @run.status == :running, do: "Watch", else: "View"}
         </.link>
         <button
           :if={@can_edit and @run.status in [:pending, :running]}
@@ -432,13 +432,6 @@ defmodule CitadelWeb.Components.TaskActivitySection do
         Test Output
       </summary>
       <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{@run.test_output}</code></pre>
-    </details>
-
-    <details :if={@run.logs && @run.logs != ""} class="group/details mt-2">
-      <summary class="text-xs font-medium text-base-content/60 cursor-pointer hover:text-base-content/80 select-none">
-        Logs
-      </summary>
-      <pre class="mt-2 p-3 bg-base-300/50 rounded text-xs overflow-x-auto max-h-96 overflow-y-auto"><code>{@run.logs}</code></pre>
     </details>
     """
   end

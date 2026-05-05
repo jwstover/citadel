@@ -33,7 +33,6 @@ defmodule CitadelWeb.Api.AgentController do
         "session_id",
         "commits",
         "test_output",
-        "logs",
         "error_message",
         "started_at",
         "completed_at"

@@ -154,7 +154,6 @@ defmodule Citadel.Tasks.AgentRunTest do
             status: :completed,
             commits: commits,
             test_output: "All tests passed",
-            logs: "Agent execution log...",
             completed_at: now
           },
           actor: user,
@@ -164,7 +163,6 @@ defmodule Citadel.Tasks.AgentRunTest do
       assert updated.status == :completed
       assert updated.commits == commits
       assert updated.test_output == "All tests passed"
-      assert updated.logs == "Agent execution log..."
     end
 
     test "can set failed status with error message", %{
