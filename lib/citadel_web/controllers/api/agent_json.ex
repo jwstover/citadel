@@ -88,7 +88,6 @@ defmodule CitadelWeb.Api.AgentJSON do
         session_id: agent_run.session_id,
         commits: agent_run.commits,
         test_output: agent_run.test_output,
-        logs: agent_run.logs,
         error_message: agent_run.error_message,
         started_at: agent_run.started_at,
         completed_at: agent_run.completed_at,
