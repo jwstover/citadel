@@ -89,6 +89,10 @@ defmodule Citadel.Tasks do
     resource Citadel.Tasks.AgentRunEvent do
       define :create_agent_run_event, action: :create
       define :list_agent_run_events, action: :list_by_run, args: [:agent_run_id]
+
+      define :list_agent_run_stream_events,
+        action: :list_stream_events_by_run,
+        args: [:agent_run_id]
     end
 
     resource Citadel.Tasks.AgentWorkItem do

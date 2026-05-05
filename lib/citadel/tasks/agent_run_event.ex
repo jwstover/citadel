@@ -31,6 +31,13 @@ defmodule Citadel.Tasks.AgentRunEvent do
       filter expr(agent_run_id == ^arg(:agent_run_id))
       prepare build(sort: [inserted_at: :asc])
     end
+
+    read :list_stream_events_by_run do
+      argument :agent_run_id, :uuid, allow_nil?: false
+
+      filter expr(agent_run_id == ^arg(:agent_run_id) and event_type == :stream)
+      prepare build(sort: [inserted_at: :asc])
+    end
   end
 
   policies do
@@ -62,7 +69,7 @@ defmodule Citadel.Tasks.AgentRunEvent do
     uuid_v7_primary_key :id
 
     attribute :event_type, :atom do
-      constraints one_of: [:run_started, :run_completed, :run_failed, :error]
+      constraints one_of: [:run_started, :run_completed, :run_failed, :error, :stream]
       allow_nil? false
       public? true
     end

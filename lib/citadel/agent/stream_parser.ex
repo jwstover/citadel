@@ -7,7 +7,10 @@ defmodule Citadel.Agent.StreamParser do
   """
 
   @doc """
-  Parses a single line of stream-json output into a structured map.
+  Parses a stream-json event into a structured map.
+
+  Accepts either a raw JSON string (a single line of `--output-format stream-json` output)
+  or an already-decoded JSON object (e.g. when replaying persisted events from the database).
 
   Returns a map with `:type` as an atom and relevant fields extracted from the JSON.
   Unknown event types return `%{type: :unknown, raw: decoded_map}`.
@@ -19,6 +22,8 @@ defmodule Citadel.Agent.StreamParser do
       {:error, _} -> %{type: :error, raw: line}
     end
   end
+
+  def parse(decoded) when is_map(decoded), do: parse_event(decoded)
 
   defp parse_event(%{"type" => "system"} = event) do
     %{

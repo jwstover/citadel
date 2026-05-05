@@ -5,6 +5,7 @@ defmodule CitadelWeb.AgentChannel do
 
   require Logger
 
+  alias Citadel.Tasks
   alias CitadelWeb.AgentPresence
 
   @impl true
@@ -50,15 +51,28 @@ defmodule CitadelWeb.AgentChannel do
   end
 
   def handle_in("stream_output", %{"run_id" => run_id, "event" => event_data}, socket) do
-    CitadelWeb.Endpoint.broadcast("agent_run_output:#{run_id}", "stream_event", %{
-      event: event_data
-    })
+    case Tasks.create_agent_run_event(
+           %{
+             event_type: :stream,
+             agent_run_id: run_id,
+             metadata: normalize_metadata(event_data)
+           },
+           actor: socket.assigns.current_user,
+           tenant: socket.assigns.workspace_id
+         ) do
+      {:ok, _event} ->
+        :ok
+
+      {:error, error} ->
+        Logger.warning(
+          "AgentChannel failed to persist stream event for run #{run_id}: #{inspect(error)}"
+        )
+    end
 
     {:noreply, socket}
   end
 
-  def handle_in("stream_complete", %{"run_id" => run_id}, socket) do
-    CitadelWeb.Endpoint.broadcast("agent_run_output:#{run_id}", "stream_complete", %{})
+  def handle_in("stream_complete", %{"run_id" => _run_id}, socket) do
     {:noreply, socket}
   end
 
@@ -71,4 +85,15 @@ defmodule CitadelWeb.AgentChannel do
   end
 
   defp presence_topic(socket), do: "agents:#{socket.assigns.workspace_id}"
+
+  defp normalize_metadata(event_data) when is_map(event_data), do: event_data
+
+  defp normalize_metadata(event_data) when is_binary(event_data) do
+    case Jason.decode(event_data) do
+      {:ok, decoded} when is_map(decoded) -> decoded
+      _ -> %{"raw" => event_data}
+    end
+  end
+
+  defp normalize_metadata(other), do: %{"raw" => inspect(other)}
 end

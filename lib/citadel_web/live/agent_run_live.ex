@@ -19,6 +19,9 @@ defmodule CitadelWeb.AgentRunLive do
         load: [:task]
       )
 
+    past_events =
+      Tasks.list_agent_run_stream_events!(run.id, actor: user, tenant: workspace.id)
+
     socket =
       socket
       |> assign(:run, run)
@@ -26,15 +29,12 @@ defmodule CitadelWeb.AgentRunLive do
       |> assign(:pending_tools, %{})
       |> assign(:todos, [])
       |> stream(:events, [])
+      |> replay_events(past_events)
 
     socket =
       if connected?(socket) do
         CitadelWeb.Endpoint.subscribe("tasks:agent_runs:#{run.task_id}")
-
-        if run.status == :running do
-          CitadelWeb.Endpoint.subscribe("agent_run_output:#{run.id}")
-        end
-
+        CitadelWeb.Endpoint.subscribe("tasks:agent_run_events:#{run.id}")
         socket
       else
         socket
@@ -45,25 +45,21 @@ defmodule CitadelWeb.AgentRunLive do
 
   def handle_info(
         %Phoenix.Socket.Broadcast{
-          topic: "agent_run_output:" <> _,
-          event: "stream_event",
-          payload: %{event: event_data}
+          topic: "tasks:agent_run_events:" <> _,
+          event: "create",
+          payload: %{data: %{event_type: :stream, metadata: metadata}}
         },
         socket
       ) do
-    parsed = StreamParser.parse(event_data)
+    parsed = StreamParser.parse(metadata)
     {:noreply, process_event(parsed, socket)}
   end
 
   def handle_info(
-        %Phoenix.Socket.Broadcast{
-          topic: "agent_run_output:" <> _,
-          event: "stream_complete"
-        },
+        %Phoenix.Socket.Broadcast{topic: "tasks:agent_run_events:" <> _},
         socket
       ) do
-    run = reload_run(socket)
-    {:noreply, assign(socket, :run, run)}
+    {:noreply, socket}
   end
 
   def handle_info(
@@ -72,6 +68,15 @@ defmodule CitadelWeb.AgentRunLive do
       ) do
     run = reload_run(socket)
     {:noreply, assign(socket, :run, run)}
+  end
+
+  defp replay_events(socket, []), do: socket
+
+  defp replay_events(socket, events) do
+    Enum.reduce(events, socket, fn event, sock ->
+      parsed = StreamParser.parse(event.metadata)
+      process_event(parsed, sock)
+    end)
   end
 
   defp process_event(%{parent_tool_use_id: parent_id}, socket)
