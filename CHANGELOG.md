@@ -1,3 +1,12 @@
+## [0.51.1](https://github.com/jwstover/citadel/compare/v0.51.0...v0.51.1) (2026-05-05)
+
+
+### Bug Fixes
+
+* **agent-runs:** use Phoenix.Component.assign for derived todo_panel values ([9d61cf8](https://github.com/jwstover/citadel/commit/9d61cf821346773034075fbfbad7d0b8430e2b18))
+
+
+
 # [0.51.0](https://github.com/jwstover/citadel/compare/v0.50.1...v0.51.0) (2026-05-05)
 
 
@@ -35,20 +44,6 @@
 ### Performance Improvements
 
 * **dashboard:** preload blocked?/blocking_count on top-level tasks ([33f489f](https://github.com/jwstover/citadel/commit/33f489f408561b4544994e97035e8a0f186f0346))
-
-
-
-# [0.49.0](https://github.com/jwstover/citadel/compare/v0.48.2...v0.49.0) (2026-04-22)
-
-
-### Bug Fixes
-
-* **observability:** export PromEx metrics via Fly Prometheus scrape ([5e1cb53](https://github.com/jwstover/citadel/commit/5e1cb53267dd74730dd4f5f5eb659d3fc16bb788))
-
-
-### Features
-
-* **observability:** auto-upload PromEx dashboards to Grafana Cloud ([a1ad64b](https://github.com/jwstover/citadel/commit/a1ad64b47b40d23daf78ab59d387392a2302dd6d))
 
 
 
