@@ -8,40 +8,40 @@ defmodule Citadel.Tasks do
 
   tools do
     tool :list_tasks, Citadel.Tasks.TaskSummary, :read do
-      description "Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. You MUST use get_task_details with a human_id to see full task details including the task descripion."
+      description ~s|Lists all tasks for the current user. Returns a compact summary with human_id, title, state, priority, and due date. You MUST use get_task_details with a human_id to see full task details including the task descripion. Example call: list_tasks({"filter": {"state": {"name": {"eq": "To Do"}}}, "limit": 25}) — args go at the top level; this tool does NOT take an "input" wrapper.|
       load [:task_state]
     end
 
     tool :create_task, Citadel.Tasks.Task, :create do
-      description "Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id. Can also set assignees (array of user IDs), due_date, priority (low, medium, high, urgent), and dependencies (array of task IDs that must be completed before this task)."
+      description ~s|Creates a new task with a title, optional markdown description, and task state. To create a sub-task, provide a parent_task_id. Can also set assignees (array of user IDs), due_date, priority (low, medium, high, urgent), and dependencies (array of task IDs that must be completed before this task). Example call: create_task({"input": {"title": "Fix login bug", "priority": "high"}}) — all args MUST be wrapped under "input".|
     end
 
     tool :update_task, Citadel.Tasks.Task, :update do
-      description "Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id. To add or remove dependencies, use the create_task_dependency and delete_task_dependency tools instead."
+      description ~s|Updates an existing task's title, description, state, assignees, due_date, priority, or parent_task_id. To add or remove dependencies, use the create_task_dependency and delete_task_dependency tools instead. Example call: update_task({"input": {"id": "<task uuid>", "state_id": "<state uuid>"}}) — all args MUST be wrapped under "input".|
     end
 
     tool :list_task_states, Citadel.Tasks.TaskState, :read do
-      description "Lists all available task states (e.g., 'To Do', 'In Progress', 'Done')"
+      description ~s|Lists all available task states (e.g., 'To Do', 'In Progress', 'Done'). Example call: list_task_states({}) — args (if any) go at the top level; this tool does NOT take an "input" wrapper.|
     end
 
     tool :get_task_details, Citadel.Tasks.Task, :get_task_details do
-      description "Gets full details for a specific task by its human-readable ID (e.g. P-42). Returns a formatted string with title, state, priority, description, assignees, dependencies, sub-tasks, and parent task."
+      description ~s|Gets full details for a specific task by its human-readable ID (e.g. P-42). Returns a formatted string with title, state, priority, description, assignees, dependencies, sub-tasks, and parent task. Example call: get_task_details({"input": {"human_id": "P-42"}}) — args MUST be wrapped under "input".|
     end
 
     tool :delete_task, Citadel.Tasks.Task, :destroy do
-      description "Deletes an existing task by ID. Sub-tasks will also be deleted."
+      description ~s|Deletes an existing task by ID. Sub-tasks will also be deleted. Example call: delete_task({"input": {"id": "<task uuid>"}}) — args MUST be wrapped under "input".|
     end
 
     tool :create_task_dependency, Citadel.Tasks.TaskDependency, :create do
-      description "Creates a dependency between two tasks. The task specified by task_id will depend on (be blocked by) the task specified by depends_on_task_id."
+      description ~s|Creates a dependency between two tasks. The task specified by task_id will depend on (be blocked by) the task specified by depends_on_task_id. Example call: create_task_dependency({"input": {"task_id": "<uuid>", "depends_on_task_id": "<uuid>"}}) — all args MUST be wrapped under "input".|
     end
 
     tool :delete_task_dependency, Citadel.Tasks.TaskDependency, :destroy do
-      description "Deletes an existing task dependency by its ID"
+      description ~s|Deletes an existing task dependency by its ID. Example call: delete_task_dependency({"input": {"id": "<dep uuid>"}}) — args MUST be wrapped under "input".|
     end
 
     tool :ask_question, Citadel.Tasks.TaskActivity, :create_agent_question do
-      description "Posts a question to the task activity feed and signals that you need user input before continuing. Call this when you cannot proceed without clarification. After calling this tool, you MUST stop all other work and exit immediately — do not make any further changes or tool calls. Provide your agent_run_id (given in your task prompt) and the task_id. The body should contain all your questions clearly formatted."
+      description ~s|Posts a question to the task activity feed and signals that you need user input before continuing. Call this when you cannot proceed without clarification. After calling this tool, you MUST stop all other work and exit immediately — do not make any further changes or tool calls. Provide your agent_run_id (given in your task prompt) and the task_id. The body should contain all your questions clearly formatted. Example call: ask_question({"input": {"agent_run_id": "<uuid>", "task_id": "<uuid>", "body": "..."}}) — all args MUST be wrapped under "input".|
     end
   end
 
