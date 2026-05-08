@@ -3,13 +3,12 @@ defmodule CitadelAgent.Runner do
   Orchestrates task execution: creates an isolated git worktree, invokes Claude Code CLI,
   captures output and git diff, returns structured results. Cleans up the worktree on completion.
 
-  Includes stall detection: if the Claude Code process exceeds the configured timeout,
-  it is killed and the run is marked as failed.
+  Enforces a wallclock cap on each Claude Code invocation: runs that exceed the configured
+  max duration (sourced from the server on agent connect) are killed and marked as failed.
+  Helper invocations (commit message, PR body) keep a shorter inactivity-based stall timer.
   """
 
   require Logger
-
-  @default_stall_timeout 600_000
 
   @commit_stall_timeout 120_000
 
@@ -593,7 +592,7 @@ defmodule CitadelAgent.Runner do
     run_claude_cli(build_prompt(task, feedback, run_id),
       working_dir: worktree_path,
       label: human_id,
-      timeout: stall_timeout(),
+      max_run_ms: CitadelAgent.Socket.max_run_ms(),
       run_id: run_id,
       resume_session_id: resume_session_id
     )
@@ -602,14 +601,22 @@ defmodule CitadelAgent.Runner do
   defp run_claude_cli(prompt, opts) do
     working_dir = Keyword.fetch!(opts, :working_dir)
     label = Keyword.get(opts, :label, "claude")
-    timeout = Keyword.get(opts, :timeout, stall_timeout())
+    inactivity_timeout = Keyword.get(opts, :timeout)
+    max_run_ms = Keyword.get(opts, :max_run_ms)
     model = Keyword.get(opts, :model)
     run_id = Keyword.get(opts, :run_id)
     resume_session_id = Keyword.get(opts, :resume_session_id)
     tools = Keyword.get(opts, :tools)
     no_mcp = Keyword.get(opts, :no_mcp, false)
 
-    Logger.info("Executing Claude Code CLI for #{label} (stall timeout: #{timeout}ms)")
+    mode =
+      cond do
+        is_integer(inactivity_timeout) -> {:inactivity, inactivity_timeout}
+        is_integer(max_run_ms) -> {:wallclock, max_run_ms}
+        true -> {:wallclock, CitadelAgent.Socket.max_run_ms()}
+      end
+
+    Logger.info("Executing Claude Code CLI for #{label} (#{describe_mode(mode)})")
 
     claude_path = System.find_executable("claude")
 
@@ -631,11 +638,21 @@ defmodule CitadelAgent.Runner do
 
       port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
 
-      collect_port_output(port, label, [], timeout, run_id)
+      collect_port_output(port, label, [], mode_with_deadline(mode), run_id)
     end
   end
 
-  defp collect_port_output(port, human_id, acc, timeout, run_id) do
+  defp describe_mode({:inactivity, ms}), do: "stall timeout: #{ms}ms"
+  defp describe_mode({:wallclock, ms}), do: "max run: #{div(ms, 1_000)}s"
+
+  defp mode_with_deadline({:wallclock, ms}),
+    do: {:wallclock, ms, System.monotonic_time(:millisecond) + ms}
+
+  defp mode_with_deadline({:inactivity, ms}), do: {:inactivity, ms}
+
+  defp collect_port_output(port, human_id, acc, mode, run_id) do
+    timeout = receive_timeout(mode)
+
     receive do
       {^port, {:data, data}} ->
         lines = String.split(data, "\n", trim: true)
@@ -646,21 +663,40 @@ defmodule CitadelAgent.Runner do
 
         push_lines_to_stream(run_id, lines)
 
-        collect_port_output(port, human_id, [data | acc], timeout, run_id)
+        collect_port_output(port, human_id, [data | acc], mode, run_id)
 
       {^port, {:exit_status, code}} ->
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
         {:ok, %{exit_code: code, output: output}}
     after
       timeout ->
-        Logger.error("Claude Code process stalled for task #{human_id} (exceeded #{timeout}ms)")
         kill_port(port)
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
-
-        {:error,
-         "Claude Code process stalled after #{div(timeout, 1_000)}s of inactivity. " <>
-           "Partial output (#{byte_size(output)} bytes) captured before kill."}
+        log_and_error(mode, human_id, output)
     end
+  end
+
+  defp receive_timeout({:inactivity, ms}), do: ms
+
+  defp receive_timeout({:wallclock, _total, deadline}),
+    do: max(deadline - System.monotonic_time(:millisecond), 0)
+
+  defp log_and_error({:inactivity, ms}, human_id, output) do
+    Logger.error("Claude Code process stalled for task #{human_id} (exceeded #{ms}ms)")
+
+    {:error,
+     "Claude Code process stalled after #{div(ms, 1_000)}s of inactivity. " <>
+       "Partial output (#{byte_size(output)} bytes) captured before kill."}
+  end
+
+  defp log_and_error({:wallclock, total_ms, _deadline}, human_id, output) do
+    Logger.error(
+      "Claude Code run for task #{human_id} exceeded wallclock cap (#{total_ms}ms)"
+    )
+
+    {:error,
+     "Claude Code run exceeded the configured #{div(total_ms, 1_000)}s max duration. " <>
+       "Partial output (#{byte_size(output)} bytes) captured before kill."}
   end
 
   defp push_lines_to_stream(nil, _lines), do: :ok
@@ -693,10 +729,6 @@ defmodule CitadelAgent.Runner do
     end
   rescue
     _ -> Port.close(port)
-  end
-
-  defp stall_timeout do
-    CitadelAgent.config(:stall_timeout_ms) || @default_stall_timeout
   end
 
   defp build_prompt(task, feedback \\ nil, run_id \\ nil) do
