@@ -5,6 +5,7 @@ defmodule CitadelWeb.AgentChannel do
 
   require Logger
 
+  alias Citadel.Accounts
   alias Citadel.Tasks
   alias CitadelWeb.AgentPresence
 
@@ -16,8 +17,15 @@ defmodule CitadelWeb.AgentChannel do
       |> assign(:status, payload["status"] || "idle")
       |> assign(:current_task_id, payload["current_task_id"])
 
+    workspace = Accounts.get_workspace_by_id!(socket.assigns.workspace_id, authorize?: false)
+
     send(self(), :after_join)
-    {:ok, %{workspace_id: socket.assigns.workspace_id}, socket}
+
+    {:ok,
+     %{
+       workspace_id: socket.assigns.workspace_id,
+       agent_max_run_seconds: workspace.agent_max_run_seconds
+     }, socket}
   end
 
   def join(_topic, _payload, _socket), do: {:error, %{reason: "unauthorized"}}

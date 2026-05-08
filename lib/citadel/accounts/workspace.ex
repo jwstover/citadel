@@ -48,7 +48,7 @@ defmodule Citadel.Accounts.Workspace do
     end
 
     update :update do
-      accept [:name]
+      accept [:name, :agent_max_run_seconds]
     end
   end
 
@@ -95,6 +95,13 @@ defmodule Citadel.Accounts.Workspace do
       constraints min_length: 1,
                   max_length: 3,
                   match: ~r/^[A-Z]+$/
+    end
+
+    attribute :agent_max_run_seconds, :integer do
+      allow_nil? false
+      public? true
+      default 14_400
+      constraints min: 60, max: 86_400
     end
 
     create_timestamp :inserted_at

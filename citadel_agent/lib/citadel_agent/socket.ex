@@ -8,6 +8,8 @@ defmodule CitadelAgent.Socket do
 
   require Logger
 
+  @default_max_run_seconds 14_400
+
   def start_link(opts \\ []) do
     Slipstream.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -24,6 +26,12 @@ defmodule CitadelAgent.Socket do
     GenServer.cast(__MODULE__, {:push_stream_complete, run_id})
   end
 
+  def max_run_ms do
+    GenServer.call(__MODULE__, :max_run_ms)
+  catch
+    :exit, _ -> @default_max_run_seconds * 1_000
+  end
+
   @impl true
   def init(_opts) do
     agent_name = CitadelAgent.config(:agent_name) || default_agent_name()
@@ -35,6 +43,7 @@ defmodule CitadelAgent.Socket do
       |> assign(:agent_name, agent_name)
       |> assign(:status, "idle")
       |> assign(:current_task_id, nil)
+      |> assign(:max_run_seconds, @default_max_run_seconds)
       |> connect!(uri: ws_uri())
 
     {:ok, socket}
@@ -55,8 +64,18 @@ defmodule CitadelAgent.Socket do
   @impl true
   def handle_join(_topic, reply, socket) do
     workspace_id = reply["workspace_id"]
-    Logger.info("Joined agent channel for workspace #{workspace_id}")
-    {:ok, assign(socket, :workspace_id, workspace_id)}
+    max_run_seconds = reply["agent_max_run_seconds"] || @default_max_run_seconds
+
+    Logger.info(
+      "Joined agent channel for workspace #{workspace_id} (max run: #{max_run_seconds}s)"
+    )
+
+    socket =
+      socket
+      |> assign(:workspace_id, workspace_id)
+      |> assign(:max_run_seconds, max_run_seconds)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -95,6 +114,12 @@ defmodule CitadelAgent.Socket do
   def handle_cast({:push_stream_complete, run_id}, socket) do
     push(socket, "agents:lobby", "stream_complete", %{"run_id" => run_id})
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_call(:max_run_ms, _from, socket) do
+    seconds = socket.assigns[:max_run_seconds] || @default_max_run_seconds
+    {:reply, seconds * 1_000, socket}
   end
 
   @impl true
