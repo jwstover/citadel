@@ -144,20 +144,6 @@ defmodule CitadelWeb.PreferencesLive.WorkspaceForm do
               required
             />
 
-            <div :if={@workspace}>
-              <.input
-                field={@form[:agent_max_run_seconds]}
-                type="number"
-                label="Max agent run duration (seconds)"
-                min="60"
-                max="86400"
-                required
-              />
-              <p class="text-xs text-base-content/70 mt-1">
-                Hard wallclock cap on a single Claude Code run. Default 14400 (4 hours). Range: 60&ndash;86400. Agents pick up changes on their next reconnect.
-              </p>
-            </div>
-
             <div class="flex gap-2 justify-end">
               <.button type="button" phx-click="cancel" variant="ghost">
                 Cancel

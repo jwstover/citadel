@@ -375,6 +375,14 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
             <% end %>
           </div>
         </.card>
+
+        <.live_component
+          module={CitadelWeb.PreferencesLive.Components.AgentSettingsCard}
+          id="agent-settings-card"
+          workspace_id={@workspace.id}
+          current_user={@current_user}
+          is_owner={@is_owner}
+        />
       </div>
 
       <.live_component
