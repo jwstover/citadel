@@ -30,7 +30,8 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
          |> assign(:memberships, memberships)
          |> assign(:invitations, invitations)
          |> assign(:is_owner, is_owner)
-         |> assign(:github_connection, github_connection)}
+         |> assign(:github_connection, github_connection)
+         |> assign_agent_settings_form(workspace, current_user, is_owner)}
 
       {:error, _reason} ->
         {:noreply,
@@ -38,6 +39,18 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
          |> put_flash(:error, "You do not have access to this workspace")
          |> redirect(to: ~p"/preferences")}
     end
+  end
+
+  defp assign_agent_settings_form(socket, _workspace, _user, false),
+    do: assign(socket, :agent_settings_form, nil)
+
+  defp assign_agent_settings_form(socket, workspace, user, true) do
+    form =
+      workspace
+      |> AshPhoenix.Form.for_update(:update, actor: user)
+      |> to_form()
+
+    assign(socket, :agent_settings_form, form)
   end
 
   defp load_github_connection(workspace_id, actor) do
@@ -196,6 +209,25 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Failed to revoke invitation")}
+    end
+  end
+
+  def handle_event("save-agent-settings", %{"form" => params}, socket) do
+    current_user = socket.assigns.current_user
+
+    case AshPhoenix.Form.submit(socket.assigns.agent_settings_form,
+           params: params,
+           action_opts: [actor: current_user]
+         ) do
+      {:ok, workspace} ->
+        {:noreply,
+         socket
+         |> assign(:workspace, workspace)
+         |> assign_agent_settings_form(workspace, current_user, socket.assigns.is_owner)
+         |> put_flash(:info, "Agent settings updated")}
+
+      {:error, form} ->
+        {:noreply, assign(socket, :agent_settings_form, form)}
     end
   end
 
@@ -372,6 +404,45 @@ defmodule CitadelWeb.PreferencesLive.Workspace do
                 Connect
               </.button>
               <span :if={!@is_owner} class="badge badge-ghost">Not connected</span>
+            <% end %>
+          </div>
+        </.card>
+
+        <.card class="bg-base-200 border-base-300">
+          <:title>Agent Settings</:title>
+
+          <div class="flex items-start justify-between gap-4 py-2">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-medium">Max agent run duration</h4>
+              <p class="text-sm text-base-content/70 mt-1">
+                Hard wallclock cap on a single Claude Code run. Range 60&ndash;86400 seconds (default 14400 / 4 hours). Agents pick up changes on their next reconnect.
+              </p>
+            </div>
+
+            <%= if @is_owner do %>
+              <.form
+                for={@agent_settings_form}
+                id="agent-settings-form"
+                phx-submit="save-agent-settings"
+                class="flex items-end gap-2 shrink-0"
+              >
+                <div>
+                  <.input
+                    field={@agent_settings_form[:agent_max_run_seconds]}
+                    type="number"
+                    label="Seconds"
+                    min="60"
+                    max="86400"
+                    required
+                  />
+                </div>
+                <.button type="submit" variant="primary">Save</.button>
+              </.form>
+            <% else %>
+              <div class="shrink-0 text-right">
+                <div class="text-lg font-semibold">{@workspace.agent_max_run_seconds}s</div>
+                <div class="text-xs text-base-content/60">read-only</div>
+              </div>
             <% end %>
           </div>
         </.card>
