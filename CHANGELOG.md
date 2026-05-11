@@ -1,3 +1,14 @@
+# [0.52.0](https://github.com/jwstover/citadel/compare/v0.51.1...v0.52.0) (2026-05-11)
+
+
+### Features
+
+* **agents:** extract agent settings into lazy-loaded LiveComponent ([f19dcbe](https://github.com/jwstover/citadel/commit/f19dcbe4f12a7036e18df73cf08c6f4e6d9dafaa))
+* **agents:** move agent settings to dedicated card on workspace details page ([1e48ff4](https://github.com/jwstover/citadel/commit/1e48ff4aed436c47953163d94eeaa5b3265e2e82))
+* **agents:** replace inactivity stall timer with workspace-configurable wallclock cap ([437e5ac](https://github.com/jwstover/citadel/commit/437e5acc291dd0677a993445a6a06463f1a0207e))
+
+
+
 ## [0.51.1](https://github.com/jwstover/citadel/compare/v0.51.0...v0.51.1) (2026-05-05)
 
 
@@ -35,15 +46,6 @@
 ### Features
 
 * **observability:** capture all error-level logs in Sentry ([e21a088](https://github.com/jwstover/citadel/commit/e21a088cf2a06200ae20ddd7d221af2baa293bb3))
-
-
-
-## [0.49.1](https://github.com/jwstover/citadel/compare/v0.49.0...v0.49.1) (2026-04-22)
-
-
-### Performance Improvements
-
-* **dashboard:** preload blocked?/blocking_count on top-level tasks ([33f489f](https://github.com/jwstover/citadel/commit/33f489f408561b4544994e97035e8a0f186f0346))
 
 
 
