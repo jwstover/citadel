@@ -769,7 +769,7 @@ defmodule CitadelWeb.TaskLive.Show do
           phx-update="ignore"
           data-content={@task.description || ""}
           data-readonly={to_string(not @can_edit)}
-          class="milkdown-container prose max-w-none"
+          class="milkdown-container prose prose-sm max-w-none"
         />
       </div>
 
