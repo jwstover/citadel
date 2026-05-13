@@ -707,13 +707,13 @@ defmodule CitadelWeb.TaskLive.Show do
 
   defp task_content(assigns) do
     ~H"""
-    <div class="breadcrumbs text-sm mb-4">
+    <div class="breadcrumbs font-mono text-xs mb-4 text-base-content/50">
       <ul>
         <li><.link navigate={~p"/dashboard"}>Tasks</.link></li>
         <li :for={ancestor <- @task.ancestors}>
           <.link navigate={~p"/tasks/#{ancestor.human_id}"}>{ancestor.human_id}</.link>
         </li>
-        <li><span>{@task.human_id}</span></li>
+        <li><span class="text-base-content/70">{@task.human_id}</span></li>
       </ul>
     </div>
 
@@ -739,10 +739,10 @@ defmodule CitadelWeb.TaskLive.Show do
             phx-blur="save-title"
             phx-keydown="save-title"
             phx-key="Enter"
-            class="input input-ghost text-2xl font-bold flex-1 p-0 h-auto min-h-0 focus:outline-none focus:bg-base-300/50 rounded"
+            class="input input-ghost font-mono text-2xl font-semibold tracking-tight flex-1 p-0 h-auto min-h-0 focus:outline-none focus:bg-base-300/50 rounded"
           />
         <% else %>
-          <h1 class="card-title text-2xl">{@task.title}</h1>
+          <h1 class="card-title font-mono text-2xl font-semibold tracking-tight">{@task.title}</h1>
         <% end %>
       </div>
       <div class="flex gap-2">
@@ -760,21 +760,23 @@ defmodule CitadelWeb.TaskLive.Show do
 
     <div class="grid grid-cols-[1fr_20rem] gap-4">
       <div class="py-4">
-        <h2 class="text-sm font-semibold text-base-content/70 mb-2">Description</h2>
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.08em] text-base-content/70 mb-3">
+          Description
+        </h2>
         <div
           id={"description-editor-#{@task.id}"}
           phx-hook="MilkdownEditor"
           phx-update="ignore"
           data-content={@task.description || ""}
           data-readonly={to_string(not @can_edit)}
-          class="milkdown-container prose max-w-none"
+          class="milkdown-container prose prose-sm max-w-none"
         />
       </div>
 
       <div class="border-l border-base-300 p-4">
         <div class="sticky top-0 space-y-5">
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Priority
             </label>
             <%= if @can_edit do %>
@@ -792,7 +794,7 @@ defmodule CitadelWeb.TaskLive.Show do
           </div>
 
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Assignees
             </label>
             <%= if @can_edit do %>
@@ -818,7 +820,7 @@ defmodule CitadelWeb.TaskLive.Show do
           </div>
 
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Due Date
             </label>
             <%= if @can_edit do %>
@@ -849,7 +851,7 @@ defmodule CitadelWeb.TaskLive.Show do
           </div>
 
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Project
             </label>
             <%= if @task.project do %>
@@ -863,7 +865,7 @@ defmodule CitadelWeb.TaskLive.Show do
             :if={@task.execution_status != :none}
             class="flex items-center justify-between gap-4"
           >
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Execution
             </label>
             <span class={[
@@ -879,7 +881,7 @@ defmodule CitadelWeb.TaskLive.Show do
           </div>
 
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               Agent
             </label>
             <%= if @can_edit do %>
@@ -911,7 +913,7 @@ defmodule CitadelWeb.TaskLive.Show do
 
           <% {pr_label, pr_text} = forge_pr_label(@task.forge_pr) %>
           <div class="flex items-center justify-between gap-4">
-            <label class="text-xs font-medium text-base-content/60 uppercase tracking-wide whitespace-nowrap">
+            <label class="font-mono text-[10.5px] font-medium text-base-content/60 uppercase tracking-[0.08em] whitespace-nowrap">
               {pr_label}
             </label>
             <%= if @task.forge_pr do %>
@@ -941,9 +943,9 @@ defmodule CitadelWeb.TaskLive.Show do
       current_workspace={@current_workspace}
     />
 
-    <div class="py-4 border-t border-base-300">
+    <div class="py-6 border-t border-base-300">
       <div class="flex items-center justify-between mb-3 mr-6">
-        <h2 class="text-sm font-semibold text-base-content/70">
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.08em] text-base-content/70">
           Sub-tasks{if @sub_tasks.ok?, do: " (#{length(@sub_tasks.result)})"}
         </h2>
         <.button :if={@can_edit} class="btn btn-xs btn-secondary" phx-click="new-sub-task">
