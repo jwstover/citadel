@@ -25,12 +25,12 @@ defmodule CitadelWeb.Components.TaskDependencies do
 
   def render(assigns) do
     ~H"""
-    <div class="py-4 border-t border-base-300">
+    <div class="py-6 border-t border-base-300">
       <%= if @dependencies_loaded or @dependents_loaded do %>
-        <h2 class="text-sm font-semibold text-base-content/70 mb-3">
+        <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.08em] text-base-content/70 mb-3">
           Blocked by
           <%= if @task.blocked? do %>
-            <span class="badge badge-warning badge-sm ml-2">Blocked</span>
+            <span class="badge badge-warning badge-sm ml-2 normal-case tracking-normal">Blocked</span>
           <% end %>
         </h2>
 
@@ -81,7 +81,9 @@ defmodule CitadelWeb.Components.TaskDependencies do
 
           <%= if @dependents_loaded and not Enum.empty?(@task.dependents) do %>
             <div>
-              <h2 class="text-sm font-semibold text-base-content/70 mb-3">Blocks</h2>
+              <h2 class="font-mono text-xs font-semibold uppercase tracking-[0.08em] text-base-content/70 mb-3">
+                Blocks
+              </h2>
               <div class="space-y-2">
                 <%= for dependent <- @task.dependents do %>
                   <div class="flex items-center gap-2 p-2 bg-base-100 rounded-lg border border-base-300">

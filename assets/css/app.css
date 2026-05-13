@@ -27,10 +27,27 @@
 
 :root {
   --citadel-color-border: oklch(20% 0 0);
+
+  /* Activity stream palette — used by TaskActivitySection.
+     Kept theme-stable: the timeline reads against the page bg, dot/pill
+     accents are tuned to be legible on both dark and light surfaces. */
+  --p-border: oklch(25% 0.005 250);
+  --p-amber: #f3c969;
+  --p-amber-soft: #f3c96922;
+  --p-teal: #2ee7a4;
+  --p-teal-soft: #2ee7a418;
+  --p-red: #f06a6a;
+  --p-red-soft: #f06a6a18;
+  --p-orange: #f49f5a;
+  --p-orange-soft: #f49f5a18;
+  --p-blue: #5cc1f0;
+  --p-blue-soft: #5cc1f018;
+  --p-violet: #b39df0;
 }
 
 [data-theme="citadel-light"] {
   --citadel-color-border: oklch(82% 0 0);
+  --p-border: oklch(82% 0 0);
 }
 
 @theme inline {
@@ -119,7 +136,16 @@
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
 /* set root font family */
-html { font-family: "Exo 2", sans-serif; }
+html {
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
 
 /* Landing page gradient animation */
 @keyframes gradient-shift {
@@ -130,6 +156,23 @@ html { font-family: "Exo 2", sans-serif; }
 .animate-gradient {
   animation: gradient-shift 6s ease infinite;
 }
+
+/* Activity stream — pulsing in-progress rail dot */
+@keyframes stream-dot-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 4px var(--color-base-200),
+      0 0 0 5px var(--p-border),
+      0 0 0 5px rgba(92, 193, 240, 0.6);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px var(--color-base-200),
+      0 0 0 5px var(--p-border),
+      0 0 0 11px rgba(92, 193, 240, 0);
+  }
+}
+.stream-dot-pulse { animation: stream-dot-pulse 1.6s ease-in-out infinite; }
 
 
 /* Hide "Forgot your password?" link on the register form — it only makes sense on sign-in */
