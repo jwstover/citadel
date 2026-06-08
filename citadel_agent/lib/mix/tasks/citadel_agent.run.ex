@@ -37,11 +37,17 @@ defmodule Mix.Tasks.CitadelAgent.Run do
       Mix.raise("CITADEL_PROJECT_PATH is required. Set it via environment variable or config.")
     end
 
+    CitadelAgent.Preflight.run!()
+
     if opts[:preflight_only] do
       Mix.shell().info("Preflight checks passed. Exiting.")
     else
+      unless Process.whereis(CitadelAgent.Socket) do
+        Supervisor.start_child(CitadelAgent.Supervisor, {CitadelAgent.Socket, []})
+      end
+
       unless Process.whereis(CitadelAgent.Worker) do
-        CitadelAgent.Worker.start_link()
+        Supervisor.start_child(CitadelAgent.Supervisor, {CitadelAgent.Worker, []})
       end
 
       Mix.shell().info("CitadelAgent is running. Press Ctrl+C to stop.")
