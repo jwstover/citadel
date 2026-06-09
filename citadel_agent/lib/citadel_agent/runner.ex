@@ -11,6 +11,7 @@ defmodule CitadelAgent.Runner do
   require Logger
 
   @commit_stall_timeout 120_000
+  @drain_after_result_ms 10_000
 
   def execute(task, project_path, opts \\ []) do
     human_id = task["human_id"]
@@ -66,7 +67,11 @@ defmodule CitadelAgent.Runner do
     end
   end
 
-  defp maybe_merge_into_feature_branch(%{"parent_human_id" => parent_id} = task, task_branch, project_path)
+  defp maybe_merge_into_feature_branch(
+         %{"parent_human_id" => parent_id} = task,
+         task_branch,
+         project_path
+       )
        when is_binary(parent_id) do
     feature_branch = "citadel/feature/#{parent_id}"
     merge_into_feature_branch(task_branch, feature_branch, project_path)
@@ -84,10 +89,18 @@ defmodule CitadelAgent.Runner do
     try do
       case create_merge_worktree(merge_worktree, feature_branch, project_path) do
         {:ok, :checked_out} ->
-          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", feature_branch])
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, [
+            "push",
+            "origin",
+            feature_branch
+          ])
 
         {:ok, :detached} ->
-          do_merge_and_push(task_branch, feature_branch, merge_worktree, ["push", "origin", "HEAD:refs/heads/#{feature_branch}"])
+          do_merge_and_push(task_branch, feature_branch, merge_worktree, [
+            "push",
+            "origin",
+            "HEAD:refs/heads/#{feature_branch}"
+          ])
 
         :error ->
           :ok
@@ -111,7 +124,10 @@ defmodule CitadelAgent.Runner do
                stderr_to_stdout: true
              ) do
           {_output, 0} ->
-            Logger.info("Created detached merge worktree (#{feature_branch} is checked out elsewhere)")
+            Logger.info(
+              "Created detached merge worktree (#{feature_branch} is checked out elsewhere)"
+            )
+
             {:ok, :detached}
 
           {output, _code} ->
@@ -174,14 +190,14 @@ defmodule CitadelAgent.Runner do
 
   defp base_branch_for(_task), do: "origin/main"
 
-  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id} = task, project_path)
+  defp maybe_ensure_feature_branch(%{"parent_human_id" => parent_id}, project_path)
        when is_binary(parent_id) do
-    ensure_feature_branch("citadel/feature/#{parent_id}", task, project_path)
+    ensure_feature_branch("citadel/feature/#{parent_id}", project_path)
   end
 
   defp maybe_ensure_feature_branch(_task, _project_path), do: :ok
 
-  defp ensure_feature_branch(feature_branch, task, project_path) do
+  defp ensure_feature_branch(feature_branch, project_path) do
     local_exists? = branch_exists_locally?(feature_branch, project_path)
     remote_exists? = branch_exists_on_remote?(feature_branch, project_path)
 
@@ -247,7 +263,14 @@ defmodule CitadelAgent.Runner do
             pr_title = generate_pr_title(task, project_path, pr_title_id)
             {:ok, pr_body} = generate_pr_description(task, project_path)
 
-            case CitadelAgent.GitHub.create_pull_request(owner, repo, feature_branch, "main", pr_title, pr_body) do
+            case CitadelAgent.GitHub.create_pull_request(
+                   owner,
+                   repo,
+                   feature_branch,
+                   "main",
+                   pr_title,
+                   pr_body
+                 ) do
               {:ok, :already_exists} ->
                 Logger.info("PR already exists for #{feature_branch} (detected during creation)")
                 nil
@@ -280,7 +303,9 @@ defmodule CitadelAgent.Runner do
         Logger.info("Set forge_pr on parent task #{parent_task_id}: #{pr_url}")
 
       {:error, reason} ->
-        Logger.warning("Failed to set forge_pr on parent task #{parent_task_id}: #{inspect(reason)}")
+        Logger.warning(
+          "Failed to set forge_pr on parent task #{parent_task_id}: #{inspect(reason)}"
+        )
     end
   end
 
@@ -325,7 +350,10 @@ defmodule CitadelAgent.Runner do
            stderr_to_stdout: true
          ) do
       {_output, 0} ->
-        Logger.info("Created worktree at #{worktree_path} on branch #{branch_name} from #{base_branch}")
+        Logger.info(
+          "Created worktree at #{worktree_path} on branch #{branch_name} from #{base_branch}"
+        )
+
         :ok
 
       {_output, _code} ->
@@ -547,7 +575,8 @@ defmodule CitadelAgent.Runner do
     |> String.split("\n", trim: true)
     |> Enum.reduce([], fn line, acc ->
       case Jason.decode(line) do
-        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}} when is_list(content) ->
+        {:ok, %{"type" => "assistant", "message" => %{"content" => content}}}
+        when is_list(content) ->
           text =
             content
             |> Enum.filter(&(is_map(&1) and &1["type"] == "text"))
@@ -620,26 +649,62 @@ defmodule CitadelAgent.Runner do
 
     claude_path = System.find_executable("claude")
 
-    unless claude_path do
+    if is_nil(claude_path) do
       {:error, "Claude Code CLI not found in PATH"}
     else
-      model_flag = if model, do: " --model #{model}", else: ""
-      resume_flag = if resume_session_id, do: " --resume #{escape_shell(resume_session_id)}", else: ""
-      tools_flag =
-        case tools do
-          nil -> ""
-          [] -> ~s( --tools "")
-          list -> " --tools #{Enum.join(list, ",")}"
-        end
-      mcp_flag = if no_mcp, do: " --strict-mcp-config", else: ""
+      claude_args =
+        build_claude_args(prompt,
+          resume_session_id: resume_session_id,
+          model: model,
+          tools: tools,
+          no_mcp: no_mcp
+        )
 
-      cmd =
-        "#{claude_path} -p #{escape_shell(prompt)}#{resume_flag}#{model_flag}#{tools_flag}#{mcp_flag} --output-format stream-json --verbose --dangerously-skip-permissions < /dev/null 2>&1"
+      exec_opts = [
+        :stdout,
+        {:stderr, :stdout},
+        :monitor,
+        {:group, 0},
+        :kill_group,
+        {:cd, working_dir}
+      ]
 
-      port = Port.open({:spawn, cmd}, [:binary, :exit_status, cd: working_dir])
+      case :exec.run([claude_path | claude_args], exec_opts) do
+        {:ok, pid, os_pid} ->
+          collect_output(pid, os_pid, label, [], "", mode_with_deadline(mode), run_id)
 
-      collect_port_output(port, label, [], mode_with_deadline(mode), run_id)
+        {:error, reason} ->
+          {:error, "Failed to launch Claude Code CLI: #{inspect(reason)}"}
+      end
     end
+  end
+
+  defp build_claude_args(prompt, opts) do
+    resume_session_id = Keyword.get(opts, :resume_session_id)
+    model = Keyword.get(opts, :model)
+    tools = Keyword.get(opts, :tools)
+    no_mcp = Keyword.get(opts, :no_mcp, false)
+
+    base = [
+      "-p",
+      prompt,
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      "--dangerously-skip-permissions"
+    ]
+
+    base = if resume_session_id, do: base ++ ["--resume", resume_session_id], else: base
+    base = if model, do: base ++ ["--model", model], else: base
+
+    base =
+      case tools do
+        nil -> base
+        [] -> base ++ ["--tools", ""]
+        list -> base ++ ["--tools", Enum.join(list, ",")]
+      end
+
+    if no_mcp, do: base ++ ["--strict-mcp-config"], else: base
   end
 
   defp describe_mode({:inactivity, ms}), do: "stall timeout: #{ms}ms"
@@ -650,29 +715,89 @@ defmodule CitadelAgent.Runner do
 
   defp mode_with_deadline({:inactivity, ms}), do: {:inactivity, ms}
 
-  defp collect_port_output(port, human_id, acc, mode, run_id) do
+  defp collect_output(pid, os_pid, human_id, acc, buffer, mode, run_id) do
     timeout = receive_timeout(mode)
 
     receive do
-      {^port, {:data, data}} ->
-        lines = String.split(data, "\n", trim: true)
+      {stream, ^os_pid, data} when stream in [:stdout, :stderr] ->
+        {lines, buffer} = split_lines(buffer, data)
+        log_and_stream(lines, human_id, run_id)
 
-        for line <- lines do
-          Logger.info("[claude:#{human_id}] #{line}")
-        end
+        new_mode = maybe_start_drain(mode, lines, human_id)
+        collect_output(pid, os_pid, human_id, [data | acc], buffer, new_mode, run_id)
 
-        push_lines_to_stream(run_id, lines)
-
-        collect_port_output(port, human_id, [data | acc], mode, run_id)
-
-      {^port, {:exit_status, code}} ->
+      {:DOWN, ^os_pid, :process, ^pid, reason} ->
+        {acc, buffer} = drain_pending_output(os_pid, acc, buffer, human_id, run_id)
+        flush_buffer(buffer, human_id, run_id)
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
-        {:ok, %{exit_code: code, output: output}}
+        {:ok, %{exit_code: exit_code_from_reason(reason), output: output}}
     after
       timeout ->
-        kill_port(port)
+        stop_and_flush(pid, os_pid)
         output = acc |> Enum.reverse() |> IO.iodata_to_binary()
-        log_and_error(mode, human_id, output)
+        handle_timeout(mode, human_id, output)
+    end
+  end
+
+  # erlexec delivers binary chunks without guaranteed line boundaries, so we
+  # carry the trailing partial line forward in `buffer` until its newline arrives.
+  defp split_lines(buffer, data) do
+    parts = String.split(buffer <> data, "\n")
+    {lines, [rest]} = Enum.split(parts, -1)
+    {Enum.reject(lines, &(&1 == "")), rest}
+  end
+
+  defp log_and_stream(lines, human_id, run_id) do
+    for line <- lines, do: Logger.info("[claude:#{human_id}] #{line}")
+    push_lines_to_stream(run_id, lines)
+  end
+
+  defp flush_buffer("", _human_id, _run_id), do: :ok
+  defp flush_buffer(buffer, human_id, run_id), do: log_and_stream([buffer], human_id, run_id)
+
+  # Sweep any stdout that raced ahead of the DOWN message into the final output.
+  defp drain_pending_output(os_pid, acc, buffer, human_id, run_id) do
+    receive do
+      {stream, ^os_pid, data} when stream in [:stdout, :stderr] ->
+        {lines, buffer} = split_lines(buffer, data)
+        log_and_stream(lines, human_id, run_id)
+        drain_pending_output(os_pid, [data | acc], buffer, human_id, run_id)
+    after
+      0 -> {acc, buffer}
+    end
+  end
+
+  defp exit_code_from_reason(:normal), do: 0
+
+  defp exit_code_from_reason({:exit_status, status}) do
+    case :exec.status(status) do
+      {:status, code} -> code
+      {:signal, _signal, _core} -> 1
+    end
+  end
+
+  defp exit_code_from_reason(_reason), do: 1
+
+  defp maybe_start_drain({:drain, _deadline, _prior} = mode, _lines, _human_id), do: mode
+
+  defp maybe_start_drain(mode, lines, human_id) do
+    if Enum.any?(lines, &result_event_line?/1) do
+      deadline = System.monotonic_time(:millisecond) + @drain_after_result_ms
+
+      Logger.info(
+        "[claude:#{human_id}] result event received; draining for #{@drain_after_result_ms}ms before force-kill"
+      )
+
+      {:drain, deadline, mode}
+    else
+      mode
+    end
+  end
+
+  defp result_event_line?(line) do
+    case Jason.decode(String.trim(line)) do
+      {:ok, %{"type" => "result"}} -> true
+      _ -> false
     end
   end
 
@@ -681,7 +806,18 @@ defmodule CitadelAgent.Runner do
   defp receive_timeout({:wallclock, _total, deadline}),
     do: max(deadline - System.monotonic_time(:millisecond), 0)
 
-  defp log_and_error({:inactivity, ms}, human_id, output) do
+  defp receive_timeout({:drain, deadline, _prior}),
+    do: max(deadline - System.monotonic_time(:millisecond), 0)
+
+  defp handle_timeout({:drain, _deadline, _prior}, human_id, output) do
+    Logger.warning(
+      "[claude:#{human_id}] result event emitted but process did not exit within drain window; force-killed process group and treating as success"
+    )
+
+    {:ok, %{exit_code: 0, output: output}}
+  end
+
+  defp handle_timeout({:inactivity, ms}, human_id, output) do
     Logger.error("Claude Code process stalled for task #{human_id} (exceeded #{ms}ms)")
 
     {:error,
@@ -689,10 +825,8 @@ defmodule CitadelAgent.Runner do
        "Partial output (#{byte_size(output)} bytes) captured before kill."}
   end
 
-  defp log_and_error({:wallclock, total_ms, _deadline}, human_id, output) do
-    Logger.error(
-      "Claude Code run for task #{human_id} exceeded wallclock cap (#{total_ms}ms)"
-    )
+  defp handle_timeout({:wallclock, total_ms, _deadline}, human_id, output) do
+    Logger.error("Claude Code run for task #{human_id} exceeded wallclock cap (#{total_ms}ms)")
 
     {:error,
      "Claude Code run exceeded the configured #{div(total_ms, 1_000)}s max duration. " <>
@@ -717,18 +851,24 @@ defmodule CitadelAgent.Runner do
     :ok
   end
 
-  defp kill_port(port) do
-    {:os_pid, os_pid} = Port.info(port, :os_pid)
-    System.cmd("kill", ["-9", to_string(os_pid)], stderr_to_stdout: true)
+  # :exec.stop sends SIGTERM then SIGKILL to the whole process group (kill_group),
+  # taking down Claude and every subprocess it spawned. Drain any straggling
+  # output and the DOWN message so they don't pollute the long-lived Worker mailbox.
+  defp stop_and_flush(pid, os_pid) do
+    :exec.stop(pid)
+    flush_until_down(pid, os_pid)
+  end
 
+  defp flush_until_down(pid, os_pid) do
     receive do
-      {^port, {:exit_status, _code}} -> :ok
+      {stream, ^os_pid, _data} when stream in [:stdout, :stderr] ->
+        flush_until_down(pid, os_pid)
+
+      {:DOWN, ^os_pid, :process, ^pid, _reason} ->
+        :ok
     after
-      5_000 ->
-        Port.close(port)
+      5_000 -> :ok
     end
-  rescue
-    _ -> Port.close(port)
   end
 
   defp build_prompt(task, feedback \\ nil, run_id \\ nil) do
@@ -799,37 +939,6 @@ defmodule CitadelAgent.Runner do
   end
 
   defp capture_commits(_worktree_path, _starting_sha), do: {:ok, []}
-
-  @stripped_env_vars ~w(ANTHROPIC_API_KEY OPENAI_API_KEY CLAUDECODE)
-
-  defp ensure_claude_auth(claude_path, working_dir, env, label) do
-    {auth_output, auth_code} =
-      System.cmd(claude_path, ["auth", "status"],
-        cd: working_dir,
-        stderr_to_stdout: true,
-        env: env
-      )
-
-    Logger.info("[claude:#{label}] Auth status in worktree (exit #{auth_code}): #{String.trim(auth_output)}")
-
-    has_sso? =
-      auth_code == 0 and not String.contains?(auth_output, "\"email\":null") and
-        not String.contains?(auth_output, "ANTHROPIC_API_KEY")
-
-    unless has_sso? do
-      Logger.warning("[claude:#{label}] SSO not active in worktree — CLI may fall back to API key auth")
-    end
-  end
-
-  defp clean_env do
-    System.get_env()
-    |> Map.drop(@stripped_env_vars)
-    |> Map.to_list()
-  end
-
-  defp escape_shell(str) do
-    "'" <> String.replace(str, "'", "'\\''") <> "'"
-  end
 
   defp determine_status(%{exit_code: 0}), do: "completed"
   defp determine_status(_), do: "failed"

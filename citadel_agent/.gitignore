@@ -24,3 +24,6 @@ citadel_agent-*.tar
 
 # Git worktrees created by agent execution
 /.worktrees/
+
+# Release tarballs produced by scripts/package.sh
+/dist/

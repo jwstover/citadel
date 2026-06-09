@@ -3,21 +3,39 @@ defmodule CitadelAgent.Application do
 
   use Application
 
+  require Logger
+
   @impl true
   def start(_type, _args) do
-    children =
-      if CitadelAgent.config(:api_key) do
-        CitadelAgent.Preflight.run!()
+    children = boot_children()
 
-        [
-          {CitadelAgent.Socket, []},
-          {CitadelAgent.Worker, []}
-        ]
-      else
-        []
-      end
-
-    opts = [strategy: :one_for_one, name: CitadelAgent.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, strategy: :one_for_one, name: CitadelAgent.Supervisor)
   end
+
+  defp boot_children do
+    cond do
+      not running_as_release?() ->
+        []
+
+      is_nil(CitadelAgent.config(:api_key)) ->
+        IO.puts(:stderr, "CITADEL_API_KEY is not set. Refusing to start.")
+        System.halt(1)
+
+      true ->
+        try do
+          CitadelAgent.Preflight.run!()
+
+          [
+            {CitadelAgent.Socket, []},
+            {CitadelAgent.Worker, []}
+          ]
+        rescue
+          e in CitadelAgent.Preflight.CheckError ->
+            IO.puts(:stderr, "Preflight failed: #{Exception.message(e)}")
+            System.halt(1)
+        end
+    end
+  end
+
+  defp running_as_release?, do: not is_nil(System.get_env("RELEASE_NAME"))
 end

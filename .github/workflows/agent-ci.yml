@@ -1,0 +1,66 @@
+name: Agent CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "citadel_agent/**"
+      - ".github/workflows/agent-ci.yml"
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "citadel_agent/**"
+      - ".github/workflows/agent-ci.yml"
+
+permissions:
+  contents: read
+
+env:
+  ELIXIR_VERSION: "1.19.1"
+  OTP_VERSION: "28.1"
+
+jobs:
+  lint:
+    name: Lint (format, unused deps, warnings)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: citadel_agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: citadel_agent/deps
+          key: deps-agent-ci-${{ hashFiles('citadel_agent/mix.lock') }}
+          restore-keys: deps-agent-ci-
+
+      - name: Install hex + rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Fetch deps
+        run: mix deps.get
+
+      - name: Check for unused deps
+        run: mix deps.unlock --check-unused
+
+      - name: Check formatting
+        run: mix format --check-formatted
+        if: always()
+
+      # Compiles deps (incl. the erlexec C++ port) and the app from scratch so
+      # warnings always surface; _build is intentionally not cached for this.
+      - name: Compile (warnings as errors)
+        run: mix compile --warnings-as-errors --force
+        if: always()

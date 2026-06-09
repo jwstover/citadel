@@ -1,0 +1,115 @@
+name: Release Agent
+
+on:
+  push:
+    tags:
+      - "agent-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ELIXIR_VERSION: "1.19.1"
+  OTP_VERSION: "28.1"
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-14
+          - target: darwin-x86_64
+            runner: macos-13
+          - target: linux-x86_64
+            runner: ubuntu-24.04
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        with:
+          path: citadel_agent/deps
+          key: deps-${{ matrix.target }}-${{ hashFiles('citadel_agent/mix.lock') }}
+          restore-keys: deps-${{ matrix.target }}-
+
+      - name: Cache _build
+        uses: actions/cache@v4
+        with:
+          path: citadel_agent/_build
+          key: build-${{ matrix.target }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('citadel_agent/mix.lock') }}
+          restore-keys: build-${{ matrix.target }}-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-
+
+      - name: Install hex + rebar
+        working-directory: citadel_agent
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Verify tag matches mix.exs version
+        if: startsWith(github.ref, 'refs/tags/agent-v')
+        working-directory: citadel_agent
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#agent-v}"
+          MIX_VERSION="$(grep -E '^\s*@version\s+' mix.exs | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          if [ "$TAG_VERSION" != "$MIX_VERSION" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match mix.exs @version $MIX_VERSION"
+            exit 1
+          fi
+          echo "✓ tag $GITHUB_REF_NAME matches mix.exs version $MIX_VERSION"
+
+      - name: Build release tarball
+        working-directory: citadel_agent
+        run: ./scripts/package.sh
+
+      - name: Verify tarball is non-empty
+        working-directory: citadel_agent
+        run: |
+          test -s dist/*.tar.gz
+          ls -lh dist/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: citadel-agent-${{ matrix.target }}
+          path: |
+            citadel_agent/dist/*.tar.gz
+            citadel_agent/dist/*.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/agent-v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh dist/
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.tar.gz
+            dist/*.tar.gz.sha256
+          generate_release_notes: true
+          fail_on_unmatched_files: true

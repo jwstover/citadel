@@ -116,9 +116,7 @@ defmodule CitadelAgent.Worker do
             )
 
           {:error, reason} ->
-            Logger.error(
-              "Failed to update run #{run_id}: #{inspect(reason)}"
-            )
+            Logger.error("Failed to update run #{run_id}: #{inspect(reason)}")
         end
 
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
@@ -180,7 +178,10 @@ defmodule CitadelAgent.Worker do
         nil
 
       {:error, reason} ->
-        Logger.warning("Failed to fetch comment #{comment_id}: #{inspect(reason)}, proceeding without feedback")
+        Logger.warning(
+          "Failed to fetch comment #{comment_id}: #{inspect(reason)}, proceeding without feedback"
+        )
+
         nil
     end
   end

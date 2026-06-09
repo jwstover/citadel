@@ -103,9 +103,14 @@ defmodule CitadelAgent.Preflight do
                  {"accept", "application/vnd.github+v3+json"}
                ]
              ) do
-          {:ok, %{status: 200}} -> :ok
-          {:ok, %{status: status}} -> {:error, "GITHUB_TOKEN is invalid — received HTTP #{status}"}
-          {:error, reason} -> {:error, "GitHub API request failed: #{inspect(reason)}"}
+          {:ok, %{status: 200}} ->
+            :ok
+
+          {:ok, %{status: status}} ->
+            {:error, "GITHUB_TOKEN is invalid — received HTTP #{status}"}
+
+          {:error, reason} ->
+            {:error, "GitHub API request failed: #{inspect(reason)}"}
         end
     end
   end
