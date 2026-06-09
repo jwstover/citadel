@@ -38,7 +38,9 @@ defmodule CitadelAgent.PreflightTest do
     end
 
     test "raises when project path is not a git repo" do
-      non_git_dir = Path.join(System.tmp_dir!(), "citadel_test_non_git_#{System.unique_integer([:positive])}")
+      non_git_dir =
+        Path.join(System.tmp_dir!(), "citadel_test_non_git_#{System.unique_integer([:positive])}")
+
       File.mkdir_p!(non_git_dir)
       on_exit(fn -> File.rm_rf!(non_git_dir) end)
 

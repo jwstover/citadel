@@ -35,7 +35,10 @@ defmodule CitadelAgent.GitHubTest do
     end
 
     test "returns error when no remote exists" do
-      dir = System.tmp_dir!() |> Path.join("github_test_no_remote_#{System.unique_integer([:positive])}")
+      dir =
+        System.tmp_dir!()
+        |> Path.join("github_test_no_remote_#{System.unique_integer([:positive])}")
+
       File.mkdir_p!(dir)
       System.cmd("git", ["init"], cd: dir)
 
@@ -86,11 +89,21 @@ defmodule CitadelAgent.GitHubTest do
 
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(201, Jason.encode!(%{"html_url" => "https://github.com/owner/repo/pull/1"}))
+        |> Plug.Conn.send_resp(
+          201,
+          Jason.encode!(%{"html_url" => "https://github.com/owner/repo/pull/1"})
+        )
       end)
 
       assert {:ok, "https://github.com/owner/repo/pull/1"} =
-               GitHub.create_pull_request("owner", "repo", "feature-branch", "main", "PR Title", "PR Body")
+               GitHub.create_pull_request(
+                 "owner",
+                 "repo",
+                 "feature-branch",
+                 "main",
+                 "PR Title",
+                 "PR Body"
+               )
 
       assert_received {:github_request, conn, body}
       assert conn.method == "POST"
@@ -109,7 +122,10 @@ defmodule CitadelAgent.GitHubTest do
       Req.Test.stub(:github_api, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(201, Jason.encode!(%{"html_url" => "https://github.com/o/r/pull/42"}))
+        |> Plug.Conn.send_resp(
+          201,
+          Jason.encode!(%{"html_url" => "https://github.com/o/r/pull/42"})
+        )
       end)
 
       assert {:ok, "https://github.com/o/r/pull/42"} =
@@ -194,7 +210,10 @@ defmodule CitadelAgent.GitHubTest do
       Req.Test.stub(:github_api, fn conn ->
         conn
         |> Plug.Conn.put_resp_content_type("application/json")
-        |> Plug.Conn.send_resp(200, Jason.encode!([%{"html_url" => "https://github.com/o/r/pull/5"}]))
+        |> Plug.Conn.send_resp(
+          200,
+          Jason.encode!([%{"html_url" => "https://github.com/o/r/pull/5"}])
+        )
       end)
 
       assert {:ok, "https://github.com/o/r/pull/5"} =

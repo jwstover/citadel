@@ -46,14 +46,16 @@ defmodule CitadelAgent.RunnerPrDescriptionTest do
 
   describe "extract_text_from_stream_json/1" do
     test "extracts text from result type" do
-      output = ~s|{"type":"result","result":{"content":[{"type":"text","text":"## Summary\\nFixes the login bug"}]}}|
+      output =
+        ~s|{"type":"result","result":{"content":[{"type":"text","text":"## Summary\\nFixes the login bug"}]}}|
 
       assert CitadelAgent.Runner.extract_text_from_stream_json(output) ==
                "## Summary\nFixes the login bug"
     end
 
     test "extracts text from assistant message type" do
-      output = ~s|{"type":"assistant","message":{"content":[{"type":"text","text":"PR description here"}]}}|
+      output =
+        ~s|{"type":"assistant","message":{"content":[{"type":"text","text":"PR description here"}]}}|
 
       assert CitadelAgent.Runner.extract_text_from_stream_json(output) == "PR description here"
     end

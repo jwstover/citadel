@@ -54,9 +54,7 @@ defmodule CitadelAgent.RunnerTest do
       worktree_path = Path.join(project_path, ".worktrees/task-TEST-3")
 
       # Create worktree, add a commit, then remove it
-      System.cmd("git", ["worktree", "add", worktree_path, "-b", branch_name],
-        cd: project_path
-      )
+      System.cmd("git", ["worktree", "add", worktree_path, "-b", branch_name], cd: project_path)
 
       File.write!(Path.join(worktree_path, "new_file.txt"), "content")
       System.cmd("git", ["add", "."], cd: worktree_path)

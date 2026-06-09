@@ -40,7 +40,10 @@ defmodule CitadelAgent.GitHub do
           {:ok, nil}
 
         {:error, exception} ->
-          Logger.warning("GitHub API request failed checking for PR: #{Exception.message(exception)}")
+          Logger.warning(
+            "GitHub API request failed checking for PR: #{Exception.message(exception)}"
+          )
+
           {:ok, nil}
       end
     end
