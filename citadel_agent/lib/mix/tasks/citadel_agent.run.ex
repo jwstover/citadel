@@ -42,12 +42,8 @@ defmodule Mix.Tasks.CitadelAgent.Run do
     if opts[:preflight_only] do
       Mix.shell().info("Preflight checks passed. Exiting.")
     else
-      unless Process.whereis(CitadelAgent.Socket) do
-        Supervisor.start_child(CitadelAgent.Supervisor, {CitadelAgent.Socket, []})
-      end
-
-      unless Process.whereis(CitadelAgent.Worker) do
-        Supervisor.start_child(CitadelAgent.Supervisor, {CitadelAgent.Worker, []})
+      unless Process.whereis(CitadelAgent.Scheduler) do
+        CitadelAgent.Scheduler.start_link()
       end
 
       Mix.shell().info("CitadelAgent is running. Press Ctrl+C to stop.")

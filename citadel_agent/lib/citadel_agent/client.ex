@@ -81,14 +81,24 @@ defmodule CitadelAgent.Client do
   defp api_key, do: CitadelAgent.config(:api_key)
 
   defp base_req do
-    Req.new(
-      base_url: base_url(),
-      headers: [
-        {"authorization", "Bearer #{api_key()}"},
-        {"content-type", "application/json"},
-        {"accept", "application/json"}
-      ]
-    )
+    opts =
+      Keyword.merge(
+        [
+          base_url: base_url(),
+          headers: [
+            {"authorization", "Bearer #{api_key()}"},
+            {"content-type", "application/json"},
+            {"accept", "application/json"}
+          ]
+        ],
+        req_options()
+      )
+
+    Req.new(opts)
+  end
+
+  defp req_options do
+    Application.get_env(:citadel_agent, :client_req_options, [])
   end
 
   defp req_get(path) do

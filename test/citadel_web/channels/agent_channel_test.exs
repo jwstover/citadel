@@ -61,8 +61,8 @@ defmodule CitadelWeb.AgentChannelTest do
           "agent_name" => agent_name
         })
 
-      assert socket.assigns.status == "idle"
-      assert socket.assigns.current_task_id == nil
+      assert socket.assigns.initial_status == "idle"
+      assert socket.assigns.initial_task_id == nil
     end
 
     test "uses status from join payload when provided", %{user: user, workspace: workspace} do
@@ -81,8 +81,8 @@ defmodule CitadelWeb.AgentChannelTest do
           "current_task_id" => task_id
         })
 
-      assert socket.assigns.status == "working"
-      assert socket.assigns.current_task_id == task_id
+      assert socket.assigns.initial_status == "working"
+      assert socket.assigns.initial_task_id == task_id
     end
   end
 

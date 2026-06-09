@@ -1,97 +1,72 @@
-defmodule CitadelAgent.Worker do
+defmodule CitadelAgent.TaskRunner do
   @moduledoc """
-  GenServer that polls Citadel for agent-eligible tasks and executes them.
+  GenServer that wraps the execution of a single task. Owns the full lifecycle
+  of one task run: fetching feedback, pushing status updates, executing via
+  `Runner.execute/3`, reporting results, transitioning the task state, and
+  cleaning up.
 
-  Tracks the active AgentRun in state so that `terminate/2` can mark it as
-  failed if the process crashes unexpectedly.
+  Registers itself in the RunnerRegistry via `:via` tuple naming so the
+  Registry automatically deregisters the process on termination.
   """
 
-  use GenServer
+  use GenServer, restart: :temporary
 
   require Logger
 
-  def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(%{task: task, run: run, project_path: project_path} = args) do
+    task_id = task["id"]
+
+    GenServer.start_link(
+      __MODULE__,
+      %{
+        task: task,
+        run: run,
+        project_path: project_path,
+        work_item: Map.get(args, :work_item)
+      },
+      name: {:via, Registry, {CitadelAgent.RunnerRegistry, task_id}}
+    )
   end
 
   @impl true
-  def init(_opts) do
-    poll_interval = CitadelAgent.config(:poll_interval) || 10_000
-    send(self(), :poll)
+  def init(state) do
+    CitadelAgent.Socket.update_status("working", state.task["id"])
+    send(self(), :execute)
 
-    Logger.info("CitadelAgent.Worker started, polling every #{poll_interval}ms")
-
-    {:ok, %{poll_interval: poll_interval, active_run: nil}}
+    {:ok, Map.put(state, :active_run, state.run)}
   end
 
   @impl true
-  def handle_info(:poll, state) do
-    state = process_next_task(state)
-    schedule_poll(state.poll_interval)
-    {:noreply, state}
+  def handle_info(:execute, state) do
+    state = run_task(state)
+    CitadelAgent.Socket.update_status("idle")
+    {:stop, :normal, %{state | active_run: nil}}
   end
 
   @impl true
-  def terminate(reason, %{active_run: %{"id" => run_id}}) do
-    Logger.error("Worker terminating with active run #{run_id}, marking as failed")
+  def terminate(:normal, _state), do: :ok
+
+  def terminate(reason, %{active_run: %{"id" => run_id}} = _state) do
+    Logger.error("TaskRunner terminating with active run #{run_id}, marking as failed")
 
     CitadelAgent.Client.update_run(run_id, %{
       "status" => "failed",
-      "error_message" => "Worker process terminated: #{inspect(reason)}",
+      "error_message" => "TaskRunner process terminated: #{inspect(reason)}",
       "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
     })
+
+    CitadelAgent.Socket.update_status("idle")
   end
 
-  def terminate(_reason, _state), do: :ok
-
-  defp schedule_poll(interval) do
-    Process.send_after(self(), :poll, interval)
+  def terminate(_reason, _state) do
+    CitadelAgent.Socket.update_status("idle")
   end
 
-  defp process_next_task(state) do
-    case CitadelAgent.Client.claim_task() do
-      {:ok, nil} ->
-        Logger.debug("No agent-eligible tasks available")
-        CitadelAgent.Socket.update_status("idle")
-        state
-
-      {:ok, %{"task" => task, "agent_run" => run} = claim} ->
-        Logger.info("Claimed task #{task["human_id"]}: #{task["title"]}")
-        work_item = claim["work_item"]
-        feedback = fetch_feedback(work_item)
-        resume_session_id = fetch_resume_session_id(work_item)
-        execute_task(task, run, feedback, resume_session_id, state)
-
-      {:error, reason} ->
-        Logger.error("Failed to claim task: #{inspect(reason)}")
-        state
-    end
-  end
-
-  defp execute_task(task, run, feedback, resume_session_id, state) do
-    case CitadelAgent.config(:project_path) do
-      nil ->
-        Logger.error("No project_path configured, failing task #{task["human_id"]}")
-
-        CitadelAgent.Client.update_run(run["id"], %{
-          "status" => "failed",
-          "error_message" => "No project_path configured on agent",
-          "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
-        })
-
-        state
-
-      project_path ->
-        state = %{state | active_run: run}
-        CitadelAgent.Socket.update_status("working", task["id"])
-        run_task(task, run, feedback, resume_session_id, project_path)
-        CitadelAgent.Socket.update_status("idle")
-        %{state | active_run: nil}
-    end
-  end
-
-  defp run_task(task, run, feedback, resume_session_id, project_path) do
+  defp run_task(state) do
+    %{task: task, run: run, project_path: project_path, work_item: work_item} = state
     run_id = run["id"]
+    feedback = fetch_feedback(work_item)
+    resume_session_id = fetch_resume_session_id(work_item)
 
     case CitadelAgent.Runner.execute(task, project_path,
            run_id: run_id,
@@ -122,6 +97,8 @@ defmodule CitadelAgent.Worker do
         Logger.info("Task #{task["human_id"]} completed with status: #{result.status}")
         push_stream_complete(run_id)
 
+        %{state | active_run: nil}
+
       {:error, reason} ->
         CitadelAgent.Client.update_run(run_id, %{
           "status" => "failed",
@@ -131,28 +108,30 @@ defmodule CitadelAgent.Worker do
 
         Logger.error("Task #{task["human_id"]} failed: #{inspect(reason)}")
         push_stream_complete(run_id)
+
+        %{state | active_run: nil}
     end
   rescue
     exception ->
       Logger.error(
-        "Task #{task["human_id"]} crashed: #{Exception.format(:error, exception, __STACKTRACE__)}"
+        "Task #{state.task["human_id"]} crashed: #{Exception.format(:error, exception, __STACKTRACE__)}"
       )
 
-      CitadelAgent.Client.update_run(run["id"], %{
+      CitadelAgent.Client.update_run(state.run["id"], %{
         "status" => "failed",
         "error_message" => Exception.message(exception),
         "completed_at" => DateTime.utc_now() |> DateTime.to_iso8601()
       })
 
-      push_stream_complete(run["id"])
+      push_stream_complete(state.run["id"])
+
+      %{state | active_run: nil}
   end
 
   defp push_stream_complete(run_id) do
-    try do
-      CitadelAgent.Socket.push_stream_complete(run_id)
-    rescue
-      e -> Logger.debug("Failed to push stream_complete: #{Exception.message(e)}")
-    end
+    CitadelAgent.Socket.push_stream_complete(run_id)
+  rescue
+    e -> Logger.debug("Failed to push stream_complete: #{Exception.message(e)}")
   end
 
   defp fetch_feedback(%{"type" => "changes_requested", "comment_id" => comment_id})

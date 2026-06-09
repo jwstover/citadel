@@ -14,8 +14,8 @@ defmodule CitadelWeb.AgentChannel do
     socket =
       socket
       |> assign(:agent_name, agent_name)
-      |> assign(:status, payload["status"] || "idle")
-      |> assign(:current_task_id, payload["current_task_id"])
+      |> assign(:initial_status, payload["status"] || "idle")
+      |> assign(:initial_task_id, payload["current_task_id"])
 
     workspace = Accounts.get_workspace_by_id!(socket.assigns.workspace_id, authorize?: false)
 
@@ -35,8 +35,8 @@ defmodule CitadelWeb.AgentChannel do
     topic = presence_topic(socket)
 
     AgentPresence.track(self(), topic, socket.assigns.agent_name, %{
-      status: socket.assigns.status,
-      current_task_id: socket.assigns.current_task_id,
+      status: socket.assigns.initial_status,
+      current_task_id: socket.assigns.initial_task_id,
       agent_name: socket.assigns.agent_name,
       joined_at: DateTime.utc_now() |> DateTime.to_iso8601()
     })
