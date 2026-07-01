@@ -5,6 +5,8 @@ defmodule CitadelWeb.BillingController do
 
   use CitadelWeb, :controller
 
+  require Logger
+
   alias Citadel.Accounts
   alias Citadel.Billing
   alias Citadel.Billing.Stripe, as: StripeService
@@ -29,7 +31,9 @@ defmodule CitadelWeb.BillingController do
         {:ok, checkout_url} ->
           redirect(conn, external: checkout_url)
 
-        {:error, _reason} ->
+        {:error, reason} ->
+          Logger.error("Stripe checkout session creation failed: #{inspect(reason)}")
+
           conn
           |> put_flash(:error, "Failed to create checkout session")
           |> redirect(to: ~p"/billing")
@@ -40,7 +44,9 @@ defmodule CitadelWeb.BillingController do
         |> put_flash(:error, "You must be logged in")
         |> redirect(to: ~p"/sign-in")
 
-      {:error, _reason} ->
+      {:error, reason} ->
+        Logger.error("Failed to initiate checkout: #{inspect(reason)}")
+
         conn
         |> put_flash(:error, "Failed to initiate checkout")
         |> redirect(to: ~p"/billing")
@@ -57,7 +63,9 @@ defmodule CitadelWeb.BillingController do
         {:ok, portal_url} ->
           redirect(conn, external: portal_url)
 
-        {:error, _reason} ->
+        {:error, reason} ->
+          Logger.error("Stripe portal session creation failed: #{inspect(reason)}")
+
           conn
           |> put_flash(:error, "Failed to access billing portal")
           |> redirect(to: ~p"/billing")
@@ -68,7 +76,9 @@ defmodule CitadelWeb.BillingController do
         |> put_flash(:error, "You must be logged in")
         |> redirect(to: ~p"/sign-in")
 
-      {:error, _reason} ->
+      {:error, reason} ->
+        Logger.error("Failed to access billing portal: #{inspect(reason)}")
+
         conn
         |> put_flash(:error, "Failed to access billing portal")
         |> redirect(to: ~p"/billing")
@@ -91,10 +101,20 @@ defmodule CitadelWeb.BillingController do
           {:ok, workspace}
 
         {:error, _error} ->
-          {:error, :workspace_not_found}
+          load_default_workspace(user)
       end
     else
-      {:error, :no_workspace_selected}
+      load_default_workspace(user)
+    end
+  end
+
+  defp load_default_workspace(user) do
+    case Accounts.list_workspaces!(actor: user) do
+      [workspace | _] ->
+        Accounts.get_workspace_by_id(workspace.id, actor: user, load: [:organization])
+
+      [] ->
+        {:error, :no_workspace_available}
     end
   end
 
