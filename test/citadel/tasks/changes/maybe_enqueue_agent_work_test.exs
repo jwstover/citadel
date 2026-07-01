@@ -336,14 +336,20 @@ defmodule Citadel.Tasks.Changes.MaybeEnqueueAgentWorkTest do
       )
       |> Ash.update!()
 
-      # Cancel the agent run (which cancels the claimed work item via SyncWorkItemStatus)
+      # Cancel the agent run. SyncWorkItemStatus cancels the claimed work item,
+      # then MaybeRequeueAgentWork creates a fresh pending work item.
       Tasks.cancel_agent_run!(agent_run, actor: user, tenant: workspace.id)
 
-      # Verify work item was cancelled
       work_items = list_work_items_for_task(task.id, workspace.id)
-      assert Enum.all?(work_items, &(&1.status == :cancelled))
+      cancelled_items = Enum.filter(work_items, &(&1.status == :cancelled))
+      pending_items = Enum.filter(work_items, &(&1.status == :pending))
+      assert length(cancelled_items) == 1
+      assert hd(cancelled_items).id == original_work_item.id
+      assert length(pending_items) == 1
+      assert hd(pending_items).id != original_work_item.id
 
-      # Toggle agent_eligible off then on - should create a new pending work item
+      # Toggling agent_eligible off then on is a no-op here because the
+      # auto-requeue already produced a pending work item.
       Tasks.update_task!(task.id, %{agent_eligible: false}, actor: user, tenant: workspace.id)
       Tasks.update_task!(task.id, %{agent_eligible: true}, actor: user, tenant: workspace.id)
 
